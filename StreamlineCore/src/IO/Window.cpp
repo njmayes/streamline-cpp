@@ -116,22 +116,16 @@ namespace slc {
 
 		glfwSetWindowCloseCallback(mWindow, [](GLFWwindow* window)
 		{
-			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
-
 			EventManager::Post<WindowCloseEvent>();
 		});
 
 		glfwSetWindowPosCallback(mWindow, [](GLFWwindow* window, int xpos, int ypos)
 		{
-			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
-
 			EventManager::Post<WindowMovedEvent>(xpos, ypos);
 		});
 
 		glfwSetKeyCallback(mWindow, [](GLFWwindow* window, int key, int scancode, int action, int mods)
 		{
-			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
-
 			switch (action)
 			{
 			case GLFW_PRESS:
@@ -154,16 +148,11 @@ namespace slc {
 
 		glfwSetCharCallback(mWindow, [](GLFWwindow* window, unsigned int keycode)
 		{
-			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
-		
 			EventManager::Post<KeyTypedEvent>(keycode);
 		});
 
 		glfwSetMouseButtonCallback(mWindow, [](GLFWwindow* window, int button, int action, int mods)
-		{
-			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
-
-			switch (action)
+		{			switch (action)
 			{
 			case GLFW_PRESS:
 			{
@@ -180,22 +169,16 @@ namespace slc {
 
 		glfwSetScrollCallback(mWindow, [](GLFWwindow* window, double xOffset, double yOffset)
 		{
-			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
-
 			EventManager::Post<MouseScrolledEvent>((float)xOffset, (float)yOffset);
 		});
 
 		glfwSetCursorPosCallback(mWindow, [](GLFWwindow* window, double xPos, double yPos)
 		{
-			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
-		
 			EventManager::Post<MouseMovedEvent>((float)xPos, (float)yPos);
 		});
 
 		glfwSetWindowFocusCallback(mWindow, [](GLFWwindow* window, int focused)
 		{
-			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
-		
 			if (focused == GLFW_TRUE)
 				EventManager::Post<WindowFocusEvent>();
 			else

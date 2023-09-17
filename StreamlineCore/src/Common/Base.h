@@ -3,10 +3,11 @@
 #include "Std.h"
 #include "Platform.h"
 #include "Reflection.h"
-#include "Functional.h"
 #include "System.h"
 
 namespace slc {
+
+#define SLC_EXPAND_MACRO(x) x
 
 #define ASSERT(x, ...)  assert(x)
 #define SASSERT(x, ...) static_assert(x)
@@ -48,4 +49,6 @@ namespace slc {
     };
 
     SCONSTEXPR size_t MakeBit(int bit) { return 1 << bit; }
+
+    namespace fs = std::filesystem;
 }
