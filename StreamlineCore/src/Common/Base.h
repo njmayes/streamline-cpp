@@ -33,4 +33,6 @@ namespace slc {
         SCONSTEXPR T Max     = std::numeric_limits<T>::max();
         SCONSTEXPR T Epsilon = std::numeric_limits<T>::epsilon();
     };
+
+    SCONSTEXPR size_t MakeBit(int bit) { return 1 << bit; }
 }
