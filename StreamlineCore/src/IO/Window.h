@@ -8,6 +8,11 @@ namespace slc {
 
     class Event; 
 
+	struct Resolution
+	{
+		unsigned width, height;
+	};
+
 	struct WindowProperties {
 		std::string title;
 		unsigned width;
@@ -15,10 +20,9 @@ namespace slc {
 		bool fullscreen;
 
 		WindowProperties(std::string_view t = "Labyrinth Engine",
-			unsigned w = 1600,
-			unsigned h = 900,
+			const Resolution& r = { 1600, 900 },
 			bool f = false)
-			: title(t), width(w), height(h), fullscreen(f) {}
+			: title(t), width(r.width), height(r.height), fullscreen(f) {}
 	};
 
 	class Window

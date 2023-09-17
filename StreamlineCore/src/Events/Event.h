@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Common/Base.h"
+#include "Common/Functional.h"
 
 #include "ApplicationEvent.h"
 #include "KeyEvent.h"
@@ -19,6 +19,8 @@ namespace slc {
 	template<typename T>
 	concept IsEvent = AllEvents::Contains<T>;
 
+#define SLC_BIND_EVENT_FUNC(fn) [this](IsEvent auto& event) -> bool { return this->fn(event); }
+
 	struct Event
 	{
 		bool handled = false;
@@ -26,32 +28,23 @@ namespace slc {
 		AllEvents::VariantType data;
 
 		template<IsEvent TEvent, typename... TArgs>
-		void init(TArgs&&... args) 
+		void Init(TArgs&&... args) 
 		{
 			type = MakeBit(AllEvents::Index<TEvent>);
 			data = TEvent(std::forward<TArgs>(args)...);
 		}
-	};
 
-	class LocalEventDispatcher
-	{
-	public:
-		LocalEventDispatcher(Event& event)
-			: mEvent(event) {}
-
-		template<typename T>
-		void dispatch(Predicate<T&> func)
+		template<IsEvent T, typename Func> requires IsFunc<Func, bool, T&>
+		void Dispatch(Func&& func)
 		{
-			if (mEvent.type != T::GetStaticType())
+			if (type != T::GetStaticType())
 				return;
 
-			if (mEvent.handled)
+			if (handled)
 				return;
 
-			mEvent.handled = func(std::get<T>(mEvent.data));
+			handled = func(*std::get_if<T>(&data));
 		}
-
-	private:
-		Event& mEvent;
 	};
+
 }

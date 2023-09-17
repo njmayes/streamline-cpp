@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Common/Base.h"
+#include "Common/Functional.h"
 
 namespace slc {
 

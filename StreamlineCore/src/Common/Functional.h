@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Common/Base.h"
+
 #pragma region Matching
 
     #define SLC_TAG(result, value) result##value
