@@ -1,4 +1,5 @@
-workspace "cpp-template"
+workspace "streamline-cpp"
+    startproject "TestApp"
 
     configurations 
     { 
@@ -25,6 +26,7 @@ workspace "cpp-template"
 outputDir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
 IncludeDir = {}
-IncludeDir["TemplateProject"] 	= "%{wks.location}/TemplateProject/src"
+IncludeDir["StreamlineCore"] 	= "%{wks.location}/StreamlineCore/src"
 
-include "TemplateProject"
+include "StreamlineCore"
+include "TestApp"

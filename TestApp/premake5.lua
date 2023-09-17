@@ -1,12 +1,10 @@
-project "TemplateProject"
+project "TestApp"
     language "C++"
     cppdialect "C++20"
-		
+	kind "ConsoleApp"
+	
     targetdir 	("%{wks.location}/bin/%{prj.name}/" .. outputDir)
     objdir 		("%{wks.location}/obj/%{prj.name}/" .. outputDir)
-	
-	pchheader "pch.h"
-	pchsource "src/pch.cpp"
 
     files 
     { 
@@ -21,20 +19,19 @@ project "TemplateProject"
 
     includedirs
     {
-        "%{IncludeDir.TemplateProject}",
+        "%{IncludeDir.StreamlineCore}",
     }
 
 	links
 	{
+		"StreamlineCore"
 	}
 	
     filter "system:windows"
-        kind "ProjectTypeWin"
         staticruntime "off"
         systemversion "latest"
 		
 	filter "system:linux"
-        kind "ProjectTypeLinux"
         staticruntime "off"
         pic "On"
         systemversion "latest"
