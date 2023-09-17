@@ -2,7 +2,23 @@
 
 #include <functional>
 
-#include "Macro.h"
+#if defined(__GNUC__) || (defined(__MWERKS__) && (__MWERKS__ >= 0x3000)) || (defined(__ICC) && (__ICC >= 600)) || defined(__ghs__)
+#    define SLC_FUNC_SIGNATURE __PRETTY_FUNCTION__
+#    define SLC_FUNC_SIGNATURE_PREFIX '='
+#    define SLC_FUNC_SIGNATURE_SUFFIX ']'
+#elif defined(__DMC__) && (__DMC__ >= 0x810)
+#    define SLC_FUNC_SIGNATURE __PRETTY_FUNCTION__
+#    define SLC_FUNC_SIGNATURE_PREFIX '='
+#    define SLC_FUNC_SIGNATURE_SUFFIX ']'
+#elif (defined(__FUNCSIG__) || (_MSC_VER))
+#    define SLC_FUNC_SIGNATURE __FUNCSIG__
+#    define SLC_FUNC_SIGNATURE_PREFIX '<'
+#    define SLC_FUNC_SIGNATURE_SUFFIX '>'
+#else
+#   error SLC_FUNC_SIGNATURE "SLC_FUNC_SIGNATURE unknown!"
+#endif
+
+#define SLC_FUNC_SIG_STRING std::string_view { std::source_location::current().function_name() }
 
 namespace slc {
 
@@ -39,21 +55,21 @@ namespace slc {
     struct TypeTraits
     {
 #if defined SLC_FUNC_SIGNATURE_PREFIX
-        SCONSTEXPR auto LongName = Reflection::GetLongName<T>();
-        SCONSTEXPR auto Name = Reflection::GetName<T>();
+        static constexpr auto LongName = Reflection::GetLongName<T>();
+        static constexpr auto Name = Reflection::GetName<T>();
 #endif
-        SCONSTEXPR bool IsObject = std::is_class_v<T>;
-        SCONSTEXPR bool IsPointer = std::is_pointer_v<T>;
-        SCONSTEXPR bool IsEnum = std::is_enum_v<T>;
-        SCONSTEXPR bool IsArray = std::is_array_v<T>;
-        SCONSTEXPR bool IsConst = std::is_const_v<T>;
-        SCONSTEXPR bool IsStandard = std::is_standard_layout_v<T>;
+        static constexpr bool IsObject = std::is_class_v<T>;
+        static constexpr bool IsPointer = std::is_pointer_v<T>;
+        static constexpr bool IsEnum = std::is_enum_v<T>;
+        static constexpr bool IsArray = std::is_array_v<T>;
+        static constexpr bool IsConst = std::is_const_v<T>;
+        static constexpr bool IsStandard = std::is_standard_layout_v<T>;
 
         template<typename R>
-        SCONSTEXPR bool IsBaseOf = std::is_base_of_v<T, R>;
+        static constexpr bool IsBaseOf = std::is_base_of_v<T, R>;
 
         template<typename R>
-        SCONSTEXPR bool IsSameAs = std::is_same_v<T, R>;
+        static constexpr bool IsSameAs = std::is_same_v<T, R>;
     };
 
     template<typename T>
@@ -68,7 +84,7 @@ namespace slc {
     struct FunctionTraits<std::function<R(Args...)>>
     {
         using ReturnType = R;
-        SCONSTEXPR size_t ArgC = sizeof...(Args);
+        static constexpr size_t ArgC = sizeof...(Args);
 
         template <size_t i>
         struct Arg
@@ -81,7 +97,7 @@ namespace slc {
     struct FunctionTraits<R(*)(Args...)>
     {
         using ReturnType = R;
-        SCONSTEXPR size_t ArgC = sizeof...(Args);
+        static constexpr size_t ArgC = sizeof...(Args);
 
         template <size_t i>
         struct Arg
@@ -101,7 +117,7 @@ namespace slc {
         template<size_t I, typename T, typename TupleType>
         static consteval size_t IndexFunction()
         {
-            SASSERT(I < std::tuple_size_v<TupleType>, "The element is not in the tuple");
+            static_assert(I < std::tuple_size_v<TupleType>, "The element is not in the tuple");
 
             using IndexType = typename std::tuple_element<I, TupleType>::type;
 
@@ -115,16 +131,16 @@ namespace slc {
     template<typename... T>
     struct TypeList
     {
-        SCONSTEXPR size_t Size = sizeof...(T);
+        static constexpr size_t Size = sizeof...(T);
 
         using TupleType = std::tuple<T...>;
         using VariantType = std::variant<T...>;
 
         template<typename R>
-        SCONSTEXPR bool Contains = std::disjunction<std::is_same<R, T>...>::value;
+        static constexpr bool Contains = std::disjunction<std::is_same<R, T>...>::value;
 
         template<typename R>
-        SCONSTEXPR size_t Index = TypeUtils::IndexFunction<0, R, TupleType>();
+        static constexpr size_t Index = TypeUtils::IndexFunction<0, R, TupleType>();
 
         template<size_t I>
         using Type = typename std::tuple_element<I, TupleType>::type;
