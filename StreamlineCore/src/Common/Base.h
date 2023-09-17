@@ -1,11 +1,24 @@
 #pragma once
 
 #include "Std.h"
-#include "Macro.h"
+#include "Platform.h"
 #include "Reflection.h"
+#include "Functional.h"
 #include "System.h"
 
 namespace slc {
+
+#define ASSERT(x, ...)  assert(x)
+#define SASSERT(x, ...) static_assert(x)
+
+#define SCONSTEXPR static constexpr
+#define SCONSTEVAL static consteval
+
+#define ifc if constexpr
+
+#define typeof(T) std::decay_t<decltype(T)>
+
+#define LOG(...)
 
     template<typename T>
     using Impl = std::unique_ptr<T>;
