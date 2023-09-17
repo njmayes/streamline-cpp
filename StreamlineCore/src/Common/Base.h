@@ -151,7 +151,8 @@ namespace slc {
     template<std::integral T>
     struct Limits
     {
-        SCONSTEXPR T Min = std::numeric_limits<T>::min();
-        SCONSTEXPR T Max = std::numeric_limits<T>::max();
+        SCONSTEXPR T Min     = std::numeric_limits<T>::min();
+        SCONSTEXPR T Max     = std::numeric_limits<T>::max();
+        SCONSTEXPR T Epsilon = std::numeric_limits<T>::epsilon();
     };
 }
