@@ -1,0 +1,6 @@
+[submodule "StreamlineCore/dependencies/glfw"]
+	path = StreamlineCore/dependencies/glfw
+	url = https://github.com/amayesingnathan/glfw.git
+[submodule "StreamlineCore/dependencies/glad"]
+	path = StreamlineCore/dependencies/glad
+	url = https://github.com/amayesingnathan/glad.git

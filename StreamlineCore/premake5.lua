@@ -22,16 +22,24 @@ project "StreamlineCore"
     includedirs
     {
         "%{IncludeDir.StreamlineCore}",
+        "%{IncludeDir.glfw}",
+        "%{IncludeDir.glad}",
     }
 
 	links
 	{
+        "glad",
+        "glfw",
 	}
 	
     filter "system:windows"
         kind "StaticLib"
         staticruntime "off"
         systemversion "latest"
+        links
+        {
+            "opengl32.lib",
+        }
 		
 	filter "system:linux"
         kind "SharedLib"

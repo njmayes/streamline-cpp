@@ -27,6 +27,15 @@ outputDir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
 IncludeDir = {}
 IncludeDir["StreamlineCore"] 	= "%{wks.location}/StreamlineCore/src"
+IncludeDir["glfw"] 	            = "%{wks.location}/StreamlineCore/dependencies/glfw/include"
+IncludeDir["glad"] 	            = "%{wks.location}/StreamlineCore/dependencies/glad/include"
 
 include "StreamlineCore"
 include "TestApp"
+
+group "Dependencies"
+
+include "StreamlineCore/dependencies/glfw"
+include "StreamlineCore/dependencies/glad"
+
+group ""
