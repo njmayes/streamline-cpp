@@ -2,10 +2,14 @@
 
 #include <string>
 
-#include "IO/Window.h"
 #include "Events/IEventListener.h"
+#include "IO/Window.h"
+#include "ImGui/ImGuiController.h"
+#include "Types/ILayer.h"
 
 int main(int argc, char* argv[]);
+
+struct GLFWwindow;
 
 namespace slc {
 
@@ -16,7 +20,7 @@ namespace slc {
 
 	struct ApplicationSpecification
 	{
-		std::string name = "Labyrinth Application";
+		std::string name = "Streamline Application";
 		Resolution resolution = { 1600, 900 };
 		fs::path workingDir;
 		bool fullscreen = false;
@@ -44,13 +48,26 @@ namespace slc {
 	public:
 		void OnEvent(Event& e) override;
 
+		Window& GetWindow() { return *mWindow; }
+
+	protected:
+		template<IsLayer T, typename... Args>
+		void PushLayer(Args&&... args) 
+		{ 
+			T* layer = new T(std::forward<Args>(args)...);
+			PushLayer(layer);
+		}
+		void PushLayer(IsLayer auto* layer) 
+		{ 
+			mLayerStack.emplace_back(layer);  
+			layer->OnAttach();
+		}
+
 	private:
 		bool OnWindowClose(WindowCloseEvent& e);
 		bool OnWindowResize(WindowResizeEvent& e);
 
-	public:
-		static void Run(int argc, char** argv);
-		static Application& Get() { return *sInstance; }
+	public:		
 		static void Close();
 
 		static const ApplicationSpecification& GetSpec() { return sInstance->mSpecification; }
@@ -61,10 +78,21 @@ namespace slc {
 		static void BlockEsc(bool block = true);
 		static void BlockEvents(bool block);
 
+		static GLFWwindow* GetNativeWindow() { return sInstance->mWindow->getNativeWindow(); }
+
+		static float GetWindowWidth() { return static_cast<float>(sInstance->mWindow->getWidth()); }
+		static float GetWindowHeight() { return static_cast<float>(sInstance->mWindow->getHeight()); }
+
 	private:
-		ApplicationSpecification mSpecification;
-		ApplicationState mState;
-		Impl<Window> mWindow;
+		static void Run(int argc, char** argv);
+		static Application& Get() { return *sInstance; }
+
+	private:
+		ApplicationSpecification 	mSpecification;
+		ApplicationState 			mState;
+		Impl<Window> 				mWindow;
+		Impl<ImGuiController> 		mImGuiController;
+		std::vector<ILayer*>		mLayerStack;
 
 	private:
 		inline static Impl<Application> sInstance = nullptr;

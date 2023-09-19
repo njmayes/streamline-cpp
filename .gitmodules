@@ -4,3 +4,6 @@
 [submodule "StreamlineCore/dependencies/glad"]
 	path = StreamlineCore/dependencies/glad
 	url = https://github.com/amayesingnathan/glad.git
+[submodule "StreamlineCore/dependencies/imgui"]
+	path = StreamlineCore/dependencies/imgui
+	url = https://github.com/amayesingnathan/imgui.git

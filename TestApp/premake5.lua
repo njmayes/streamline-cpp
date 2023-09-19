@@ -24,7 +24,7 @@ project "TestApp"
 
 	links
 	{
-		"StreamlineCore"
+		"StreamlineCore",
 	}
 	
     filter "system:windows"

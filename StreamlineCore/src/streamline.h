@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Common/Base.h"
+#include "Common/Application.h"
+#include "Common/System.h"
 
-#include "Events/EventManager.h"
 #include "Events/IEventListener.h"
 
 #include "IO/Window.h"

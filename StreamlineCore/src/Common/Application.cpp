@@ -15,6 +15,12 @@ namespace slc {
 
 	Application::~Application()
 	{
+		for (ILayer* layer : mLayerStack)
+		{
+			layer->OnDetach();
+			delete layer;
+		}
+
 		mWindow.reset();
 	}
 
@@ -65,8 +71,10 @@ namespace slc {
 
 			EventManager::Dispatch();
 
-            // TODO: Main Application logic (app logic, imgui)
-
+			sInstance->mImGuiController->StartFrame();
+			for (ILayer* layer : sInstance->mLayerStack)
+				layer->OnRender();
+			sInstance->mImGuiController->EndFrame();
 
 			sInstance->mWindow->onUpdate();
 		}
