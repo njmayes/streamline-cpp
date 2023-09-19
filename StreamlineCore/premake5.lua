@@ -24,12 +24,14 @@ project "StreamlineCore"
         "%{IncludeDir.StreamlineCore}",
         "%{IncludeDir.glfw}",
         "%{IncludeDir.glad}",
+        "%{IncludeDir.imgui}",
     }
 
 	links
 	{
         "glad",
         "glfw",
+        "imgui",
 	}
 	
     filter "system:windows"
