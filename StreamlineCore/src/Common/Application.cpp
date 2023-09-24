@@ -2,6 +2,7 @@
 #include "Application.h"
 
 #include "Graphics/Renderer.h"
+#include "ImGui/Widgets.h"
 
 namespace slc {
 
@@ -43,7 +44,6 @@ namespace slc {
 
 	bool Application::OnWindowResize(WindowResizeEvent& e)
 	{
-
 		if (e.width == 0 || e.height == 0)
 		{
 			mState.minimised = true;
@@ -78,8 +78,12 @@ namespace slc {
 
 			sInstance->mImGuiController->StartFrame();
 
+			Widgets::BeginDockspace();
+
 			for (ILayer* layer : sInstance->mLayerStack)
 				layer->OnRender();
+
+			Widgets::EndDockspace();
 
 			sInstance->mImGuiController->EndFrame();
 
