@@ -9,6 +9,13 @@ namespace slc {
 
 	void EventManager::Dispatch()
 	{
+		sGenericListeners.insert(sGenericListeners.end(), sNewListeners.begin(), sNewListeners.end());
+		sNewListeners.clear();
+
+		std::erase_if(sGenericListeners,
+			[&](const IEventListener* listener) { return std::ranges::find(sOldListeners, listener) != sOldListeners.end(); });
+		sOldListeners.clear();
+
 		while (!sEventQueue.empty())
 		{
 			Event& e = sEventQueue.front();
@@ -37,8 +44,8 @@ namespace slc {
 		{
 		case ListenerType::Generic:
 		{
-			// Some events may create a new listener while we're iterating through the listeners, so postpone addition till start of new game loop.
-			Application::SubmitActionToMainThread([&, listener]() { sGenericListeners.emplace_back(listener); });
+			// Some events may create a new listener while we're iterating through the listeners, so postpone addition till start of new app loop.
+			sNewListeners.emplace_back(listener);
 			break;
 		}
 		case ListenerType::App:
@@ -60,7 +67,7 @@ namespace slc {
 		{
 		case ListenerType::Generic:
 		{
-			Application::SubmitActionToMainThread([&, listener]() { std::erase(sGenericListeners, listener); });
+			sOldListeners.emplace_back(listener);
 			break;
 		}
 		case ListenerType::App:

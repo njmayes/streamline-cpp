@@ -10,7 +10,6 @@ namespace slc {
 			std::filesystem::current_path(mSpecification.workingDir);
 
 		mWindow = Window::Create(WindowProperties(mSpecification.name, mSpecification.resolution, mSpecification.fullscreen));
-
 	}
 
 	Application::~Application()
