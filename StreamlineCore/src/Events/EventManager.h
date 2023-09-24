@@ -36,5 +36,8 @@ namespace slc {
 		inline static IEventListener* sAppListener = nullptr;
 		inline static IEventListener* sImGuiListener = nullptr;
 		inline static std::vector<IEventListener*> sGenericListeners;
+
+		inline static std::vector<IEventListener*> sNewListeners;
+		inline static std::vector<IEventListener*> sOldListeners;
 	};
 }
