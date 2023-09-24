@@ -13,11 +13,19 @@ namespace slc {
 		{
 			Event& e = sEventQueue.front();
 
-			for (IEventListener* listener : sGenericListeners)
-			{
-				if (!e.handled && listener->Accept(e.type))
-					listener->OnEvent(e);
-			}
+			// Handle app events first
+			if (sAppListener->Accept(e))
+				sAppListener->OnEvent(e);
+
+			// Handle imgui events next
+			if (sImGuiListener->Accept(e))
+				sImGuiListener->OnEvent(e);
+
+			auto filteredListeners = std::views::common(sGenericListeners) |
+				std::views::filter([&](IEventListener* listener) { return listener->Accept(e); });
+
+			for (IEventListener* listener : filteredListeners)
+				listener->OnEvent(e);
 
 			sEventQueue.pop();
 		}

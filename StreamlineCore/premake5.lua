@@ -36,7 +36,7 @@ project "StreamlineCore"
 	
     filter "system:windows"
         kind "StaticLib"
-        staticruntime "off"
+        staticruntime "on"
         systemversion "latest"
         links
         {

@@ -21,6 +21,8 @@ namespace slc {
 
 #define LOG(...)
 
+    using Byte = uint8_t;
+
     template<typename T>
     using Impl = std::unique_ptr<T>;
     template<typename T>
@@ -48,7 +50,7 @@ namespace slc {
         SCONSTEXPR T Epsilon = std::numeric_limits<T>::epsilon();
     };
 
-    SCONSTEXPR size_t MakeBit(int bit) { return 1 << bit; }
+    SCONSTEXPR size_t MakeBit(int bit) { return 1ull << bit; }
 
     namespace fs = std::filesystem;
 }

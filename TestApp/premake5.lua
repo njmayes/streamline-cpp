@@ -28,7 +28,7 @@ project "TestApp"
 	}
 	
     filter "system:windows"
-        staticruntime "off"
+        staticruntime "on"
         systemversion "latest"
 		
 	filter "system:linux"

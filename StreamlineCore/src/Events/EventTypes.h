@@ -4,12 +4,12 @@
 
 namespace slc {
 
-	using EventTypeFlag = unsigned;
+	using EventTypeFlag = size_t;
 
 	// Use enum in namespace over enum class so they can be used in bitwise operations but remain properly scoped.
 	namespace EventType {
 
-		enum Flag : unsigned
+		enum Flag : size_t
 		{	// New events must be added to AllEvents struct in same order
 			None = 0,
 

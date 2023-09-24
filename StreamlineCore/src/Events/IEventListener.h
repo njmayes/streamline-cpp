@@ -12,13 +12,14 @@ namespace slc {
 
 		virtual constexpr EventTypeFlag GetListeningEvents() const = 0;
 		virtual void OnEvent(Event& e) = 0;
-		virtual void SetEventCondition(Predicate<> condition) { mAcceptCondition = condition; }
+		virtual void SetEventCondition(Predicate<>&& condition) { mAcceptCondition = std::move(condition); }
 
-		bool Accept(EventTypeFlag type) const
+		bool Accept(Event& event) const
 		{ 
-			bool acceptType = (GetListeningEvents() & type);
-			return acceptType && mAcceptCondition();
+			//   Not already handled		Valid Event Type				Satisfies additional condition
+			return !event.handled && (GetListeningEvents() & event.type) && mAcceptCondition();
 		}
+
 	private:
 		IEventListener(ListenerType type)
 			: mType(type)

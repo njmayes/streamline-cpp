@@ -36,10 +36,10 @@ namespace slc {
 		glfwSwapBuffers(mWindow);
 	}
 
-	void Window::setTitle(const std::string& title)
+	void Window::setTitle(std::string_view title)
 	{
 		mData.title = title;
-		glfwSetWindowTitle(mWindow, title.c_str());
+		glfwSetWindowTitle(mWindow, title.data());
 	}
 
 	void Window::setVSync(bool enabled)

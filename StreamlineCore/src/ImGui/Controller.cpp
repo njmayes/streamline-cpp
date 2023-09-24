@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "ImGuiController.h"
+#include "Controller.h"
 
 #include "GLFW/glfw3.h"
 #include "imgui.h"
