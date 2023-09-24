@@ -28,7 +28,7 @@ namespace slc {
 		}
 
 		friend class Application;
-		friend class ImGuiHandler;
+		friend class ImGuiController;
 
 	private:
 		ListenerType mType = ListenerType::Generic;

@@ -78,10 +78,10 @@ namespace slc {
 		static void BlockEsc(bool block = true);
 		static void BlockEvents(bool block);
 
-		static GLFWwindow* GetNativeWindow() { return sInstance->mWindow->getNativeWindow(); }
+		static GLFWwindow* GetNativeWindow() { return sInstance->mWindow->GetNativeWindow(); }
 
-		static float GetWindowWidth() { return static_cast<float>(sInstance->mWindow->getWidth()); }
-		static float GetWindowHeight() { return static_cast<float>(sInstance->mWindow->getHeight()); }
+		static float GetWindowWidth() { return static_cast<float>(sInstance->mWindow->GetWidth()); }
+		static float GetWindowHeight() { return static_cast<float>(sInstance->mWindow->GetHeight()); }
 
 	private:
 		static void Run(int argc, char** argv);
