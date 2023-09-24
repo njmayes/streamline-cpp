@@ -4,7 +4,7 @@
 
 #include "Events/IEventListener.h"
 #include "IO/Window.h"
-#include "ImGui/ImGuiController.h"
+#include "ImGui/Controller.h"
 #include "Types/ILayer.h"
 
 int main(int argc, char* argv[]);

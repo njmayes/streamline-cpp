@@ -6,7 +6,7 @@ struct GLFWwindow;
 
 namespace slc {
 
-    class Event; 
+    struct Event; 
 
 	struct Resolution
 	{
@@ -38,7 +38,7 @@ namespace slc {
 		unsigned getWidth() const { return mData.width; }
 		unsigned getHeight() const { return mData.height; }
 
-		void setTitle(const std::string& title);
+		void setTitle(std::string_view title);
 
 		//Attributes
 		void setVSync(bool enabled);
