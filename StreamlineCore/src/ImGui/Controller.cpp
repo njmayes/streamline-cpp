@@ -11,7 +11,8 @@
 
 namespace slc {
 
-	ImGuiController::ImGuiController()
+	ImGuiController::ImGuiController(GLFWwindow* window)
+        : IEventListener(ListenerType::ImGui)
 	{
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
@@ -31,7 +32,7 @@ namespace slc {
 			style.Colors[ImGuiCol_WindowBg].w = 1.0f;
 		}
 
-        ImGui_ImplGlfw_InitForOpenGL(Application::GetNativeWindow(), true);
+        ImGui_ImplGlfw_InitForOpenGL(window, true);
         ImGui_ImplOpenGL3_Init("#version 410");
 	}
 

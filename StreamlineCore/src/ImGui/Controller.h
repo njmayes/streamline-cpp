@@ -2,12 +2,14 @@
 
 #include "Events/IEventListener.h"
 
+struct GLFWwindow;
+
 namespace slc {
 
 	class ImGuiController : public IEventListener
 	{
 	public:
-		ImGuiController();
+		ImGuiController(GLFWwindow* window);
 		~ImGuiController();
 
 		ImGuiController(const ImGuiController&) = delete;
@@ -18,6 +20,9 @@ namespace slc {
 
 		void StartFrame() const;
 		void EndFrame() const;
+
+		template<typename... Args>
+		static Impl<ImGuiController> Create(Args&&... args) { return MakeImpl<ImGuiController>(std::forward<Args>(args)...); }
 
     public:
 		void OnEvent(Event& e) {}

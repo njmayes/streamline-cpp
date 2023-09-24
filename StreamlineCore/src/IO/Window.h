@@ -33,18 +33,18 @@ namespace slc {
 		Window(const WindowProperties& props);
 		virtual ~Window();
 
-		void onUpdate();
+		void OnUpdate();
 
-		unsigned getWidth() const { return mData.width; }
-		unsigned getHeight() const { return mData.height; }
+		unsigned GetWidth() const { return mData.width; }
+		unsigned GetHeight() const { return mData.height; }
 
-		void setTitle(std::string_view title);
+		void SetTitle(std::string_view title);
 
 		//Attributes
-		void setVSync(bool enabled);
-		bool isVSync() const;
+		void SetVSync(bool enabled);
+		bool IsVSync() const;
 
-		GLFWwindow* getNativeWindow() const { return mWindow; }
+		GLFWwindow* GetNativeWindow() const { return mWindow; }
 
 		static Impl<Window> Create(const WindowProperties& props = WindowProperties());
 

@@ -30,19 +30,19 @@ namespace slc {
 		Shutdown();
 	}
 
-	void Window::onUpdate()
+	void Window::OnUpdate()
 	{
 		glfwPollEvents();
 		glfwSwapBuffers(mWindow);
 	}
 
-	void Window::setTitle(std::string_view title)
+	void Window::SetTitle(std::string_view title)
 	{
 		mData.title = title;
 		glfwSetWindowTitle(mWindow, title.data());
 	}
 
-	void Window::setVSync(bool enabled)
+	void Window::SetVSync(bool enabled)
 	{
 		if (enabled)
 			glfwSwapInterval(1);
@@ -52,7 +52,7 @@ namespace slc {
 		mData.vSync = enabled;
 	}
 
-	bool Window::isVSync() const
+	bool Window::IsVSync() const
 	{
 		return mData.vSync;
 	}
@@ -102,7 +102,7 @@ namespace slc {
 		ASSERT(GLVersion.major > 4 || (GLVersion.major == 4 && GLVersion.minor >= 5), "Streamline requires at least OpenGL version 4.5!");
 
 		glfwSetWindowUserPointer(mWindow, &mData);
-		setVSync(true);
+		SetVSync(true);
 
 		// Set GLFW callbacks
 		glfwSetWindowSizeCallback(mWindow, [](GLFWwindow* window, int width, int height)

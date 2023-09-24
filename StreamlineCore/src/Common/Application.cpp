@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "Application.h"
 
+#include "Graphics/Renderer.h"
+
 namespace slc {
 
 	Application::Application(const ApplicationSpecification& spec)
@@ -10,6 +12,10 @@ namespace slc {
 			std::filesystem::current_path(mSpecification.workingDir);
 
 		mWindow = Window::Create(WindowProperties(mSpecification.name, mSpecification.resolution, mSpecification.fullscreen));
+
+		Renderer::Init();
+
+		mImGuiController = ImGuiController::Create(mWindow->GetNativeWindow());
 	}
 
 	Application::~Application()
@@ -45,7 +51,7 @@ namespace slc {
 		}
 
 		mState.minimised = false;
-		//Renderer::SetViewport(e.width, e.height);
+		Renderer::SetViewport(e.width, e.height);
 		return false;
 	}
 
@@ -71,11 +77,13 @@ namespace slc {
 			EventManager::Dispatch();
 
 			sInstance->mImGuiController->StartFrame();
+
 			for (ILayer* layer : sInstance->mLayerStack)
 				layer->OnRender();
+
 			sInstance->mImGuiController->EndFrame();
 
-			sInstance->mWindow->onUpdate();
+			sInstance->mWindow->OnUpdate();
 		}
 
 		sInstance.reset();
