@@ -20,6 +20,7 @@ project "TestApp"
     includedirs
     {
         "%{IncludeDir.StreamlineCore}",
+        "%{IncludeDir.imgui}",
     }
 
 	links
