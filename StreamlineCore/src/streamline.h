@@ -5,8 +5,6 @@
 
 #include "Events/IEventListener.h"
 
-#include "IO/Window.h"
-
 #include "ImGui/Widgets.h"
 #include "ImGui/Utils.h"
 

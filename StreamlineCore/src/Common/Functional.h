@@ -7,7 +7,6 @@
     #define SLC_TAG(result, value) result##value
 
     #define MATCH_START(result) \
-                do \
                 {\
                     using SLC_TAG(result, ResultType) = std::decay_t<decltype(result)>;\
                     using SLC_TAG(result, EnumUnionType) = SLC_TAG(result, ResultType)::EnumUnionType;\
@@ -23,7 +22,7 @@
                     }
 
     #define MATCH_END {}\
-                } while (false);
+                }
 
 #pragma endregion
 
@@ -43,7 +42,10 @@
 
     #define DO(ResultExpression) \
                 {\
-                    auto finalResult = (ResultExpression);\
+                    auto finalResult = std::invoke([]()\
+                    {\
+                        return (ResultExpression);\
+                    });\
                     TRY_RET(finalResult);\
                 }
 

@@ -31,19 +31,19 @@ namespace slc {
 	};
 
 	template<typename T>
-	SCONSTEXPR Option<T> Some(T&& result)
+	SCONSTEXPR Option<T> Some(T&& result) noexcept(Option<T>::NoExceptMove)
 	{
 		return Option<T>(std::move(result));
 	}
 	template<typename T, typename... Args>
-	SCONSTEXPR Option<T> Some(Args&&... args)
+	SCONSTEXPR Option<T> Some(Args&&... args) noexcept(Option<T>::NoExceptNew)
 	{
 		return Option<T>(T(std::forward<Args>(args)...));
 	}
 
 	template<typename T>
-	SCONSTEXPR Option<T> None()
+	SCONSTEXPR Option<T> None() noexcept
 	{
-		return Option<T>();
+		return Option<T>(OptionEnum::None);
 	}
 }

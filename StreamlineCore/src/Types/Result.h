@@ -38,17 +38,17 @@ namespace slc {
 		explicit constexpr Result(E error) noexcept
 			: mValue(error), mResult(false) {}
 
-		constexpr EnumUnionType as_enum() const noexcept { return mResult ? EnumUnionType(Ok) : GetErr(); }
+		constexpr EnumUnionType as_enum() const noexcept { return mResult ? EnumUnionType(Ok) : GetError(); }
 
 		/// <summary>
 		/// Converts from const Result<T, E> to Result<const T&, E>
 		/// </summary>
-		constexpr Result<const T&, E> as_ref() const noexcept { return mResult ? Result<const T&, E>(GetValRef()) : Result<const T&, E>(GetErr()); }
+		constexpr Result<const T&, E> as_ref() const noexcept { return mResult ? Result<const T&, E>(GetValRef()) : Result<const T&, E>(GetError()); }
 
 		/// <summary>
 		/// Converts from Result<T, E> to Result<T&, E>
 		/// </summary>
-		constexpr Result<T&, E> as_mut() noexcept { return mResult ? Result<T&, E>(GetValRef()) : Result<T&, E>(GetErr()); }
+		constexpr Result<T&, E> as_mut() noexcept { return mResult ? Result<T&, E>(GetValRef()) : Result<T&, E>(GetError()); }
 
 		constexpr bool is_ok() const noexcept { return mResult; }
 		constexpr bool is_err() const noexcept { return !mResult; }
@@ -61,18 +61,18 @@ namespace slc {
 		*/
 
 		/// <summary>
-		/// Panics with a provided custom message or returns result
+		/// Throws runtime error with a provided custom message or returns result
 		/// </summary>
 		constexpr T&& expect(const std::string_view msg)
 		{
 			if (!mResult)
 				throw std::runtime_error(msg.data());
 			else
-				return GetVal();
+				return MoveVal();
 		}
 
 		/// <summary>
-		/// Panics with a generic message or returns result
+		/// Throws runtime error with a generic message or returns result
 		/// </summary>
 		constexpr T&& unwrap() { return expect("emergency failure"); }
 
@@ -82,7 +82,7 @@ namespace slc {
 		constexpr T&& unwrap_or(const T& defaultValue) noexcept(NoExceptMove) requires std::copyable<T>
 		{
 			if (mResult)
-				return GetVal();
+				return MoveVal();
 			else
 				return T(defaultValue);
 		}
@@ -113,12 +113,12 @@ namespace slc {
 		/// Transforms Result&lt;T, E&gt; into Result&lt;R, E&gt; by applying the provided function to the contained value of Ok and leaving Err values unchanged
 		/// </summary>
 		template<typename Func, typename U> requires IsFunc<Func, Result<U, E>, T&&>
-		constexpr Result<U, E>&& map(Func&& op) noexcept(noexcept(op()) && Result<U, E>::NoExceptMove && NoExceptMove)
+		constexpr Result<U, E> map(Func&& op) noexcept(noexcept(op()) && Result<U, E>::NoExceptMove && NoExceptMove)
 		{
 			if (mResult)
-				return op(GetVal());
+				return op(MoveVal());
 
-			return Result<U, E>(GetErr());
+			return Result<U, E>(GetError());
 		}
 		/// <summary>
 		/// Transforms Result&lt;T, E&gt; into Result&lt;T, F&gt; by applying the provided function to the contained value of Err and leaving Ok values unchanged
@@ -127,9 +127,9 @@ namespace slc {
 		constexpr Result<T, E>&& map_err(Func&& op) noexcept(noexcept(op()) && NoExceptMove)
 		{
 			if (mResult)
-				return Result<T, O>(GetVal());
+				return Result<T, O>(MoveVal());
 
-			return Result<T, O>(op(GetErr()));
+			return Result<T, O>(op(GetError()));
 		}
 
 		/// <summary>
@@ -140,7 +140,7 @@ namespace slc {
 		constexpr U&& map_or(U defaultVal, Func&& op) noexcept(noexcept(op()) && Result<U, E>::NoExceptMove && NoExceptMove)
 		{
 			if (mResult)
-				return GetVal();
+				return MoveVal();
 
 			return std::move(defaultVal);
 		}
@@ -158,9 +158,9 @@ namespace slc {
 		)
 		{
 			if (mResult)
-				return op(GetVal());
+				return op(MoveVal());
 
-			return errOp(GetErr());
+			return errOp(GetError());
 		}
 
 		/// <summary>
@@ -172,13 +172,13 @@ namespace slc {
 			if (mResult)
 				return next();
 
-			return Result<T, E>(GetErr());
+			return Result<T, E>(GetError());
 		}
 
 	protected:
-		constexpr T&& GetVal() noexcept(NoExceptMove) { return std::move(*std::get_if<T>(&mValue)); }
+		constexpr T&& MoveVal() noexcept(NoExceptMove) { return std::move(*std::get_if<T>(&mValue)); }
 		constexpr T& GetValRef() noexcept { return *std::get_if<T>(&mValue); }
-		constexpr E GetErr() const noexcept { return *std::get_if<E>(&mValue); }
+		constexpr E GetError() const noexcept { return *std::get_if<E>(&mValue); }
 
 	protected:
 		bool mResult = false;
@@ -188,7 +188,7 @@ namespace slc {
 	};
 
 	template<typename T, IsEnum E>
-	SCONSTEXPR Result<T, E> Ok(T&& result) noexcept(T::NoExceptMove)
+	SCONSTEXPR Result<T, E> Ok(T&& result) noexcept(Result<T, E>::NoExceptMove)
 	{
 		return Result<T, E>(std::move(result));
 	}
