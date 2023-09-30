@@ -150,7 +150,7 @@ namespace slc {
 
 	bool Widgets::TreeNodeEx(void* id, std::string_view text, ImGuiTreeNodeFlags flags)
 	{
-		return ImGui::TreeNodeEx(id, flags, text.data());
+		return ImGui::TreeNodeEx(id, flags, "%s", text.data());
 	}
 
 	void Widgets::Selectable(std::string_view label, bool selected, Action<> action)
@@ -162,7 +162,7 @@ namespace slc {
 	void Widgets::TreeNodeInternal(void* id, std::string_view text, bool selected, ImGuiTreeNodeFlags flags, Action<> whileOpen)
 	{
 		flags |= selected ? ImGuiTreeNodeFlags_Selected : 0;
-		if (ImGui::TreeNodeEx((void*)&id, flags, text.data()))
+		if (ImGui::TreeNodeEx((void*)&id, flags, "%s", text.data()))
 		{
 			whileOpen();
 			ImGui::TreePop();
@@ -247,7 +247,7 @@ namespace slc {
 			return;
 		}
 
-		ImGui::Text(text.data());
+		ImGui::TextUnformatted(text.data());
 	}
 
 	void Widgets::LabelWrapped(std::string_view text)
@@ -257,7 +257,7 @@ namespace slc {
 			ImGui::TextWrapped("...");
 			return;
 		}
-		ImGui::TextWrapped(text.data());
+		ImGui::TextWrapped("%s", text.data());
 	}
 
 	void Widgets::StringEdit(std::string_view label, std::string& field)
@@ -366,7 +366,7 @@ namespace slc {
 
 		ImGui::Columns(2);
 		ImGui::SetColumnWidth(0, colWidth);
-		ImGui::Text(label.data());
+		ImGui::TextUnformatted(label.data());
 		ImGui::NextColumn();
 
 		ImGui::PushMultiItemsWidths(2, ImGui::CalcItemWidth());
@@ -418,7 +418,7 @@ namespace slc {
 
 		ImGui::Columns(2);
 		ImGui::SetColumnWidth(0, colWidth);
-		ImGui::Text(label.data());
+		ImGui::TextUnformatted(label.data());
 		ImGui::NextColumn();
 
 		ImGui::PushMultiItemsWidths(3, ImGui::CalcItemWidth());
@@ -484,7 +484,7 @@ namespace slc {
 
 		ImGui::Columns(2);
 		ImGui::SetColumnWidth(0, colWidth);
-		ImGui::Text(label.data());
+		ImGui::TextUnformatted(label.data());
 		ImGui::NextColumn();
 
 		ImGui::PushMultiItemsWidths(4, ImGui::CalcItemWidth());
@@ -566,7 +566,7 @@ namespace slc {
 
 		ImGui::Columns(2);
 		ImGui::SetColumnWidth(0, colWidth);
-		ImGui::Text(label.data());
+		ImGui::TextUnformatted(label.data());
 		ImGui::NextColumn();
 
 		ImGui::PushMultiItemsWidths(2, ImGui::CalcItemWidth());
@@ -623,7 +623,7 @@ namespace slc {
 
 		ImGui::Columns(2);
 		ImGui::SetColumnWidth(0, colWidth);
-		ImGui::Text(label.data());
+		ImGui::TextUnformatted(label.data());
 		ImGui::NextColumn();
 
 		ImGui::PushMultiItemsWidths(3, ImGui::CalcItemWidth());
@@ -694,7 +694,7 @@ namespace slc {
 
 		ImGui::Columns(2);
 		ImGui::SetColumnWidth(0, colWidth);
-		ImGui::Text(label.data());
+		ImGui::TextUnformatted(label.data());
 		ImGui::NextColumn();
 
 		ImGui::PushMultiItemsWidths(4, ImGui::CalcItemWidth());
