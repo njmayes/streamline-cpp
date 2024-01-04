@@ -4,25 +4,42 @@
 
 #pragma region Matching
 
-    #define SLC_TAG(result, value) result##value
-
     #define MATCH_START(result) \
+        {\
+            auto&& resultVal = result;\
+            std::invoke([&](auto&& resultParam){\
+                auto errPtr = resultParam.as_err();\
+                if (resultParam.is_ok())\
+                    goto _OK_MATCH;\
+                \
+                switch (*errPtr)\
+                {
+
+    #define MATCH_OK(code)\
+                _OK_MATCH:\
                 {\
-                    using SLC_TAG(result, ResultType) = std::decay_t<decltype(result)>;\
-                    using SLC_TAG(result, EnumUnionType) = SLC_TAG(result, ResultType)::EnumUnionType;\
-                    const auto& SLC_TAG(result, _ref) = result;
-
-    #define MATCH(result, option, code) \
-                    if (SLC_TAG(result, _ref).as_enum() == SLC_TAG(result, EnumUnionType)(option)) {\
-                        code \
-                    } else 
-    #define MATCH_A(result, code) \
-                    {\
-                        code \
-                    }
-
-    #define MATCH_END {}\
+                    std::invoke([](auto& value) { code; }, resultParam.as_valref());\
+                    goto _END_MATCH;\
                 }
+
+    #define MATCH(option, code)\
+                case option:\
+                {\
+                    std::invoke([](auto error) { code; }, *errPtr);\
+                    break;\
+                }
+
+    #define MATCH_ALL(code)\
+                default:\
+                    code;\
+                    break;
+
+    #define MATCH_END \
+                }\
+                _END_MATCH:\
+                    ;\
+            }, resultVal);\
+        }
 
 #pragma endregion
 

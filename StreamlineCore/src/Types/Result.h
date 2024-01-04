@@ -175,9 +175,32 @@ namespace slc {
 			return Result<T, E>(GetError());
 		}
 
+		/// <summary>
+		/// For use with macros only.
+		/// </summary>
+		constexpr const E* as_err() const noexcept { return std::get_if<E>(&mValue); }
+		/// <summary>
+		/// For use with macros only.
+		/// </summary>
+		constexpr T& as_valref() noexcept { return *std::get_if<T>(&mValue); }
+
 	protected:
+		/// <summary>
+		/// Only for internal use. Should never be used without checking the internal state prior first. Marked noexcept given this assumption as std::get_if should never return null.
+		/// </summary>
+		/// <returns></returns>
 		constexpr T&& MoveVal() noexcept(NoExceptMove) { return std::move(*std::get_if<T>(&mValue)); }
+
+		/// <summary>
+		/// Only for internal use. Should never be used without checking the internal state prior first. Marked noexcept given this assumption as std::get_if should never return null.
+		/// </summary>
+		/// <returns></returns>
 		constexpr T& GetValRef() noexcept { return *std::get_if<T>(&mValue); }
+
+		/// <summary>
+		/// Only for internal use. Should never be used without checking the internal state prior first. Marked noexcept given this assumption as std::get_if should never return null.
+		/// </summary>
+		/// <returns></returns>
 		constexpr E GetError() const noexcept { return *std::get_if<E>(&mValue); }
 
 	protected:
