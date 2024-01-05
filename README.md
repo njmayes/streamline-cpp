@@ -1,29 +1,25 @@
 # cpp-template
 
-Basic C++ project template using premake5.
+A general purpose C++20 desktop application framework.
 
 ## Description
 
-This is a basic template for a C++ project, using premake as a build system. The template comes with basic premake template projects, and when the 
-set up script is run premake will be downloaded and project files will be generated if there have been any changes to the premake or source files.
+This is a general purpose C++20 framework/library, that contains a collection of shared code from various projects I have made over the years.
 
-The first time that the setup script is run, the user is prompted to supply the name for the workspace and starting template project. 
-The repo directory will still need to be renamed manually as sometimes the permissions for this can be restricted.
+The core application framework uses a mixture of code from my WIP game engine [Labyrinth Engine](https://github.com/amayesingnathan/LabyrinthEngine) 
+as well as my C++20 Dear ImGui wrapper [imgui-cpp](https://github.com/amayesingnathan/imgui-cpp).
 
-## Getting Started
-
+This core framework combined with various other common bits of code and ideas, such as Rust-style Result types, complete with a form of basic
+pattern matching and Do notation, provides a selection of tools to save time rewriting application boilerplate code and reusing code ideas in 
+different places.
+  
 ### Dependencies
 
 * Python3
 * premake5 - Will be downloaded and extracted as a binary when the setup script is run if it is not found.
+* glfw - Used for multi-platform windowing (built from source)
+* Dear ImGui - Used for UI widgets (built from source)
 * Currently only supports Windows and Linux (Ubuntu tested).
-
-### Installing
-
-* Clone the repo and run `setup.bat` for Windows or `setup.sh` for Linux. 
-* Enter the name for the solution and the starting project.
-* Project files will be generated for the target platform to use.
-* Extend the project as desired!
 
 ## License
 
