@@ -12,11 +12,13 @@ int main(int argc, char* argv[]);
 struct GLFWwindow;
 
 namespace slc {
-
 	class Application;
+}
 
-	//To be defined in client
-	extern Impl<Application> CreateApplication(int argc, char** argv);
+//To be defined in client
+extern slc::Impl<slc::Application> CreateApplication(int argc, char** argv);
+
+namespace slc {
 
 	struct ApplicationSpecification
 	{
