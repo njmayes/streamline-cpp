@@ -1,4 +1,4 @@
-# cpp-template
+# streamline-cpp
 
 A general purpose C++20 desktop application framework.
 
