@@ -17,10 +17,10 @@ namespace slc {
 		using StorageType = std::variant<T, E>;
 
 	public:
-		SCONSTEXPR bool NoExceptDefNew  = std::is_nothrow_default_constructible_v<T>;
-		SCONSTEXPR bool NoExceptNew		= std::is_nothrow_constructible_v<T>;
-		SCONSTEXPR bool NoExceptMove	= std::is_nothrow_move_constructible_v<T> && std::is_nothrow_move_assignable_v<T>;
-		SCONSTEXPR bool NoExceptCopy	= std::is_nothrow_copy_constructible_v<T> && std::is_nothrow_copy_assignable_v<T>;
+		SCONSTEXPR bool NoExceptDefNew = std::is_nothrow_default_constructible_v<T>;
+		SCONSTEXPR bool NoExceptNew = std::is_nothrow_constructible_v<T>;
+		SCONSTEXPR bool NoExceptMove = std::is_nothrow_move_constructible_v<T> && std::is_nothrow_move_assignable_v<T>;
+		SCONSTEXPR bool NoExceptCopy = std::is_nothrow_copy_constructible_v<T> && std::is_nothrow_copy_assignable_v<T>;
 
 		enum InternalEnum : EnumUnderlyingType
 		{
@@ -113,7 +113,7 @@ namespace slc {
 		/// Transforms Result&lt;T, E&gt; into Result&lt;R, E&gt; by applying the provided function to the contained value of Ok and leaving Err values unchanged
 		/// </summary>
 		template<typename Func, typename U> requires IsFunc<Func, Result<U, E>, T&&>
-		constexpr Result<U, E> map(Func&& op) noexcept(noexcept(op()) && Result<U, E>::NoExceptMove && NoExceptMove)
+		constexpr Result<U, E> map(Func&& op) noexcept(noexcept(op()) && Result<U, E>::NoExceptMove&& NoExceptMove)
 		{
 			if (mResult)
 				return op(MoveVal());
@@ -137,7 +137,7 @@ namespace slc {
 		/// Function returns U&& where U is a possibly new type. 
 		/// </summary>
 		template<typename Func, typename U> requires IsFunc<Func, U&&, T&&>
-		constexpr U&& map_or(U defaultVal, Func&& op) noexcept(noexcept(op()) && Result<U, E>::NoExceptMove && NoExceptMove)
+		constexpr U&& map_or(U defaultVal, Func&& op) noexcept(noexcept(op()) && Result<U, E>::NoExceptMove&& NoExceptMove)
 		{
 			if (mResult)
 				return MoveVal();
@@ -151,11 +151,11 @@ namespace slc {
 		/// </summary>
 		template<typename Func, typename ErrFunc, typename U> requires IsFunc<Func, U&&, T&&> and IsFunc<ErrFunc, U&&, E>
 		constexpr U&& map_or_else(Func&& op, ErrFunc&& errOp) noexcept(
-			noexcept(op()) && 
+			noexcept(op()) &&
 			noexcept(errOp()) &&
-			Result<U, E>::NoExceptMove &&
+			Result<U, E>::NoExceptMove&&
 			NoExceptMove
-		)
+			)
 		{
 			if (mResult)
 				return op(MoveVal());
@@ -210,20 +210,40 @@ namespace slc {
 		StorageType mValue;
 	};
 
-	template<typename T, IsEnum E>
-	SCONSTEXPR Result<T, E> Ok(T&& result) noexcept(Result<T, E>::NoExceptMove)
-	{
-		return Result<T, E>(std::move(result));
-	}
-	template<typename T, IsEnum E, typename... Args>
-	SCONSTEXPR Result<T, E> Ok(Args&&... args) noexcept(Result<T, E>::NoExceptNew)
-	{
-		return Result<T, E>(T(std::forward<Args>(args)...));
-	}
+
+	template<typename T>
+	struct OkFunctor;
+
+	template<typename T>
+	struct ErrorFunctor;
 
 	template<typename T, IsEnum E>
-	SCONSTEXPR Result<T, E> Err(E error) noexcept
+	struct OkFunctor<Result<T, E>>
 	{
-		return Result<T, E>(error);
-	}
+		constexpr Result<T, E> operator()(T&& result) const noexcept(Result<T, E>::NoExceptMove)
+		{
+			return Result<T, E>(std::move(result));
+		}
+
+		template<typename... Args>
+		constexpr Result<T, E> operator()(Args&&... args) const noexcept(Option<T>::NoExceptNew)
+		{
+			return Result<T, E>(std::move(T(std::forward<Args>(args)...)));
+		}
+	};
+
+	template<typename T, IsEnum E>
+	struct ErrorFunctor<Result<T, E>>
+	{
+		constexpr Result<T, E> operator()(E error) const noexcept
+		{
+			return Result<T, E>(error);
+		}
+	};
+
+	template<typename T>
+	SCONSTEXPR OkFunctor<T> Ok;
+
+	template<typename T>
+	SCONSTEXPR ErrorFunctor<T> Err;
 }

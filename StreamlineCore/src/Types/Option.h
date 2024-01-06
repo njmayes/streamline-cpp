@@ -31,19 +31,38 @@ namespace slc {
 	};
 
 	template<typename T>
-	SCONSTEXPR Option<T> Some(T&& result) noexcept(Option<T>::NoExceptMove)
-	{
-		return Option<T>(std::move(result));
-	}
-	template<typename T, typename... Args>
-	SCONSTEXPR Option<T> Some(Args&&... args) noexcept(Option<T>::NoExceptNew)
-	{
-		return Option<T>(T(std::forward<Args>(args)...));
-	}
+	struct SomeFunctor;
 
 	template<typename T>
-	SCONSTEXPR Option<T> None() noexcept
+	struct NoneFunctor;
+
+	template<typename T>
+	struct SomeFunctor<Option<T>>
 	{
-		return Option<T>(OptionEnum::None);
-	}
+		constexpr Option<T> operator()(T&& result) const noexcept(Option<T>::NoExceptMove)
+		{
+			return Option<T>(std::move(result));
+		}
+
+		template<typename... Args>
+		constexpr Option<T> operator()(Args&&... args) const noexcept(Option<T>::NoExceptNew)
+		{
+			return Option<T>(std::move(T(std::forward<Args>(args)...)));
+		}
+	};
+
+	template<typename T, IsEnum E>
+	struct NoneFunctor<Result<T, E>>
+	{
+		constexpr Result<T, E> operator()() const noexcept
+		{
+			return Option<T>(OptionEnum::None);
+		}
+	};
+
+	template<typename T>
+	SCONSTEXPR SomeFunctor<T> Some;
+
+	template<typename T>
+	SCONSTEXPR NoneFunctor<T> None;
 }
