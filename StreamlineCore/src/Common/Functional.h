@@ -55,22 +55,22 @@
                     }\
 
     #define START(DoAction, ...) DoAction(__VA_ARGS__)
-    #define NEXT(DoAction, ...) [&]() -> FunctionTraits<typeof(DoAction)>::ReturnType { return DoAction(__VA_ARGS__); }
+    #define NEXT(DoAction, ...) [&]() -> auto { return DoAction(__VA_ARGS__); }
 
     #define DO(ResultExpression) \
                 {\
-                    auto finalResult = std::invoke([]()\
+                    auto finalResult = std::invoke([&]()\
                     {\
                         return (ResultExpression);\
                     });\
-                    TRY_RET(finalResult);\
+                    TRY_RET(finalResult)\
                 }
 
     #define DO_R(ResultType, ResultEnum, NewVarName, ResultExpression) \
-                Result<ResultType, ResultEnum> NewVarName = std::invoke([]()\
+                Result<ResultType, ResultEnum> NewVarName = std::invoke([&]()\
                 {\
                     return (ResultExpression);\
                 });\
-                TRY_RET(NewVarName);
+                TRY_RET(NewVarName)
 
 #pragma endregion
