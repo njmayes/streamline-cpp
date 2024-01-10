@@ -37,3 +37,11 @@ namespace slc {
 	}
 
 }
+
+slc::Impl<slc::Application> CreateApplication(int argc, char** argv)
+{
+	slc::ApplicationSpecification spec;
+	spec.name = "TestApp";
+
+	return slc::MakeImpl<slc::TestApp>(spec);
+}

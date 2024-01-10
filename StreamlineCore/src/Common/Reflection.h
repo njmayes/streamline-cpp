@@ -80,6 +80,7 @@ namespace slc {
     template<typename T>
     struct FunctionTraits;
 
+    // std::function specialisation
     template<typename R, typename... Args>
     struct FunctionTraits<std::function<R(Args...)>>
     {
@@ -93,7 +94,8 @@ namespace slc {
         };
     };
 
-    template <class R, class... Args>
+    // Function pointer specialisation
+    template <typename R, typename... Args>
     struct FunctionTraits<R(*)(Args...)>
     {
         using ReturnType = R;
@@ -106,8 +108,23 @@ namespace slc {
         };
     };
 
+    // Member function pointer specialisation
+    template <typename R, typename O, typename... Args >
+    struct FunctionTraits<R(O::*)(Args...)>
+    {
+        using ObjectType = O;
+        using ReturnType = R;
+        static constexpr size_t ArgC = sizeof...(Args);
+
+        template <size_t i>
+        struct Arg
+        {
+            using Type = typename std::tuple_element<i, std::tuple<Args...>>::type;
+        };
+    };
+
     template<typename Func, typename TReturn, typename... TArgs>
-    concept IsFunc = std::invocable<Func, TArgs...>&&
+    concept IsFunc = std::invocable<Func, TArgs...> &&
         requires (Func&& fn, TArgs&&... args) { { fn(std::forward<TArgs>(args)...) } -> std::convertible_to<TReturn>; };
 
 
