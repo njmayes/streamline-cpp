@@ -39,10 +39,10 @@ namespace slc::UI {
 		~MenuBar();
 
 	public:
-		void addHeading(std::string_view heading);
-		void addMenuItemAction(std::string_view label, std::string_view shortcut, Action<> action);
-		void addMenuItemSwitch(std::string_view label, std::string_view shortcut, bool& show);
-		void addSeparator();
+		void AddHeading(std::string_view heading);
+		void AddMenuItemAction(std::string_view label, std::string_view shortcut, Action<> action);
+		void AddMenuItemSwitch(std::string_view label, std::string_view shortcut, bool& show);
+		void AddSeparator();
 
 	private:
 		std::vector<MenuHeading> mMenuItems;

@@ -7,6 +7,9 @@ namespace slc::UI {
 
 	MenuBar::~MenuBar()
 	{
+		if (mMenuItems.empty())
+			return;
+
 		if (!ImGui::BeginMenuBar())
 			return;
 
@@ -40,24 +43,24 @@ namespace slc::UI {
 		ImGui::EndMenuBar();
 	}
 
-	void MenuBar::addHeading(std::string_view heading)
+	void MenuBar::AddHeading(std::string_view heading)
 	{
 		mMenuItems.emplace_back(heading);
 	}
 
-	void MenuBar::addMenuItemAction(std::string_view label, std::string_view shortcut, Action<> action)
+	void MenuBar::AddMenuItemAction(std::string_view label, std::string_view shortcut, Action<> action)
 	{
 		MenuHeading& lastMenu = mMenuItems.back();
 		lastMenu.menu.emplace_back(MenuItemType::Action, label, shortcut, action);
 	}
 
-	void MenuBar::addMenuItemSwitch(std::string_view label, std::string_view shortcut, bool& show)
+	void MenuBar::AddMenuItemSwitch(std::string_view label, std::string_view shortcut, bool& show)
 	{
 		MenuHeading& lastMenu = mMenuItems.back();
 		lastMenu.menu.emplace_back(MenuItemType::Switch, label, shortcut, show);
 	}
 
-	void MenuBar::addSeparator()
+	void MenuBar::AddSeparator()
 	{
 		MenuHeading& lastMenu = mMenuItems.back();
 		lastMenu.menu.emplace_back(MenuItemType::Separator);

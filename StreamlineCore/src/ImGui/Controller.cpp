@@ -9,6 +9,8 @@
 
 #include "Common/Application.h"
 
+#include "Widgets.h"
+
 namespace slc {
 
 	ImGuiController::ImGuiController(GLFWwindow* window)
@@ -48,10 +50,14 @@ namespace slc {
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
+
+        Widgets::BeginDockspace();
     }
 
     void ImGuiController::EndFrame() const
     {
+        Widgets::EndDockspace();
+
         ImGuiIO& io = ImGui::GetIO();
 
         io.DisplaySize = ImVec2(Application::GetWindowWidth(), Application::GetWindowHeight());

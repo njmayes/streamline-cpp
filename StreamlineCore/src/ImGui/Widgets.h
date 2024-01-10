@@ -95,7 +95,7 @@ namespace slc {
 		static void StringEdit(std::string_view label, std::string& field);
 		static void PathEdit(std::string_view label, std::filesystem::path& field);
 
-		template<typename T> requires std::signed_integral<T>
+		template<std::signed_integral T>
 		static void IntEdit(std::string_view label, T& field)
 		{
 			int64_t result = ScalarEdit(label, field);
@@ -106,7 +106,7 @@ namespace slc {
 
 			field = (T)result;
 		}
-		template<typename T> requires std::signed_integral<T>
+		template<std::signed_integral T>
 		static void IntEdit(std::string_view label, T field, Action<T> onEdit)
 		{
 			int64_t result = ScalarEdit(label, field);
@@ -119,7 +119,7 @@ namespace slc {
 			onEdit(field);
 		}
 
-		template<typename T> requires std::unsigned_integral<T>
+		template<std::unsigned_integral T>
 		static void UIntEdit(std::string_view label, T& field)
 		{
 			uint64_t result = UScalarEdit(label, field);
@@ -130,7 +130,7 @@ namespace slc {
 
 			field = (T)result;
 		}
-		template<typename T> requires std::unsigned_integral<T>
+		template<std::unsigned_integral T>
 		static void UIntEdit(std::string_view label, T field, Action<T> onEdit)
 		{
 			uint64_t result = UScalarEdit(label, field);
@@ -148,35 +148,35 @@ namespace slc {
 		static void DoubleEdit(std::string_view label, double& field, float speed = 1.0f, float mix = 0.0f, float max = 0.0f);
 		static void DoubleEdit(std::string_view label, double field, Action<double> onEdit, float speed = 1.0f, float mix = 0.0f, float max = 0.0f);
 
-		template<typename T> requires VecSized<ImVec2, T>
+		template<VecSized<ImVec2> T>
 		static void Vector2Edit(std::string_view label, T& values, float resetVal = 0.0f, float colWidth = 100.0f)
 		{
 			ImVec2 imValues = Utils::ToImVec<ImVec2>(values);
 			Vector2EditInternal(label, imValues, resetVal, colWidth);
 			values = Utils::FromImVec<T>(imValues);
 		}
-		template<typename T> requires VecSized<ImVec3, T>
+		template<VecSized<ImVec3> T>
 		static void Vector3Edit(std::string_view label, T& values, float resetVal = 0.0f, float colWidth = 100.0f)
 		{
 			ImVec3 imValues = Utils::ToImVec<ImVec3>(values);
 			Vector3EditInternal(label, imValues, resetVal, colWidth);
 			values = Utils::FromImVec<T>(imValues);
 		}
-		template<typename T> requires VecSized<ImVec4, T>
+		template<VecSized<ImVec4> T>
 		static void Vector4Edit(std::string_view label, T& values, float resetVal = 0.0f, float colWidth = 100.0f)
 		{
 			ImVec4 imValues = Utils::ToImVec<ImVec4>(values);
 			Vector4EditInternal(label, imValues, resetVal, colWidth);
 			values = Utils::FromImVec<T>(imValues);
 		}
-		template<typename T> requires VecSized<ImVec2, T>
+		template<VecSized<ImVec2> T>
 		static void Vector2Edit(std::string_view label, T values, Action<const ImVec2&> onEdit, float resetVal = 0.0f, float colWidth = 100.0f) { Vector2EditInternal(label, Utils::ToImVec<ImVec2>(values), onEdit, resetVal, colWidth); }
-		template<typename T> requires VecSized<ImVec3, T>
+		template<VecSized<ImVec3> T>
 		static void Vector3Edit(std::string_view label, T values, Action<const ImVec3&> onEdit, float resetVal = 0.0f, float colWidth = 100.0f) { Vector3EditInternal(label, Utils::ToImVec<ImVec3>(values), onEdit, resetVal, colWidth); }
-		template<typename T> requires VecSized<ImVec4, T>
+		template<VecSized<ImVec4> T>
 		static void Vector4Edit(std::string_view label, T values, Action<const ImVec4&> onEdit, float resetVal = 0.0f, float colWidth = 100.0f) { Vector4EditInternal(label, Utils::ToImVec<ImVec4>(values), onEdit, resetVal, colWidth); }
 
-		template<typename T> requires VecSized<ImVec4, T>
+		template<VecSized<ImVec4> T>
 		static void ColourEdit(std::string_view label, T& colour)
 		{
 			ImVec4 imColour = Utils::ToImVec<ImVec4>(colour);
@@ -184,17 +184,17 @@ namespace slc {
 			colour = Utils::FromImVec<T>(imColour);
 		}
 
-		template<typename T> requires VecSized<ImVec2, T>
+		template<VecSized<ImVec2> T>
 		static void Image(uintptr_t image, const T& size, float rotation = 0.0f) { ImageInternal((ImTextureID)image, Utils::ToImVec<ImVec2>(size), rotation); }
-		template<typename T> requires VecSized<ImVec2, T>
+		template<VecSized<ImVec2> T>
 		static void Image(uintptr_t image, const T& size, float rotation, const T& uv0, const T& uv1)
 		{
 			ImageInternal((ImTextureID)image, Utils::ToImVec<ImVec2>(size), rotation, Utils::ToImVec<ImVec2>(uv0), Utils::ToImVec<ImVec2>(uv1));
 		}
 
-		template<typename T> requires VecSized<ImVec2, T>
+		template<VecSized<ImVec2> T>
 		static void ImageButton(uintptr_t image, const T& size, Action<> action = {}) { ImageButtonInternal((ImTextureID)image, Utils::ToImVec<ImVec2>(size), action); }
-		template<typename T> requires VecSized<ImVec2, T>
+		template<VecSized<ImVec2> T>
 		static void ImageButton(uintptr_t image, const T& size, Action<> action, const T& uv0, const T& uv1, int padding = -1)
 		{
 			ImageButtonInternal((ImTextureID)image, Utils::ToImVec<ImVec2>(size), action, Utils::ToImVec<ImVec2>(uv0), Utils::ToImVec<ImVec2>(uv1), padding);
@@ -305,9 +305,9 @@ namespace slc {
 		static void EndCombo();
 
 	private:
-		inline static std::unique_ptr<IPayload>			sCurrentPayload  = nullptr;
-		inline static std::unique_ptr<UI::MenuBar>		sCurrentMenuBar  = nullptr;
-		inline static std::unique_ptr<UI::PopUp>		sCurrentPopup    = nullptr;
-		inline static std::unique_ptr<UI::PopUpContext> sCurrentPopupCtx = nullptr;
+		inline static Impl<IPayload>	sCurrentPayload  = nullptr;
+		inline static UI::MenuBar		sCurrentMenuBar;
+		inline static UI::PopUp			sCurrentPopup;
+		inline static UI::PopUpContext	sCurrentPopupCtx;
 	};
 }

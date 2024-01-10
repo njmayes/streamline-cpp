@@ -171,37 +171,37 @@ namespace slc {
 
 	void Widgets::BeginMenuBar()
 	{
-		sCurrentMenuBar = std::make_unique<UI::MenuBar>();
+		sCurrentMenuBar = UI::MenuBar();
 	}
 
 	void Widgets::AddMenuBarHeading(std::string_view heading)
 	{
-		sCurrentMenuBar->addHeading(heading);
+		sCurrentMenuBar.AddHeading(heading);
 	}
 
 	void Widgets::AddMenuBarItem(std::string_view heading, Action<> action)
 	{
-		sCurrentMenuBar->addMenuItemAction(heading, "", action);
+		sCurrentMenuBar.AddMenuItemAction(heading, "", action);
 	}
 
 	void Widgets::AddMenuBarItem(std::string_view heading, std::string_view shortcut, Action<> action)
 	{
-		sCurrentMenuBar->addMenuItemAction(heading, shortcut, action);
+		sCurrentMenuBar.AddMenuItemAction(heading, shortcut, action);
 	}
 
 	void Widgets::AddMenuBarItem(std::string_view heading, bool& displayed)
 	{
-		sCurrentMenuBar->addMenuItemSwitch(heading, "", displayed);
+		sCurrentMenuBar.AddMenuItemSwitch(heading, "", displayed);
 	}
 
 	void Widgets::AddMenuBarSeparator()
 	{
-		sCurrentMenuBar->addSeparator();
+		sCurrentMenuBar.AddSeparator();
 	}
 
 	void Widgets::EndMenuBar()
 	{
-		sCurrentMenuBar.reset();
+		sCurrentMenuBar = UI::MenuBar();
 	}
 
 	void Widgets::OpenPopup(std::string_view popupName)
@@ -211,32 +211,32 @@ namespace slc {
 
 	void Widgets::BeginPopup(std::string_view popupName)
 	{
-		sCurrentPopup = std::make_unique<UI::PopUp>(popupName);
+		sCurrentPopup = UI::PopUp(popupName);
 	}
 
 	void Widgets::AddPopupItem(std::string_view heading, Action<> action)
 	{
-		sCurrentPopup->addPopUpItem(heading, action);
+		sCurrentPopup.AddPopUpItem(heading, action);
 	}
 
 	void Widgets::EndPopup()
 	{
-		sCurrentPopup.reset();
+		sCurrentPopup = UI::PopUp();
 	}
 
 	void Widgets::BeginContextPopup()
 	{
-		sCurrentPopupCtx = std::make_unique<UI::PopUpContext>();
+		sCurrentPopupCtx = UI::PopUpContext();
 	}
 
 	void Widgets::AddContextItem(std::string_view heading, Action<> action)
 	{
-		sCurrentPopupCtx->addPopUpItem(heading, action);
+		sCurrentPopupCtx.AddPopUpItem(heading, action);
 	}
 
 	void Widgets::EndContextPopup()
 	{
-		sCurrentPopupCtx.reset();
+		sCurrentPopupCtx = UI::PopUpContext();
 	}
 
 	void Widgets::Label(std::string_view text)

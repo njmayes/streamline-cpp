@@ -21,7 +21,7 @@ namespace slc {
 
 	Application::~Application()
 	{
-		for (ILayer* layer : mLayerStack)
+		for (ApplicationLayer* layer : mLayerStack)
 		{
 			layer->OnDetach();
 			delete layer;
@@ -72,21 +72,23 @@ namespace slc {
 
 		while (sInstance->mState.running)
 		{
+			// Process any queued tasks that could not be performed within main loop.
 			sInstance->ExecuteMainThread();
 
+			// Process any events in the event queue
 			EventManager::Dispatch();
 
+			// Begin ImGui rendering
 			sInstance->mImGuiController->StartFrame();
 
-			Widgets::BeginDockspace();
-
-			for (ILayer* layer : sInstance->mLayerStack)
+			// Render each ImGui controls in each layer
+			for (ApplicationLayer* layer : sInstance->mLayerStack)
 				layer->OnRender();
 
-			Widgets::EndDockspace();
-
+			// End ImGui rendering
 			sInstance->mImGuiController->EndFrame();
 
+			// Poll GLFW events to populate queue and swap buffers
 			sInstance->mWindow->OnUpdate();
 		}
 
@@ -99,13 +101,6 @@ namespace slc {
 			sInstance->mState.running = false;
 	}
 
-	void Application::SubmitActionToMainThread(Action<>&& function)
-	{
-		std::scoped_lock<std::mutex> lock(sInstance->mState.mainThreadQueueMutex);
-
-		sInstance->mState.mainThreadQueue.emplace_back(std::move(function));
-	}
-
 	void Application::BlockEsc(bool block)
 	{
 		sInstance->mState.blockExit = block;
@@ -113,6 +108,6 @@ namespace slc {
 
 	void Application::BlockEvents(bool block)
 	{
-        // TODO: Add imgui block events
+		sInstance->mImGuiController->BlockEvents(block);
 	}
 }

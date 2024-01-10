@@ -11,25 +11,19 @@ namespace slc {
 	class Result
 	{
 	private:
-		using EnumUnderlyingType = int64_t;
-
 		using Type = Result<T, E>;
 		using StorageType = std::variant<T, E>;
 
 	public:
-		SCONSTEXPR bool NoExceptDefNew = std::is_nothrow_default_constructible_v<T>;
-		SCONSTEXPR bool NoExceptNew = std::is_nothrow_constructible_v<T>;
-		SCONSTEXPR bool NoExceptMove = std::is_nothrow_move_constructible_v<T> && std::is_nothrow_move_assignable_v<T>;
-		SCONSTEXPR bool NoExceptCopy = std::is_nothrow_copy_constructible_v<T> && std::is_nothrow_copy_assignable_v<T>;
+		using DataType  = T;
+		using ErrorType = E;
+		
+		template<typename... Args>
+		SCONSTEXPR bool NoExceptNew		= std::is_nothrow_constructible_v<T, Args...>;
 
-		enum InternalEnum : EnumUnderlyingType
-		{
-			Ok = Limits<EnumUnderlyingType>::Min
-		};
-
-		using EnumUnionType = std::variant<InternalEnum, E>;
-		using DataType = T;
-		using EnumType = E;
+		SCONSTEXPR bool NoExceptDefNew  = std::is_nothrow_default_constructible_v<T>;
+		SCONSTEXPR bool NoExceptMove	= std::is_nothrow_move_constructible_v<T> && std::is_nothrow_move_assignable_v<T>;
+		SCONSTEXPR bool NoExceptCopy	= std::is_nothrow_copy_constructible_v<T> && std::is_nothrow_copy_assignable_v<T>;
 
 	public:
 		explicit constexpr Result() = default;
@@ -37,8 +31,6 @@ namespace slc {
 			: mValue(std::move(result)), mResult(true) {}
 		explicit constexpr Result(E error) noexcept
 			: mValue(error), mResult(false) {}
-
-		constexpr EnumUnionType as_enum() const noexcept { return mResult ? EnumUnionType(Ok) : GetError(); }
 
 		/// <summary>
 		/// Converts from const Result<T, E> to Result<const T&, E>
@@ -279,9 +271,10 @@ namespace slc {
 		}
 
 		template<typename... Args>
-		constexpr Result<T, E> operator()(Args&&... args) const noexcept(Option<T>::NoExceptNew)
+		constexpr Result<T, E> operator()(Args&&... args) const noexcept(Result<T, E>::NoExceptMove && Result<T, E>::template NoExceptNew<Args...>)
 		{
-			return Result<T, E>(std::move(T(std::forward<Args>(args)...)));
+			T&& val = T(std::forward<Args>(args)...);
+			return Result<T, E>(std::move(val));
 		}
 	};
 
