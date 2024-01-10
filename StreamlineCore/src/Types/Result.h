@@ -153,7 +153,7 @@ namespace slc {
 		constexpr U&& map_or_else(Func&& op, ErrFunc&& errOp) noexcept(
 			noexcept(op()) &&
 			noexcept(errOp()) &&
-			Result<U, E>::NoExceptMove&&
+			Result<U, E>::NoExceptMove &&
 			NoExceptMove
 			)
 		{
@@ -173,6 +173,30 @@ namespace slc {
 				return next();
 
 			return Result<T, E>(GetError());
+		}
+
+		/// <summary>
+		/// Returns the result of the provided function, or the error result
+		/// </summary>
+		template<typename Func> requires IsFunc<Func, Result<T, E>, T&&>
+		constexpr Result<T, E> operator |(Func&& next) noexcept(noexcept(next(std::declval<T&&>())) && NoExceptMove)
+		{
+			if (mResult)
+				return next(MoveVal());
+
+			return Result<T, E>(GetError());
+		}
+
+		/// <summary>
+		/// Returns the result of the provided function, or the error result
+		/// </summary>
+		template<typename R, typename Func> requires IsFunc<Func, Result<R, E>, T&&>
+		constexpr Result<R, E> chain(Func&& next) noexcept(noexcept(next(std::declval<T&&>())) && NoExceptMove)
+		{
+			if (mResult)
+				return next(MoveVal());
+
+			return Result<R, E>(GetError());
 		}
 
 		/// <summary>
@@ -209,6 +233,35 @@ namespace slc {
 	private:
 		StorageType mValue;
 	};
+
+	namespace ResultInternals {
+
+		template<typename T, typename R, IsEnum E, typename NextFunc, typename... Func> requires IsFunc<NextFunc, Result<T, E>, R&&>
+		SCONSTEXPR Result<T, E> DoOperation(Result<R, E> first, NextFunc&& next)
+		{
+			using FuncReturnType = std::invoke_result_t<NextFunc, R&&>;
+			using ResultValueType = FuncReturnType::DataType;
+
+			return first.chain<ResultValueType>(next);
+		}
+
+		template<typename T, typename R, IsEnum E, typename NextFunc, typename... Func> requires IsFunc<NextFunc, Result<T, E>, R&&>
+		SCONSTEXPR Result<T, E> DoOperation(Result<R, E> first, NextFunc&& next, Func&&... ops)
+		{
+			using FuncReturnType = std::invoke_result_t<NextFunc, R&&>;
+			using ResultValueType = FuncReturnType::DataType;
+
+			return DoOperation<ResultValueType, T, E>(first.chain<ResultValueType>(next), std::forward<Func>(ops)...);
+		}
+	}
+
+	template<typename T, typename R, IsEnum E, typename... Func>
+	SCONSTEXPR Result<T, E> Do(Result<R, E> first, Func&&... ops)
+	{
+		return ResultInternals::DoOperation<T, R, E>(first, std::forward<Func>(ops)...);
+	}
+
+
 
 
 	template<typename T>

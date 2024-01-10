@@ -54,23 +54,7 @@
                             return value;\
                     }\
 
-    #define START(DoAction, ...) DoAction(__VA_ARGS__)
-    #define NEXT(DoAction, ...) [&]() -> auto { return DoAction(__VA_ARGS__); }
-
-    #define DO(ResultExpression) \
-                {\
-                    auto finalResult = std::invoke([&]()\
-                    {\
-                        return (ResultExpression);\
-                    });\
-                    TRY_RET(finalResult)\
-                }
-
-    #define DO_R(ResultType, ResultEnum, NewVarName, ResultExpression) \
-                Result<ResultType, ResultEnum> NewVarName = std::invoke([&]()\
-                {\
-                    return (ResultExpression);\
-                });\
-                TRY_RET(NewVarName)
+    #define CHAIN(DoAction) [&]() -> auto { return DoAction(); }
+    #define NEXT(DoAction) [&](auto&& val) -> auto { return DoAction(std::move(val)); }
 
 #pragma endregion
