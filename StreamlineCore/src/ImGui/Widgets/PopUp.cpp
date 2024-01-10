@@ -7,6 +7,9 @@ namespace slc::UI {
 
 	PopUp::~PopUp()
 	{
+		if (mPopUpItems.empty())
+			return;
+
 		if (!ImGui::BeginPopup(mStrID.data()))
 			return;
 
@@ -21,13 +24,16 @@ namespace slc::UI {
 		ImGui::EndPopup();
 	}
 
-	void PopUp::addPopUpItem(std::string_view label, Action<> action)
+	void PopUp::AddPopUpItem(std::string_view label, Action<> action)
 	{
 		mPopUpItems.emplace_back(label, action);
 	}
 
 	PopUpContext::~PopUpContext()
 	{
+		if (mPopUpItems.empty())
+			return;
+
 		if (!ImGui::BeginPopupContextItem())
 			return;
 
@@ -38,7 +44,7 @@ namespace slc::UI {
 		ImGui::EndPopup();
 	}
 
-	void PopUpContext::addPopUpItem(std::string_view label, Action<> action)
+	void PopUpContext::AddPopUpItem(std::string_view label, Action<> action)
 	{
 		mPopUpItems.emplace_back(label, action);
 	}

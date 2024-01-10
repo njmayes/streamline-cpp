@@ -5,7 +5,6 @@
 #include "Events/IEventListener.h"
 #include "IO/Window.h"
 #include "ImGui/Controller.h"
-#include "Types/ILayer.h"
 
 int main(int argc, char* argv[]);
 
@@ -19,6 +18,19 @@ namespace slc {
 extern slc::Impl<slc::Application> CreateApplication(int argc, char** argv);
 
 namespace slc {
+
+	class ApplicationLayer : public IEventListener
+	{
+	public:
+		virtual void OnAttach() = 0;
+		virtual void OnDetach() = 0;
+		virtual void OnRender() = 0;
+	};
+
+	template<typename T>
+	concept IsLayer = std::is_base_of_v<ApplicationLayer, T>;
+
+	using LayerStack = std::vector<ApplicationLayer*>;
 
 	struct ApplicationSpecification
 	{
@@ -47,7 +59,6 @@ namespace slc {
 		Application(const ApplicationSpecification& spec);
 		~Application();
 
-	public:
 		void OnEvent(Event& e) override;
 
 		Window& GetWindow() { return *mWindow; }
@@ -59,22 +70,30 @@ namespace slc {
 			T* layer = new T(std::forward<Args>(args)...);
 			PushLayer(layer);
 		}
-		void PushLayer(IsLayer auto* layer) 
-		{ 
-			mLayerStack.emplace_back(layer);  
+
+	private:
+		void PushLayer(IsLayer auto* layer)
+		{
+			mLayerStack.emplace_back(layer);
 			layer->OnAttach();
 		}
 
-	private:
 		bool OnWindowClose(WindowCloseEvent& e);
 		bool OnWindowResize(WindowResizeEvent& e);
 
-	public:		
+	public:
 		static void Close();
 
 		static const ApplicationSpecification& GetSpec() { return sInstance->mSpecification; }
 
-		static void SubmitActionToMainThread(Action<>&& function);
+		template<typename Func> requires IsFunc<Func, void>
+		static void SubmitActionToMainThread(Func&& function)
+		{
+			std::scoped_lock<std::mutex> lock(sInstance->mState.mainThreadQueueMutex);
+
+			sInstance->mState.mainThreadQueue.emplace_back(std::move(function));
+		}
+
 		static void ExecuteMainThread();
 
 		static void BlockEsc(bool block = true);
@@ -94,7 +113,7 @@ namespace slc {
 		ApplicationState 			mState;
 		Impl<Window> 				mWindow;
 		Impl<ImGuiController> 		mImGuiController;
-		std::vector<ILayer*>		mLayerStack;
+		LayerStack					mLayerStack;
 
 	private:
 		inline static Impl<Application> sInstance = nullptr;
