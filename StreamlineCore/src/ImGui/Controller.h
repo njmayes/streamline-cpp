@@ -25,7 +25,7 @@ namespace slc {
 		static Impl<ImGuiController> Create(Args&&... args) { return MakeImpl<ImGuiController>(std::forward<Args>(args)...); }
 
     public:
-		void OnEvent(Event& e) {}
+		void OnEvent(Event& e);
 		LISTENING_EVENTS(EVENT_CATEGORY_MOUSE, EVENT_CATEGORY_KEY)
 
 		void BlockEvents(bool block) { mBlockEvents = block; }

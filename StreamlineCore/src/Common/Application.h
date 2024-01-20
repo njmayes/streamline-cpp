@@ -5,6 +5,7 @@
 #include "Events/IEventListener.h"
 #include "IO/Window.h"
 #include "ImGui/Controller.h"
+#include "Types/Timestep.h"
 
 int main(int argc, char* argv[]);
 
@@ -24,6 +25,7 @@ namespace slc {
 	public:
 		virtual void OnAttach() = 0;
 		virtual void OnDetach() = 0;
+		virtual void OnUpdate(Timestep ts) = 0;
 		virtual void OnRender() = 0;
 	};
 
@@ -45,6 +47,7 @@ namespace slc {
 		bool running = true;
 		bool minimised = false;
 		bool blockExit = false;
+		float lastFrameTime = 0.0f;
 
 		std::vector<Action<>> mainThreadQueue;
 		std::mutex mainThreadQueueMutex;
@@ -71,13 +74,13 @@ namespace slc {
 			PushLayer(layer);
 		}
 
-	private:
 		void PushLayer(IsLayer auto* layer)
 		{
 			mLayerStack.emplace_back(layer);
 			layer->OnAttach();
 		}
 
+	private:
 		bool OnWindowClose(WindowCloseEvent& e);
 		bool OnWindowResize(WindowResizeEvent& e);
 

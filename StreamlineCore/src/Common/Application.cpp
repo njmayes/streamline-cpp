@@ -14,8 +14,6 @@ namespace slc {
 
 		mWindow = Window::Create(WindowProperties(mSpecification.name, mSpecification.resolution, mSpecification.fullscreen));
 
-		Renderer::Init();
-
 		mImGuiController = ImGuiController::Create(mWindow->GetNativeWindow());
 	}
 
@@ -27,6 +25,7 @@ namespace slc {
 			delete layer;
 		}
 
+		mImGuiController.reset();
 		mWindow.reset();
 	}
 
@@ -72,11 +71,22 @@ namespace slc {
 
 		while (sInstance->mState.running)
 		{
+			float time = Timestep::Now();
+			Timestep timestep = time - sInstance->mState.lastFrameTime;
+			sInstance->mState.lastFrameTime = time;
+
 			// Process any queued tasks that could not be performed within main loop.
 			sInstance->ExecuteMainThread();
 
 			// Process any events in the event queue
 			EventManager::Dispatch();
+
+			// Run update method for each frame
+			if (!sInstance->mState.minimised)
+			{
+				for (auto* layer : sInstance->mLayerStack)
+					layer->OnUpdate(timestep);
+			}
 
 			// Begin ImGui rendering
 			sInstance->mImGuiController->StartFrame();
