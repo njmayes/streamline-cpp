@@ -4,6 +4,8 @@
 #include "GLFW/glfw3.h"
 #include "imgui.h"
 
+#include "ImGuizmo.h"
+
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
 
@@ -50,6 +52,7 @@ namespace slc {
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
+        ImGuizmo::BeginFrame();
 
         Widgets::BeginDockspace();
     }
@@ -72,6 +75,16 @@ namespace slc {
 			ImGui::RenderPlatformWindowsDefault();
 			glfwMakeContextCurrent(backup_current_context);
 		}
+    }
+
+    void ImGuiController::OnEvent(Event& e)
+    {
+        if (!mBlockEvents)
+            return;
+
+        ImGuiIO& io = ImGui::GetIO();
+        e.handled |= (e.type & EventType::EVENT_CATEGORY_MOUSE) && io.WantCaptureMouse;
+        e.handled |= (e.type & EventType::EVENT_CATEGORY_KEY) && io.WantCaptureKeyboard;
     }
 
     void ImGuiController::SetDarkThemeColours()
