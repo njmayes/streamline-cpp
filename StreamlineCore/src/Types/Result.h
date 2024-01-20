@@ -55,7 +55,7 @@ namespace slc {
 		/// <summary>
 		/// Throws runtime error with a provided custom message or returns result
 		/// </summary>
-		constexpr T&& expect(const std::string_view msg)
+		constexpr T expect(const std::string_view msg)
 		{
 			if (!mResult)
 				throw std::runtime_error(msg.data());
@@ -66,12 +66,12 @@ namespace slc {
 		/// <summary>
 		/// Throws runtime error with a generic message or returns result
 		/// </summary>
-		constexpr T&& unwrap() { return expect("emergency failure"); }
+		constexpr T unwrap() { return expect("emergency failure"); }
 
 		/// <summary>
 		/// Returns result or the provided default value
 		/// </summary>
-		constexpr T&& unwrap_or(const T& defaultValue) noexcept(NoExceptMove) requires std::copyable<T>
+		constexpr T unwrap_or(const T& defaultValue) noexcept(NoExceptCopy && NoExceptMove) requires std::copyable<T>
 		{
 			if (mResult)
 				return MoveVal();
@@ -81,7 +81,7 @@ namespace slc {
 		/// <summary>
 		/// Returns result or the default value of the underlying type
 		/// </summary>
-		constexpr T&& unwrap_or_default() noexcept(NoExceptDefNew) requires std::is_default_constructible_v<T>
+		constexpr T unwrap_or_default() noexcept(NoExceptDefNew && NoExceptCopy && NoExceptMove) requires std::is_default_constructible_v<T>
 		{
 			return unwrap_or(T());
 		}
@@ -89,7 +89,7 @@ namespace slc {
 		/// Returns result or the result of evaluating the provided function
 		/// </summary>
 		template<typename Func> requires IsFunc<Func, T>
-		constexpr T&& unwrap_or_else(Func&& op) noexcept(noexcept(op()) && NoExceptMove)
+		constexpr T unwrap_or_else(Func&& op) noexcept(noexcept(op()) && NoExceptCopy && NoExceptMove)
 		{
 			return unwrap_or(op());
 		}
@@ -104,19 +104,19 @@ namespace slc {
 		/// <summary>
 		/// Transforms Result&lt;T, E&gt; into Result&lt;R, E&gt; by applying the provided function to the contained value of Ok and leaving Err values unchanged
 		/// </summary>
-		template<typename Func, typename U> requires IsFunc<Func, Result<U, E>, T&&>
-		constexpr Result<U, E> map(Func&& op) noexcept(noexcept(op()) && Result<U, E>::NoExceptMove&& NoExceptMove)
+		template<typename U, typename Func> requires IsFunc<Func, U&&, T&&>
+		constexpr Result<U, E> map(Func&& op) noexcept(noexcept(op(std::declval<T&&>())) && Result<U, E>::NoExceptMove && NoExceptMove)
 		{
 			if (mResult)
-				return op(MoveVal());
+				return Result<U,E>(op(MoveVal()));
 
 			return Result<U, E>(GetError());
 		}
 		/// <summary>
-		/// Transforms Result&lt;T, E&gt; into Result&lt;T, F&gt; by applying the provided function to the contained value of Err and leaving Ok values unchanged
+		/// Transforms Result&lt;T, E&gt; into Result&lt;T, O&gt; by applying the provided function to the contained value of Err and leaving Ok values unchanged
 		/// </summary>
-		template<typename Func, IsEnum O> requires IsFunc<Func, O, E>
-		constexpr Result<T, E>&& map_err(Func&& op) noexcept(noexcept(op()) && NoExceptMove)
+		template<IsEnum O, typename Func> requires IsFunc<Func, O, E>
+		constexpr Result<T, O> map_err(Func&& op) noexcept(noexcept(op(std::declval<E>())) && NoExceptMove)
 		{
 			if (mResult)
 				return Result<T, O>(MoveVal());
@@ -128,11 +128,16 @@ namespace slc {
 		/// Applies the provided function to the contained value of Ok, or returns the provided default value if the Result is Err.
 		/// Function returns U&& where U is a possibly new type. 
 		/// </summary>
-		template<typename Func, typename U> requires IsFunc<Func, U&&, T&&>
-		constexpr U&& map_or(U defaultVal, Func&& op) noexcept(noexcept(op()) && Result<U, E>::NoExceptMove&& NoExceptMove)
+		/// <typeparam name="Func"></typeparam>
+		/// <typeparam name="U"></typeparam>
+		/// <param name="defaultVal"></param>
+		/// <param name="op"></param>
+		/// <returns></returns>
+		template<typename U, typename Func> requires IsFunc<Func, U&&, T&&>
+		constexpr U map_or(U&& defaultVal, Func&& op) noexcept(noexcept(op(std::declval<T&&>())) && Result<U, E>::NoExceptMove && NoExceptMove)
 		{
 			if (mResult)
-				return MoveVal();
+				return op(MoveVal());
 
 			return std::move(defaultVal);
 		}
@@ -141,10 +146,10 @@ namespace slc {
 		/// Applies the provided function to the contained value of Ok, or applies the provided default fallback function to the contained value of Err.
 		/// Both functions return U&& where U is a possibly new type. 
 		/// </summary>
-		template<typename Func, typename ErrFunc, typename U> requires IsFunc<Func, U&&, T&&> and IsFunc<ErrFunc, U&&, E>
-		constexpr U&& map_or_else(Func&& op, ErrFunc&& errOp) noexcept(
-			noexcept(op()) &&
-			noexcept(errOp()) &&
+		template<typename U, typename Func, typename ErrFunc> requires IsFunc<Func, U&&, T&&> and IsFunc<ErrFunc, U&&, E>
+		constexpr U map_or_else(Func&& op, ErrFunc&& errOp) noexcept(
+			noexcept(op(std::declval<T&&>())) &&
+			noexcept(errOp(std::declval<E>())) &&
 			Result<U, E>::NoExceptMove &&
 			NoExceptMove
 			)
