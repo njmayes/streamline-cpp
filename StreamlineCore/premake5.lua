@@ -12,6 +12,8 @@ project "StreamlineCore"
     { 
         "src/**.h", 
         "src/**.cpp",
+        "dependencies/ImGuizmo/ImGuizmo.h",
+        "dependencies/ImGuizmo/ImGuizmo.cpp",
     }
 	
 	defines
@@ -25,6 +27,7 @@ project "StreamlineCore"
         "%{IncludeDir.glfw}",
         "%{IncludeDir.glad}",
         "%{IncludeDir.imgui}",
+        "%{IncludeDir.ImGuizmo}",
     }
 
 	links
@@ -33,6 +36,9 @@ project "StreamlineCore"
         "glfw",
         "imgui",
 	}
+	
+	filter "files:dependencies/ImGuizmo/**.cpp"
+		flags { "NoPCH" }
 	
     filter "system:windows"
         kind "StaticLib"
