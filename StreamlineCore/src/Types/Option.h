@@ -12,6 +12,9 @@ namespace slc {
 	template<typename T>
 	class Option : public Result<T, OptionEnum::NoneEnum>
 	{
+	public:
+		SCONSTEXPR OptionEnum::NoneEnum None = OptionEnum::None;
+
 	private:
 		using BaseType = Result<T, OptionEnum::NoneEnum>;
 
@@ -45,18 +48,19 @@ namespace slc {
 		}
 
 		template<typename... Args>
-		constexpr Option<T> operator()(Args&&... args) const noexcept(Option<T>::NoExceptNew)
+		constexpr Option<T> operator()(Args&&... args) const noexcept(Option<T>::NoExceptMove && Option<T>::template NoExceptNew<Args...>)
 		{
-			return Option<T>(std::move(T(std::forward<Args>(args)...)));
+			T&& val = T(std::forward<Args>(args)...);
+			return Option<T>(std::move(val));
 		}
 	};
 
-	template<typename T, IsEnum E>
-	struct NoneFunctor<Result<T, E>>
+	template<typename T>
+	struct NoneFunctor<Option<T>>
 	{
-		constexpr Result<T, E> operator()() const noexcept
+		constexpr Option<T> operator()() const noexcept
 		{
-			return Option<T>(OptionEnum::None);
+			return Option<T>(Option<T>::None);
 		}
 	};
 
