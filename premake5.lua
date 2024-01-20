@@ -30,6 +30,7 @@ IncludeDir["StreamlineCore"] 	= "%{wks.location}/StreamlineCore/src"
 IncludeDir["glfw"] 	            = "%{wks.location}/StreamlineCore/dependencies/glfw/include"
 IncludeDir["glad"] 	            = "%{wks.location}/StreamlineCore/dependencies/glad/include"
 IncludeDir["imgui"] 	        = "%{wks.location}/StreamlineCore/dependencies/imgui"
+IncludeDir["ImGuizmo"] 			= "%{wks.location}/StreamlineCore/dependencies/ImGuizmo"
 
 include "StreamlineCore"
 include "TestApp"

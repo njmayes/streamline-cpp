@@ -7,3 +7,6 @@
 [submodule "StreamlineCore/dependencies/imgui"]
 	path = StreamlineCore/dependencies/imgui
 	url = https://github.com/amayesingnathan/imgui.git
+[submodule "StreamlineCore/dependencies/ImGuizmo"]
+	path = StreamlineCore/dependencies/ImGuizmo
+	url = git@github.com:CedricGuillemet/ImGuizmo.git
