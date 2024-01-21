@@ -29,7 +29,8 @@ namespace slc {
 		static bool IsMouseReleased(MouseCode button);
 
 		template<typename T> requires VecSized<ImVec2, T>
-		static T MousePos() { return FromImVec<T>(MousePosInternal()); }
+		static T MousePos() { return FromImVec<T>(MousePos()); }
+		static ImVec2 MousePos();
 
 		template<typename T> requires VecSized<ImVec2, T>
 		static T CursorPos() { return FromImVec<T>(CursorPosInternal()); }
@@ -38,7 +39,8 @@ namespace slc {
 		static void SetCursorPosY(float pos);
 
 		template<typename T> requires VecSized<ImVec2, T>
-		static T WindowPos() { return FromImVec<T>(WindowPosInternal()); }
+		static T WindowPos() { return FromImVec<T>(WindowPos()); }
+		static ImVec2 WindowPos();
 
 		template<typename T> requires VecSized<ImVec2, T>
 		static void SetNextWindowSize(const T& size, ImGuiCond cond = ImGuiCond_FirstUseEver) { SetNextWindowSizeInternal(ToImVec<ImVec2>(size), cond); }
@@ -55,15 +57,19 @@ namespace slc {
 		static void SetWindowMoveFromTitleBar(bool titleBarOnly = true);
 
 		template<typename T> requires VecSized<ImVec2, T>
-		static T AvailableRegion() { return FromImVec<T>(AvailableRegionInternal()); }
+		static T AvailableRegion() { return FromImVec<T>(AvailableRegion()); }
+		static ImVec2 AvailableRegion();
 		template<typename T> requires VecSized<ImVec2, T>
-		static T AvailableRegionMax() { return FromImVec<T>(AvailableRegionMaxInternal()); }
+		static T AvailableRegionMax() { return FromImVec<T>(AvailableRegionMax()); }
+		static ImVec2 AvailableRegionMax();
 		template<typename T> requires VecSized<ImVec2, T>
-		static T AvailableRegionMin() { return FromImVec<T>(AvailableRegionMinInternal()); }
+		static T AvailableRegionMin() { return FromImVec<T>(AvailableRegionMin()); }
+		static ImVec2 AvailableRegionMin();
 
 		static float FontSize();
 		template<typename T> requires VecSized<ImVec2, T>
-		static T FramePadding() { return FromImVec<T>(FramePaddingInternal()); }
+		static T FramePadding() { return FromImVec<T>(FramePadding()); }
+		static ImVec2 FramePadding();
 		static float FrameHeightWithSpacing();
 
 		static float LineHeight();
@@ -89,19 +95,11 @@ namespace slc {
 
 	private:
 		static ImVec2 CursorPosInternal();
-		static ImVec2 MousePosInternal();
-		static ImVec2 WindowPosInternal();
 		static ImVec2 GetMainWindowCentreInternal();
 
 		static void SetNextWindowSizeInternal(const ImVec2& size, ImGuiCond cond = ImGuiCond_FirstUseEver);
 		static void SetNextWindowPosInternal(const ImVec2& size, const ImVec2& pivot = ImVec2(0, 0), ImGuiCond cond = ImGuiCond_FirstUseEver);
 
 		static void SetButtonColourInternal(const ImVec4& colour);
-
-		static ImVec2 AvailableRegionInternal();
-		static ImVec2 AvailableRegionMinInternal();
-		static ImVec2 AvailableRegionMaxInternal();
-
-		static ImVec2 FramePaddingInternal();
 	};
 }

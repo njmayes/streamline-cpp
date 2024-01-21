@@ -11,6 +11,8 @@ namespace slc {
 	struct Resolution
 	{
 		unsigned width, height;
+
+		std::string ToString() const { return std::format("{}x{}", width, height); }
 	};
 
 	struct WindowProperties {

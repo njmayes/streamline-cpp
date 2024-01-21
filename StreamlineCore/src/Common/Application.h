@@ -40,6 +40,8 @@ namespace slc {
 		Resolution resolution = { 1600, 900 };
 		fs::path workingDir;
 		bool fullscreen = false;
+
+		virtual ~ApplicationSpecification() {}
 	};
 
 	struct ApplicationState
@@ -86,6 +88,7 @@ namespace slc {
 
 	public:
 		static void Close();
+		static Application& Get() { return *sInstance; }
 
 		static const ApplicationSpecification& GetSpec() { return sInstance->mSpecification; }
 
@@ -109,10 +112,11 @@ namespace slc {
 
 	private:
 		static void Run(int argc, char** argv);
-		static Application& Get() { return *sInstance; }
+
+	protected:
+		ApplicationSpecification 	mSpecification;
 
 	private:
-		ApplicationSpecification 	mSpecification;
 		ApplicationState 			mState;
 		Impl<Window> 				mWindow;
 		Impl<ImGuiController> 		mImGuiController;
