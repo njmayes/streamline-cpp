@@ -34,6 +34,7 @@ namespace slc {
 
 		template<typename T> requires VecSized<ImVec2, T>&& requires (T a) { T(0, 0); }
 		static void BeginChild(std::string_view strID, const T& size = T(0, 0), bool border = false) { BeginChildInternal(strID, Utils::ToImVec<ImVec2>(size), border); }
+		static void BeginChild(std::string_view strID) { BeginChild<ImVec2>(strID); }
 		static void EndChild();
 
 		static void BeginGroup();

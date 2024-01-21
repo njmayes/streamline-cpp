@@ -35,6 +35,6 @@ namespace slc {
 		Predicate<> mAcceptCondition = [](){ return true; };
 	};
 
-#define LISTENING_EVENTS(...)	static constexpr EventTypeFlag GetStaticType() { return EXPAND_EVENTS(__VA_ARGS__); }\
-								virtual constexpr EventTypeFlag GetListeningEvents() const override { return GetStaticType(); }
+#define LISTENING_EVENTS(...)	static constexpr slc::EventTypeFlag GetStaticType() { return EXPAND_EVENTS(__VA_ARGS__); }\
+								virtual constexpr slc::EventTypeFlag GetListeningEvents() const override { return GetStaticType(); }
 }

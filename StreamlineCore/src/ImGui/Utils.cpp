@@ -27,12 +27,12 @@ namespace slc {
 		return ImGui::GetCursorPos();
 	}
 
-	ImVec2 Utils::MousePosInternal()
+	ImVec2 Utils::MousePos()
 	{
 		return ImGui::GetMousePos();
 	}
 
-	ImVec2 Utils::WindowPosInternal()
+	ImVec2 Utils::WindowPos()
 	{
 		return ImGui::GetWindowPos();
 	}
@@ -88,17 +88,17 @@ namespace slc {
 		io.ConfigWindowsMoveFromTitleBarOnly = titleBarOnly;
 	}
 
-	ImVec2 Utils::AvailableRegionInternal()
+	ImVec2 Utils::AvailableRegion()
 	{
 		return ImGui::GetContentRegionAvail();
 	}
 
-	ImVec2 Utils::AvailableRegionMinInternal()
+	ImVec2 Utils::AvailableRegionMin()
 	{
 		return ImGui::GetWindowContentRegionMin();
 	}
 
-	ImVec2 Utils::AvailableRegionMaxInternal()
+	ImVec2 Utils::AvailableRegionMax()
 	{
 		return ImGui::GetWindowContentRegionMax();
 	}
@@ -108,7 +108,7 @@ namespace slc {
 		return GImGui->Font->FontSize;
 	}
 
-	ImVec2 Utils::FramePaddingInternal()
+	ImVec2 Utils::FramePadding()
 	{
 		return GImGui->Style.FramePadding;
 	}
