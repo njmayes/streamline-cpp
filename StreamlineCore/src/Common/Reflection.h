@@ -123,6 +123,11 @@ namespace slc {
         };
     };
 
+
+    template<typename Func, typename... TArgs>
+    concept IsAction = std::invocable<Func, TArgs...>&&
+        requires (Func&& fn, TArgs&&... args) { { fn(std::forward<TArgs>(args)...) }; };
+
     template<typename Func, typename TReturn, typename... TArgs>
     concept IsFunc = std::invocable<Func, TArgs...> &&
         requires (Func&& fn, TArgs&&... args) { { fn(std::forward<TArgs>(args)...) } -> std::convertible_to<TReturn>; };
