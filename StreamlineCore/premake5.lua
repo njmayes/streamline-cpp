@@ -1,6 +1,7 @@
 project "StreamlineCore"
     language "C++"
     cppdialect "C++20"
+    staticruntime "off"
 		
     targetdir 	("%{wks.location}/bin/%{prj.name}/" .. outputDir)
     objdir 		("%{wks.location}/obj/%{prj.name}/" .. outputDir)
@@ -42,7 +43,6 @@ project "StreamlineCore"
 	
     filter "system:windows"
         kind "StaticLib"
-        staticruntime "on"
         systemversion "latest"
         links
         {
@@ -51,7 +51,6 @@ project "StreamlineCore"
 		
 	filter "system:linux"
         kind "SharedLib"
-        staticruntime "off"
         pic "On"
         systemversion "latest"
 

@@ -6,13 +6,20 @@
 
 namespace slc {
 
-	Application::Application(const ApplicationSpecification& spec)
+	Application::Application(ApplicationSpecification* spec)
 		: IEventListener(ListenerType::App), mSpecification(spec)
 	{
-		if (!mSpecification.workingDir.empty())
-			std::filesystem::current_path(mSpecification.workingDir);
+		if (sInstance)
+		{
+			ASSERT(false, "Application already exists");
+			return;
+		}
+		sInstance = this;
 
-		mWindow = Window::Create(WindowProperties(mSpecification.name, mSpecification.resolution, mSpecification.fullscreen));
+		if (!spec->workingDir.empty())
+			std::filesystem::current_path(spec->workingDir);
+
+		mWindow = Window::Create(WindowProperties(spec->name, spec->resolution, spec->fullscreen));
 
 		mImGuiController = ImGuiController::Create(mWindow->GetNativeWindow());
 	}
@@ -27,6 +34,11 @@ namespace slc {
 
 		mImGuiController.reset();
 		mWindow.reset();
+
+		delete mSpecification;
+
+		for (const auto& shutdownTask : mAppSystems | std::views::reverse)
+			shutdownTask();
 	}
 
 	void Application::OnEvent(Event& e)
@@ -66,8 +78,13 @@ namespace slc {
 
 	void Application::Run(int argc, char** argv)
 	{
-		ASSERT(!sInstance, "Application already exists");
-		sInstance = CreateApplication(argc, argv);
+		Application* app = CreateApplication(argc, argv);
+		if (sInstance != app)
+		{
+			delete app;
+			ASSERT(false, "There was already an app instance, could not create a new one");
+			return;
+		}
 
 		while (sInstance->mState.running)
 		{
@@ -102,7 +119,7 @@ namespace slc {
 			sInstance->mWindow->OnUpdate();
 		}
 
-		sInstance.reset();
+		delete sInstance;
 	}
 
 	void Application::Close()

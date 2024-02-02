@@ -16,9 +16,12 @@ namespace slc {
 }
 
 //To be defined in client
-extern slc::Impl<slc::Application> CreateApplication(int argc, char** argv);
+extern slc::Application* CreateApplication(int argc, char** argv);
 
 namespace slc {
+
+	template<typename T, typename... Args>
+	concept AppSystem = requires (Args&&... args) { T::Init(std::forward<Args>(args)...); T::Shutdown(); };
 
 	class ApplicationLayer : public IEventListener
 	{
@@ -33,6 +36,7 @@ namespace slc {
 	concept IsLayer = std::is_base_of_v<ApplicationLayer, T>;
 
 	using LayerStack = std::vector<ApplicationLayer*>;
+	using ApplicationSystems = std::vector<Action<>>;
 
 	struct ApplicationSpecification
 	{
@@ -61,7 +65,7 @@ namespace slc {
 		LISTENING_EVENTS(WindowClose, WindowResize)
 
 	public:
-		Application(const ApplicationSpecification& spec);
+		Application(ApplicationSpecification* spec);
 		~Application();
 
 		void OnEvent(Event& e) override;
@@ -82,6 +86,13 @@ namespace slc {
 			layer->OnAttach();
 		}
 
+		template<typename T, typename... Args> requires AppSystem<T, Args...>
+		void RegisterSystem(Args&&... args)
+		{
+			T::Init(std::forward<Args>(args)...);
+			mAppSystems.emplace_back(T::Shutdown);
+		}
+
 	private:
 		bool OnWindowClose(WindowCloseEvent& e);
 		bool OnWindowResize(WindowResizeEvent& e);
@@ -90,9 +101,17 @@ namespace slc {
 		static void Close();
 		static Application& Get() { return *sInstance; }
 
-		static const ApplicationSpecification& GetSpec() { return sInstance->mSpecification; }
+		static const ApplicationSpecification& GetSpec() { return *sInstance->mSpecification; }
+		template<typename T> requires std::derived_from<T, ApplicationSpecification>
+		static const T& GetSpec() { return *dynamic_cast<const T*>(sInstance->mSpecification); }
 
-		template<typename Func> requires IsFunc<Func, void>
+		template<typename T> requires std::derived_from<T, ApplicationSpecification>
+		static void SetSpec(const T& spec)
+		{
+			*sInstance->mSpecification = spec;
+		}
+
+		template<IsAction Func>
 		static void SubmitActionToMainThread(Func&& function)
 		{
 			std::scoped_lock<std::mutex> lock(sInstance->mState.mainThreadQueueMutex);
@@ -114,16 +133,17 @@ namespace slc {
 		static void Run(int argc, char** argv);
 
 	protected:
-		ApplicationSpecification 	mSpecification;
+		ApplicationSpecification* 	mSpecification;
 
 	private:
 		ApplicationState 			mState;
 		Impl<Window> 				mWindow;
 		Impl<ImGuiController> 		mImGuiController;
 		LayerStack					mLayerStack;
+		ApplicationSystems			mAppSystems;
 
 	private:
-		inline static Impl<Application> sInstance = nullptr;
+		inline static Application* sInstance = nullptr;
 		friend int ::main(int argc, char** argv);
 	};
 }
