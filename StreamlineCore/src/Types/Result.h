@@ -126,7 +126,7 @@ namespace slc {
 
 		/// <summary>
 		/// Applies the provided function to the contained value of Ok, or returns the provided default value if the Result is Err.
-		/// Function returns U&& where U is a possibly new type. 
+		/// Function returns U&amp;&amp; where U is a possibly new type. 
 		/// </summary>
 		/// <typeparam name="Func"></typeparam>
 		/// <typeparam name="U"></typeparam>
@@ -144,7 +144,7 @@ namespace slc {
 
 		/// <summary>
 		/// Applies the provided function to the contained value of Ok, or applies the provided default fallback function to the contained value of Err.
-		/// Both functions return U&& where U is a possibly new type. 
+		/// Both functions return U&amp;&amp; where U is a possibly new type. 
 		/// </summary>
 		template<typename U, typename Func, typename ErrFunc> requires IsFunc<Func, U&&, T&&> and IsFunc<ErrFunc, U&&, E>
 		constexpr U map_or_else(Func&& op, ErrFunc&& errOp) noexcept(
