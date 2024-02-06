@@ -39,7 +39,7 @@ namespace slc {
 		{
 			constexpr size_t DataSize = sizeof(T);
 			if (offset + DataSize > mSize)
-				resize(offset + DataSize);
+				Resize(offset + DataSize);
 
 			memcpy((Byte*)mData + offset, &data, DataSize);
 		}
@@ -48,8 +48,8 @@ namespace slc {
 		void Pop(T& data)
 		{
 			constexpr size_t DataSize = sizeof(T);
-			data = std::move(read<T>(mSize - DataSize));
-			resize(mSize - DataSize);
+			data = std::move(Read<T>(mSize - DataSize));
+			Resize(mSize - DataSize);
 		}
 
 		Byte* Data() { return (Byte*)mData; }
