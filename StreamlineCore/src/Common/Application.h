@@ -12,13 +12,11 @@ int main(int argc, char* argv[]);
 struct GLFWwindow;
 
 namespace slc {
+
 	class Application;
-}
 
-//To be defined in client
-extern slc::Application* CreateApplication(int argc, char** argv);
-
-namespace slc {
+	//To be defined in client
+	extern slc::Application* CreateApplication(int argc, char** argv);
 
 	template<typename T, typename... Args>
 	concept AppSystem = requires (Args&&... args) { T::Init(std::forward<Args>(args)...); T::Shutdown(); };

@@ -188,7 +188,7 @@ namespace slc {
 		/// Returns the result of the provided function, or the error result
 		/// </summary>
 		template<typename R, typename Func> requires IsFunc<Func, Result<R, E>, T&&>
-		constexpr Result<R, E> chain(Func&& next) noexcept(noexcept(next(std::declval<T&&>())) && NoExceptMove)
+		constexpr Result<R, E> and_then(Func&& next) noexcept(noexcept(next(std::declval<T&&>())) && NoExceptMove)
 		{
 			if (mResult)
 				return next(MoveVal());
@@ -239,7 +239,7 @@ namespace slc {
 			using FuncReturnType = std::invoke_result_t<NextFunc, R&&>;
 			using ResultValueType = FuncReturnType::DataType;
 
-			return first.chain<ResultValueType>(next);
+			return first.and_then<ResultValueType>(next);
 		}
 
 		template<typename T, typename R, IsEnum E, typename NextFunc, typename... Func> requires IsFunc<NextFunc, Result<T, E>, R&&>
@@ -248,7 +248,7 @@ namespace slc {
 			using FuncReturnType = std::invoke_result_t<NextFunc, R&&>;
 			using ResultValueType = FuncReturnType::DataType;
 
-			return DoOperation<ResultValueType, T, E>(first.chain<ResultValueType>(next), std::forward<Func>(ops)...);
+			return DoOperation<ResultValueType, T, E>(first.and_then<ResultValueType>(next), std::forward<Func>(ops)...);
 		}
 	}
 
