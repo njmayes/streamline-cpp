@@ -42,9 +42,9 @@ namespace slc {
 	template<typename T>
 	struct SomeFunctor<Option<T>>
 	{
-		constexpr Option<T> operator()(T&& result) const noexcept(Option<T>::NoExceptMove)
+		constexpr Option<T> operator()(T&& result) const noexcept(noexcept(T(std::forward<T>(std::declval<T>()))))
 		{
-			return Option<T>(std::move(result));
+			return Option<T>(std::forward<T>(result));
 		}
 
 		template<typename... Args>
