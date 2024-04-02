@@ -10,13 +10,12 @@ namespace slc {
 	template<typename T, IsEnum E>
 	class Result
 	{
-	private:
-		using Type = Result<T, E>;
-		using StorageType = std::variant<T, E>;
-
 	public:
-		using DataType  = T;
+		using ResultType = T
 		using ErrorType = E;
+		
+		using Type = Result<T, E>;
+		using StorageType = std::variant<ResultType, ErrorType>;
 		
 		template<typename... Args>
 		SCONSTEXPR bool NoExceptNew		= std::is_nothrow_constructible_v<T, Args...>;
@@ -26,9 +25,9 @@ namespace slc {
 		SCONSTEXPR bool NoExceptCopy	= std::is_nothrow_copy_constructible_v<T> && std::is_nothrow_copy_assignable_v<T>;
 
 	public:
-		explicit constexpr Result() = default;
-		explicit constexpr Result(T&& result) noexcept(NoExceptMove)
-			: mValue(std::move(result)), mResult(true) {}
+		explicit constexpr Result() = delete;
+    	explicit constexpr Result(T&& result) noexcept(noexcept(T(std::forward<T>(std::declval<T>()))))
+			: mValue(std::forward<T>(result)), mResult(true) {}
 		explicit constexpr Result(E error) noexcept
 			: mValue(error), mResult(false) {}
 
@@ -217,6 +216,7 @@ namespace slc {
 		/// </summary>
 		/// <returns></returns>
 		constexpr T& GetValRef() noexcept { return *std::get_if<T>(&mValue); }
+		constexpr const T& GetValRef() const noexcept { return *std::get_if<T>(&mValue); }
 
 		/// <summary>
 		/// Only for internal use. Should never be used without checking the internal state prior first. Marked noexcept given this assumption as std::get_if should never return null.
@@ -270,9 +270,9 @@ namespace slc {
 	template<typename T, IsEnum E>
 	struct OkFunctor<Result<T, E>>
 	{
-		constexpr Result<T, E> operator()(T&& result) const noexcept(Result<T, E>::NoExceptMove)
+		constexpr Result<T, E> operator()(T&& result) const noexcept(noexcept(T(std::forward<T>(std::declval<T>()))))
 		{
-			return Result<T, E>(std::move(result));
+			return Result<T, E>(std::forward<T>(result));
 		}
 
 		template<typename... Args>
