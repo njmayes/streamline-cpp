@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Containers/Array.h"
 
 namespace slc {
 
@@ -37,6 +38,6 @@ namespace slc {
 		constexpr size_t size() const { return TSize; }
 
 	protected:
-		std::array<Byte, TSize> mData = { 0 };
+		Array<Byte, TSize> mData;
 	};
 }

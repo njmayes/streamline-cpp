@@ -1,9 +1,14 @@
 #pragma once
 
-#include "Std.h"
 #include "Platform.h"
 #include "Reflection.h"
 #include "System.h"
+
+#include <memory>
+#include <filesystem>
+#include <format>
+
+#include <cassert>
 
 namespace slc {
 
@@ -41,6 +46,7 @@ namespace slc {
 
     template<typename... T>
     using Predicate = Func<bool, T...>;
+
 
     template<std::integral T>
     struct Limits

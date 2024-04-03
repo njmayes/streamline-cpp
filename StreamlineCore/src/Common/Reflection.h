@@ -1,6 +1,8 @@
 #pragma once
 
 #include <functional>
+#include <variant>
+#include <string_view>
 
 #if defined(__GNUC__) || (defined(__MWERKS__) && (__MWERKS__ >= 0x3000)) || (defined(__ICC) && (__ICC >= 600)) || defined(__ghs__)
 #    define SLC_FUNC_SIGNATURE __PRETTY_FUNCTION__
@@ -123,15 +125,15 @@ namespace slc {
         };
     };
 
-
-    template<typename Func, typename... TArgs>
-    concept IsAction = std::invocable<Func, TArgs...>&&
-        requires (Func&& fn, TArgs&&... args) { { fn(std::forward<TArgs>(args)...) }; };
-
     template<typename Func, typename TReturn, typename... TArgs>
     concept IsFunc = std::invocable<Func, TArgs...> &&
         requires (Func&& fn, TArgs&&... args) { { fn(std::forward<TArgs>(args)...) } -> std::convertible_to<TReturn>; };
 
+    template<typename... TArgs>
+    concept IsAction = IsFunc<void, TArgs...>;
+
+    template<typename... TArgs>
+    concept IsPredicate = IsFunc<bool, TArgs...>;
 
 
     namespace TypeUtils {

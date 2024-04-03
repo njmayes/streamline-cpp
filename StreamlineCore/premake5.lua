@@ -1,6 +1,6 @@
 project "StreamlineCore"
     language "C++"
-    cppdialect "C++20"
+    cppdialect "C++latest"
     staticruntime "off"
 		
     targetdir 	("%{wks.location}/bin/%{prj.name}/" .. outputDir)
