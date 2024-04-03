@@ -48,25 +48,6 @@ namespace slc {
 		auto operator co_await() const& noexcept { return CopyAwaitable{ mHandle }; }
 		auto operator co_await() const&& noexcept { return MoveAwaitable{ mHandle }; }
 
-	public:
-		auto Wait() -> decltype(auto)
-		{
-			while (!mHandle.done())
-			{
-				mHandle.resume();
-			}
-
-			if constexpr (std::is_void_v<TReturn>)
-			{
-				mHandle.promise().extract_result();
-				return;
-			}
-			else
-			{
-				return mHandle.promise().extract_result();
-			}
-		}
-
 	private:
 		CoroutineHandle mHandle;
 	};

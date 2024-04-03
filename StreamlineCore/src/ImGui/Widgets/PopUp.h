@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Common/Base.h"
+#include "Containers/Vector.h"
 
 namespace slc::UI {
 
@@ -24,7 +25,7 @@ namespace slc::UI {
 
 	private:
 		std::string_view mStrID;
-		std::vector<PopUpItem> mPopUpItems;
+		Vector<PopUpItem> mPopUpItems;
 	};
 
 	class PopUpContext
@@ -35,6 +36,6 @@ namespace slc::UI {
 		void AddPopUpItem(std::string_view label, Action<> action);
 
 	private:
-		std::vector<PopUpItem> mPopUpItems;
+		Vector<PopUpItem> mPopUpItems;
 	};
 }

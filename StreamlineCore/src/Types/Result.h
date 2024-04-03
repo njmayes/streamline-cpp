@@ -11,7 +11,7 @@ namespace slc {
 	class Result
 	{
 	public:
-		using ResultType = T
+		using ResultType = T;
 		using ErrorType = E;
 		
 		using Type = Result<T, E>;
@@ -237,7 +237,7 @@ namespace slc {
 		SCONSTEXPR Result<T, E> DoOperation(Result<R, E> first, NextFunc&& next)
 		{
 			using FuncReturnType = std::invoke_result_t<NextFunc, R&&>;
-			using ResultValueType = FuncReturnType::DataType;
+			using ResultValueType = FuncReturnType::ResultType;
 
 			return first.and_then<ResultValueType>(next);
 		}
@@ -246,7 +246,7 @@ namespace slc {
 		SCONSTEXPR Result<T, E> DoOperation(Result<R, E> first, NextFunc&& next, Func&&... ops)
 		{
 			using FuncReturnType = std::invoke_result_t<NextFunc, R&&>;
-			using ResultValueType = FuncReturnType::DataType;
+			using ResultValueType = FuncReturnType::ResultType;
 
 			return DoOperation<ResultValueType, T, E>(first.and_then<ResultValueType>(next), std::forward<Func>(ops)...);
 		}

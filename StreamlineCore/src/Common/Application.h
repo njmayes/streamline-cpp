@@ -1,11 +1,13 @@
 #pragma once
 
-#include <string>
-
+#include "Containers/Vector.h"
 #include "Events/IEventListener.h"
 #include "IO/Window.h"
 #include "ImGui/Controller.h"
 #include "Types/Timestep.h"
+
+#include <string>
+#include <mutex>
 
 int main(int argc, char* argv[]);
 
@@ -33,8 +35,8 @@ namespace slc {
 	template<typename T>
 	concept IsLayer = std::is_base_of_v<ApplicationLayer, T>;
 
-	using LayerStack = std::vector<ApplicationLayer*>;
-	using ApplicationSystems = std::vector<Action<>>;
+	using LayerStack = Vector<ApplicationLayer*>;
+	using ApplicationSystems = Vector<Action<>>;
 
 	struct ApplicationSpecification
 	{
@@ -53,7 +55,7 @@ namespace slc {
 		bool blockExit = false;
 		float lastFrameTime = 0.0f;
 
-		std::vector<Action<>> mainThreadQueue;
+		Vector<Action<>> mainThreadQueue;
 		std::mutex mainThreadQueueMutex;
 	};
 

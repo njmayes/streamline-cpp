@@ -1,6 +1,6 @@
 project "TestApp"
     language "C++"
-    cppdialect "C++20"
+    cppdialect "C++latest"
 	kind "ConsoleApp"
 	
     targetdir 	("%{wks.location}/bin/%{prj.name}/" .. outputDir)

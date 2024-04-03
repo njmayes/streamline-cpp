@@ -7,6 +7,8 @@
 #include "Widgets/PopUp.h"
 #include "Widgets/Payload.h"
 
+#include "Containers/Span.h"
+
 namespace slc {
 
 	template<typename T> requires VecSized<ImVec2, T>
@@ -227,13 +229,13 @@ namespace slc {
 		static void Button(const T& size, std::string_view label, Action<> action = {}) { ButtonInternal(label, Utils::ToImVec<ImVec2>(size), action); }
 
 		template<typename T> requires std::copy_constructible<T>
-		static void Combobox(std::string_view label, std::string_view preview, T& value, std::span<const ComboEntry<T>> table)
+		static void Combobox(std::string_view label, std::string_view preview, T& value, Span<const ComboEntry<T>> table)
 		{
 			if (!BeginCombo(label, preview))
 				return;
 
 			// Convert span of entries to view of base classes
-			auto baseTable = table | std::views::transform([](const ComboEntry<T>& entry) { return dynamic_cast<const IComboEntry*>(&entry); });
+			auto baseTable = table.Select<const IComboEntry*>([](const ComboEntry<T>& entry) { return dynamic_cast<const IComboEntry*>(&entry); });
 
 			const IComboEntry* comboEntry = nullptr;
 			for (const IComboEntry* entry : baseTable)
@@ -251,13 +253,13 @@ namespace slc {
 		}
 
 		template<typename T>
-		static void Combobox(std::string_view label, std::string_view preview, T value, std::span<const ComboEntry<T>> table, Action<std::string_view, const T&> onSelection)
+		static void Combobox(std::string_view label, std::string_view preview, T value, Span<const ComboEntry<T>> table, Action<std::string_view, const T&> onSelection)
 		{
 			if (!BeginCombo(label, preview))
 				return;
 
 			// Convert span of entries to view of base classes
-			auto baseTable = table | std::views::transform([](const ComboEntry<T>& entry) { return dynamic_cast<const IComboEntry*>(&entry); });
+			auto baseTable = table.Select<const IComboEntry*>([](const ComboEntry<T>& entry) { return dynamic_cast<const IComboEntry*>(&entry); });
 
 			const IComboEntry* comboEntry = nullptr;
 			for (const IComboEntry* entry : baseTable)

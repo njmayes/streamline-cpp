@@ -2,6 +2,8 @@
 
 #include "Common/Base.h"
 
+#include <random>
+
 namespace slc {
 
 	class UUID

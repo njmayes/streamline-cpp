@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Common/Base.h"
+
 #include <coroutine>
 
 namespace slc {
@@ -65,9 +67,9 @@ namespace slc::Internal {
 		using CoroutineType = std::coroutine_handle<TaskPromise<TReturn>>;
 		using TaskType = Task<TReturn>;
 
-		static constexpr bool IsReferenceType = std::is_reference_v<TReturn>;
+		static constexpr bool IsReturnReferenceType = std::is_reference_v<TReturn>;
 		using ResultType = std::conditional_t<
-			IsReferenceType,
+			IsReturnReferenceType,
 			std::remove_reference_t<TReturn>*,
 			std::remove_const_t<TReturn>
 		>;
@@ -78,11 +80,11 @@ namespace slc::Internal {
 		auto get_return_object() noexcept -> TaskType;
 
 		template<typename TValue> requires
-			( IsReferenceType && std::is_constructible_v<TReturn,	 TValue&&>) or
-			(!IsReferenceType && std::is_constructible_v<ResultType, TValue&&>)
+			( IsReturnReferenceType && std::is_constructible_v<TReturn,	 TValue&&>) or
+			(!IsReturnReferenceType && std::is_constructible_v<ResultType, TValue&&>)
 		auto return_value(TValue&& value) -> void
 		{
-			if constexpr (IsReferenceType)
+			if constexpr (IsReturnReferenceType)
 			{
 				TReturn ref = static_cast<TValue&&>(value);
 				mResult.emplace<ResultType>(std::addressof(ref));
@@ -93,7 +95,7 @@ namespace slc::Internal {
 			}
 		}
 
-		auto return_value(ResultType value) -> void requires(!IsReferenceType)
+		auto return_value(ResultType value) -> void requires(!IsReturnReferenceType)
 		{
 			if constexpr (std::is_move_constructible_v<ResultType>)
 			{
@@ -111,7 +113,7 @@ namespace slc::Internal {
 		{
 			if (std::holds_alternative<ResultType>(mResult))
 			{
-				if constexpr (IsReferenceType)
+				if constexpr (IsReturnReferenceType)
 				{
 					return static_cast<TReturn>(*std::get<ResultType>(mResult));
 				}
@@ -133,7 +135,7 @@ namespace slc::Internal {
 		{
 			if (std::holds_alternative<ResultType>(mResult))
 			{
-				if constexpr (IsReferenceType)
+				if constexpr (IsReturnReferenceType)
 				{
 					return static_cast<std::add_const_t<TReturn>>(*std::get<ResultType>(mResult));
 				}
@@ -155,7 +157,7 @@ namespace slc::Internal {
 		{
 			if (std::holds_alternative<ResultType>(mResult))
 			{
-				if constexpr (IsReferenceType)
+				if constexpr (IsReturnReferenceType)
 				{
 					return static_cast<TReturn>(*std::get<ResultType>(mResult));
 				}
