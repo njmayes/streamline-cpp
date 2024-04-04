@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Platform.h"
+#include "Macros.h"
 #include "Reflection.h"
 #include "System.h"
 
@@ -11,20 +11,6 @@
 #include <cassert>
 
 namespace slc {
-
-#define SLC_EXPAND_MACRO(x) x
-
-#define ASSERT(x, ...)  assert(x)
-#define SASSERT(x, ...) static_assert(x)
-
-#define SCONSTEXPR static constexpr
-#define SCONSTEVAL static consteval
-
-#define ifc if constexpr
-
-#define typeof(T) std::remove_reference_t<decltype(T)>
-
-#define LOG(...)
 
     using Byte = uint8_t;
 

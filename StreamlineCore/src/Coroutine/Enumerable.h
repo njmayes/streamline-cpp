@@ -5,6 +5,7 @@
 #include <ranges>
 #include <iostream>
 
+
 namespace slc {
 
 	template<typename T>
@@ -22,11 +23,17 @@ namespace slc {
 		virtual ~IEnumerableBase() = 0;
 
 		template<typename T>
-		Enumerator<T> AsEnumerable() { return dynamic_cast<IEnumerable<T>*>(this)->GetEnumeratorInternal(); }
+		Enumerator<T> AsEnumerable() { return dynamic_cast<IEnumerable<T>*>(this)->GetEnumeratorImpl(); }
 	};
 
 	inline IEnumerableBase::~IEnumerableBase() {}
 
+	/// <summary>
+	/// Provides support for lazy evaluation of an enumerable sequence and a C# IEnumerable style interface.
+	/// If the derived type TEnum satisfies std::ranges::range<TEnum> then use the MAKE_RANGE_ENUMERABLE(TEnum) to override GetEnumerator(). 
+	/// Otherwise, provide an override for GetEnumerator() that yields each item in the enumeration in sequence.
+	/// </summary>
+	/// <typeparam name="T">The type returned on each evaluation of the enumeration.</typeparam>
 	template<typename T>
 	class IEnumerable : public IEnumerableBase
 	{
@@ -35,10 +42,10 @@ namespace slc {
 		using EnumeratorType = Enumerator<T>;
 
 	public:
-		virtual ~IEnumerable() = 0;
-
-	public:
+		virtual ~IEnumerable() {}
 		virtual EnumeratorType GetEnumerator() = 0;
+
+#define MAKE_RANGE_ENUMERABLE(...)  EXPAND_TEMPLATE(__VA_ARGS__)::EnumeratorType GetEnumerator() override { return this->GetEnumeratorForRange(); }
 
 		// C# LINQ-like functions
 	public:
@@ -46,7 +53,7 @@ namespace slc {
 		T Aggregate(this Self&& self, Func&& func)
 		{
 			T result = self.First();
-			for (auto&& val : std::forward<Self>(self).GetEnumeratorInternal())
+			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
 				result = func(result, std::forward<T>(val));
 			}
@@ -57,7 +64,7 @@ namespace slc {
 		template<typename Self, IsPredicate<const T&> Func>
 		bool All(this Self&& self, Func&& predicate)
 		{
-			for (auto&& val : std::forward<Self>(self).GetEnumeratorInternal())
+			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
 				if (!predicate(std::forward<T>(val)))
 					return false;
@@ -69,7 +76,7 @@ namespace slc {
 		template<typename Self>
 		bool Any(this Self&& self)
 		{
-			for (auto&& val : std::forward<Self>(self).GetEnumeratorInternal())
+			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
 				return true;
 			}
@@ -80,7 +87,7 @@ namespace slc {
 		template<typename Self, IsPredicate<const T&> Func>
 		bool Any(this Self&& self, Func&& predicate)
 		{
-			for (auto&& val : std::forward<Self>(self).GetEnumeratorInternal())
+			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
 				if (predicate(std::forward<T>(val)))
 					return true;
@@ -92,7 +99,7 @@ namespace slc {
 		template<typename Self>
 		EnumeratorType Append(this Self&& self, T&& newVal)
 		{
-			for (auto&& val : std::forward<Self>(self).GetEnumeratorInternal())
+			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
 				co_yield std::forward<T>(val);
 			}
@@ -103,7 +110,7 @@ namespace slc {
 		template<typename R, typename Self> requires Castable<T&, R&> or Castable<T, R>
 		Enumerator<R> Cast(this Self&& self)
 		{
-			for (auto&& val : std::forward<Self>(self).GetEnumeratorInternal())
+			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
 				co_yield std::forward<R>(val);
 			}
@@ -112,11 +119,11 @@ namespace slc {
 		template<typename Self, typename Other> requires std::derived_from<Other, IEnumerable<T>> and std::equality_comparable<T>
 		EnumeratorType Concat(this Self&& self, Other&& other)
 		{
-			for (auto&& val : std::forward<Self>(self).GetEnumeratorInternal())
+			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
 				co_yield std::forward<T>(val);
 			}
-			for (auto&& val : std::forward<Other>(other).GetEnumeratorInternal())
+			for (auto&& val : std::forward<Other>(other).GetEnumeratorImpl())
 			{
 				co_yield std::forward<T>(val);
 			}
@@ -125,7 +132,7 @@ namespace slc {
 		template<typename Self> requires std::equality_comparable<T>
 		bool Contains(this Self&& self, const T& value)
 		{
-			for (auto&& val : std::forward<Self>(self).GetEnumeratorInternal())
+			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
 				if (std::forward<T>(val) == value)
 					return true;
@@ -138,7 +145,7 @@ namespace slc {
 		int Count(this Self&& self)
 		{
 			int i = 0;
-			for (auto&& val : std::forward<Self>(self).GetEnumeratorInternal())
+			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
 				i++;
 			}
@@ -150,7 +157,7 @@ namespace slc {
 		int Count(this Self&& self, Func&& predicate)
 		{
 			int i = 0;
-			for (auto&& val : std::forward<Self>(self).GetEnumeratorInternal())
+			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
 				if (predicate(std::forward<T>(val)))
 				{
@@ -170,7 +177,7 @@ namespace slc {
 		template<typename Self, typename Other> requires std::derived_from<Other, IEnumerable<T>> and std::equality_comparable<T>
 		EnumeratorType Except(this Self&& self, Other&& other) 
 		{
-			for (auto&& val : std::forward<Self>(self).GetEnumeratorInternal())
+			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
 				if (!other.Contains(val))
 				{
@@ -182,7 +189,7 @@ namespace slc {
 		template<typename Self>
 		auto First(this Self&& self) -> decltype(auto)
 		{
-			for (auto&& val : std::forward<Self>(self).GetEnumeratorInternal())
+			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
 				return std::forward<T>(val);
 			}
@@ -191,7 +198,7 @@ namespace slc {
 		template<typename Self> requires std::is_default_constructible_v<Self>
 		T FirstOrDefault(this Self&& self)
 		{
-			for (auto&& val : std::forward<Self>(self).GetEnumeratorInternal())
+			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
 				return std::forward<T>(val);
 			}
@@ -203,7 +210,7 @@ namespace slc {
 		T& Last(this Self&& self)
 		{
 			T* valPtr = nullptr;
-			for (auto&& val : std::forward<Self>(self).GetEnumeratorInternal())
+			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
 				valPtr = std::addressof(val);
 			}
@@ -216,7 +223,7 @@ namespace slc {
 		{
 			T* valPtr = nullptr;
 
-			for (auto&& val : std::forward<Self>(self).GetEnumeratorInternal())
+			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
 				valPtr = std::addressof(val);
 			}
@@ -231,7 +238,7 @@ namespace slc {
 		T& Max(this Self&& self)
 		{
 			T* valPtr = nullptr;
-			for (auto&& val : std::forward<Self>(self).GetEnumeratorInternal())
+			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
 				if (!valPtr || std::greater<T>(val, *valPtr))
 				{
@@ -246,7 +253,7 @@ namespace slc {
 		T& Min(this Self&& self)
 		{
 			T* valPtr = nullptr;
-			for (auto&& val : std::forward<Self>(self).GetEnumeratorInternal())
+			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
 				if (!valPtr || std::less<T>(val, *valPtr))
 				{
@@ -260,7 +267,7 @@ namespace slc {
 		template<typename R, typename Self, typename Func> requires IsFunc<Func, R, T&>
 		Enumerator<R> Select(this Self&& self, Func&& op)
 		{
-			for (auto&& val : std::forward<Self>(self).GetEnumeratorInternal())
+			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
 				co_yield op(std::forward<T>(val));
 			}
@@ -269,12 +276,7 @@ namespace slc {
 		template<typename Self, typename Func> requires IsFunc<Func, bool, const T&>
 		EnumeratorType Where(this Self&& self, Func&& predicate)
 		{
-			if constexpr (std::is_rvalue_reference_v<Self>)
-			{
-				int a = 0;
-			}
-
-			for (auto&& val : std::forward<Self>(self).GetEnumeratorInternal())
+			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
 				if (predicate(val))
 				{
@@ -291,7 +293,7 @@ namespace slc {
 			{
 				co_yield std::forward<T>(val);
 			}
-		}
+		} 
 
 	private:
 		template<typename R>
@@ -300,10 +302,12 @@ namespace slc {
 		friend class IEnumerableBase;
 
 		template<Enumerable<T> Self>
-		EnumeratorType GetEnumeratorInternal(this Self&& self)
+		EnumeratorType GetEnumeratorImpl(this Self&& self)
 		{
-			using Type = std::remove_reference_t<Self>;
+			// If possible directly dispatch correct function at compile time rather than 
+			// resorting to virtual function. Possible when method is called on derived type.
 
+			using Type = std::remove_reference_t<Self>;
 			if constexpr (std::same_as<Type, EnumeratorType>)
 			{
 				// Enumerator type is itself an IEnumerable so it can be used to chain functions.
@@ -318,14 +322,11 @@ namespace slc {
 			}
 			else if constexpr (Internal::UserDefinedEnumerable<Type, T> or std::same_as<Type, IEnumerable<T>>)
 			{
-				// Use overriden GetEnumerator method. If not overriden enumeration returns no results.
+				// Use overriden GetEnumerator method. Used for user defined types or when called from IEnumerableBase
 				return self.GetEnumerator();
 			}
 		}
 	};
-
-	template<typename T>
-	inline IEnumerable<T>::~IEnumerable<T>() {}
 
 	template<typename T>
 	class Enumerator : public IEnumerable<T>

@@ -15,7 +15,7 @@ namespace slc {
     public:
         using std::unordered_set<TKey, Hash, KeyEqual, Allocator>::unordered_set;
 
-        Enumerator<TKey> GetEnumerator() override { return this->GetEnumeratorForRange(); }
+        MAKE_RANGE_ENUMERABLE(HashSet)
     };
 
 }

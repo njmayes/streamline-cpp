@@ -14,7 +14,7 @@ namespace slc {
     public:
         using std::map<TKey, TValue, Compare, Allocator>::map;
 
-        Enumerator<TKey> GetEnumerator() override { return this->GetEnumeratorForRange(); }
+        MAKE_RANGE_ENUMERABLE(Map)
     };
 
 }

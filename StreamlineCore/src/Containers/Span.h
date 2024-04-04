@@ -13,6 +13,6 @@ namespace slc {
     public:
         using std::span<T, Extent>::span;
 
-        Enumerator<T> GetEnumerator() override { return this->GetEnumeratorForRange(); }
+        MAKE_RANGE_ENUMERABLE(Span)
     };
 }
