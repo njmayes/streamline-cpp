@@ -1,4 +1,3 @@
-#include "pch.h"
 #include "EventManager.h"
 
 #include "Common/Application.h"

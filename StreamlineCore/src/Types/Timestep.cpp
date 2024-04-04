@@ -1,4 +1,3 @@
-#include "pch.h"
 #include "Timestep.h"
 
 #include <GLFW/glfw3.h>

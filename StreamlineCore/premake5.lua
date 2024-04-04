@@ -5,9 +5,6 @@ project "StreamlineCore"
 		
     targetdir 	("%{wks.location}/bin/%{prj.name}/" .. outputDir)
     objdir 		("%{wks.location}/obj/%{prj.name}/" .. outputDir)
-	
-	pchheader "pch.h"
-	pchsource "src/pch.cpp"
 
     files 
     { 
@@ -37,9 +34,6 @@ project "StreamlineCore"
         "glfw",
         "imgui",
 	}
-	
-	filter "files:dependencies/ImGuizmo/**.cpp"
-		flags { "NoPCH" }
 	
     filter "system:windows"
         kind "StaticLib"
