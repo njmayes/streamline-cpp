@@ -12,6 +12,8 @@ namespace slc {
     {
     public:
         using std::forward_list<T, Allocator>::forward_list;
+
+        Enumerator<T> GetEnumerator() override { return this->GetEnumeratorForRange(); }
     };
 
 }

@@ -3,6 +3,7 @@
 #include "Common/Base.h"
 
 #include <coroutine>
+#include <concepts>
 
 namespace slc {
 
@@ -38,7 +39,7 @@ namespace slc::Internal {
 
 		auto get_return_object() noexcept -> slc::Enumerator<T>;
 
-		auto initial_suspend() const { return std::suspend_always{}; }
+		auto initial_suspend() const { return std::suspend_never{}; }
 		auto final_suspend() const noexcept { return std::suspend_always{}; }
 
 		template<typename U = T> requires !std::is_rvalue_reference_v<U>

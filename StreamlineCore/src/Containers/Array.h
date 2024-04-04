@@ -13,6 +13,8 @@ namespace slc {
         using std::array<T, TSize>::array;
 
         Array() { memset(this->data(), 0, TSize); }
+
+        Enumerator<T> GetEnumerator() override { return this->GetEnumeratorForRange(); }
     };
 
 }

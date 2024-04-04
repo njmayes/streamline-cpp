@@ -14,6 +14,8 @@ namespace slc {
     {
     public:
         using std::unordered_map<TKey, Hash, KeyEqual, Allocator>::unordered_multiset;
+
+        Enumerator<TKey> GetEnumerator() override { return this->GetEnumeratorForRange(); }
     };
 
 }

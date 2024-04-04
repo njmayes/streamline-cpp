@@ -22,7 +22,7 @@ namespace slc {
 
 #define ifc if constexpr
 
-#define typeof(T) std::decay_t<decltype(T)>
+#define typeof(T) std::remove_reference_t<decltype(T)>
 
 #define LOG(...)
 

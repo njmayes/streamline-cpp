@@ -77,7 +77,24 @@ namespace slc {
     template<typename T>
     concept IsEnum = TypeTraits<T>::IsEnum;
 
+    template<typename From, typename To>
+    concept Castable = requires (From from) { static_cast<To>(from); };
 
+    template<typename T>
+    concept ComparableLess = requires (T t1, T t2) { std::less<T>(t1, t2); };
+
+    template<typename T>
+    concept ComparableGreater = requires (T t1, T t2) { std::greater<T>(t1, t2); };
+
+    template<typename Func, typename TReturn, typename... TArgs>
+    concept IsFunc = std::invocable<Func, TArgs...>&&
+        requires (Func&& fn, TArgs&&... args) { { fn(std::forward<TArgs>(args)...) } -> std::convertible_to<TReturn>; };
+
+    template<typename... TArgs>
+    concept IsAction = IsFunc<void, TArgs...>;
+
+    template<typename... TArgs>
+    concept IsPredicate = IsFunc<bool, TArgs...>;
 
     template<typename T>
     struct FunctionTraits;
@@ -124,16 +141,6 @@ namespace slc {
             using Type = typename std::tuple_element<i, std::tuple<Args...>>::type;
         };
     };
-
-    template<typename Func, typename TReturn, typename... TArgs>
-    concept IsFunc = std::invocable<Func, TArgs...> &&
-        requires (Func&& fn, TArgs&&... args) { { fn(std::forward<TArgs>(args)...) } -> std::convertible_to<TReturn>; };
-
-    template<typename... TArgs>
-    concept IsAction = IsFunc<void, TArgs...>;
-
-    template<typename... TArgs>
-    concept IsPredicate = IsFunc<bool, TArgs...>;
 
 
     namespace TypeUtils {

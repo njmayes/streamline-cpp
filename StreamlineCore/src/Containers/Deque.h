@@ -12,6 +12,8 @@ namespace slc {
     {
     public:
         using std::deque<T, Allocator>::deque;
+
+        Enumerator<T> GetEnumerator() override { return this->GetEnumeratorForRange(); }
     };
 
 }

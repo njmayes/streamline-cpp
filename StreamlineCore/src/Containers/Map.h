@@ -13,6 +13,8 @@ namespace slc {
     {
     public:
         using std::map<TKey, TValue, Compare, Allocator>::map;
+
+        Enumerator<TKey> GetEnumerator() override { return this->GetEnumeratorForRange(); }
     };
 
 }
