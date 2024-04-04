@@ -13,7 +13,7 @@ namespace slc {
     public:
         using std::stack<T, Container>::stack;
 
-        Enumerator<T> GetEnumerator() override { return this->GetEnumeratorForRange(); }
+        MAKE_RANGE_ENUMERABLE(Stack)
     };
 
 }

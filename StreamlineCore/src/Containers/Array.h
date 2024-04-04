@@ -12,9 +12,9 @@ namespace slc {
     public:
         using std::array<T, TSize>::array;
 
-        Array() { memset(this->data(), 0, TSize); }
+        Array() { memset(this->data(), 0, TSize * sizeof(T)); }
 
-        Enumerator<T> GetEnumerator() override { return this->GetEnumeratorForRange(); }
+        MAKE_RANGE_ENUMERABLE(Array)
     };
 
 }

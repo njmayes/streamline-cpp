@@ -13,7 +13,7 @@ namespace slc {
     public:
         using std::vector<T, Allocator>::vector;
 
-        Enumerator<T> GetEnumerator() override { return this->GetEnumeratorForRange(); }
+        MAKE_RANGE_ENUMERABLE(Vector)
     };
 
 }
