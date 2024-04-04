@@ -12,7 +12,6 @@
 #include "Containers/HashSet.h"
 #include "Containers/List.h"
 #include "Containers/Map.h"
-#include "Containers/Queue.h"
 #include "Containers/Set.h"
 #include "Containers/Span.h"
 #include "Containers/Stack.h"

@@ -248,15 +248,44 @@ using namespace slc;
 
 int main(int argc, char* argv[])
 {
-	Vector<int> test = { 0, 1, 2, 3, 4, 5 };
+	Vector<int> foo = { 0, 1, 2, 3, 4, 5 };
+	Vector<int> bar = { 0, 1, 2, 3, 4, 5 };
 
-	auto test2 = test.Select<std::string>([](int val) { return std::to_string(val); });
+	//auto tmp = foo
+	//	.Select<double>([](int a) { return (double)a * 2.1878; });
 
-	auto test3 = test2.Where([](const auto& str) { return std::stoi(str) == 8; });
+	//auto baz = tmp
+	//	.Append(2.0);
 
-	for (const auto& val : test3)
+	//std::cout << "Enumerable A" << std::endl;
+	//for (const auto& val : baz)
+	//{
+	//	std::cout << val << std::endl;
+	//}
+
+	IEnumerableBase& fooBase = foo;
+	auto baz1 = fooBase.AsEnumerable<int>();
+
+
+	std::cout << "Enumerable A" << std::endl;
+	for (const auto& val : baz1)
 	{
-		std::cout << val;
+		std::cout << val << std::endl;
+	}
+
+	auto baz2 = bar
+		.Select<double>([](int a) { return (double)a * 2.1878; })
+		.Append(0)
+		.Append(41)
+		.Append(432)
+		.Append(4123)
+		.Append(32);
+
+
+	std::cout << "Enumerable B" << std::endl;
+	for (const auto& val : baz2)
+	{
+		std::cout << val << std::endl;
 	}
 
 	//auto task = TaskTestAsyncInt();

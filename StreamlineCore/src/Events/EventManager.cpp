@@ -33,7 +33,7 @@ namespace slc {
 			for (IEventListener* listener : filteredListeners)
 				listener->OnEvent(e);
 
-			sEventQueue.pop();
+			sEventQueue.pop_front();
 		}
 	}
 

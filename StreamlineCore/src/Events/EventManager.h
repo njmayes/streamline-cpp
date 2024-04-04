@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Containers/Vector.h"
-#include "Containers/Queue.h"
+#include "Containers/Deque.h"
 
 #include "Event.h"
 
@@ -25,14 +25,14 @@ namespace slc {
 		template<IsEvent TEvent, typename... TArgs>
 		static void Post(TArgs&&... args)
 		{
-			Event& e = sEventQueue.emplace();
+			Event& e = sEventQueue.emplace_back();
 			e.Init<TEvent>(std::forward<TArgs>(args)...);
 		}
 
 		static void Dispatch();
 
 	private:
-		inline static Queue<Event> sEventQueue;
+		inline static Deque<Event> sEventQueue;
 		
 		inline static IEventListener* sAppListener = nullptr;
 		inline static IEventListener* sImGuiListener = nullptr;
