@@ -1,10 +1,9 @@
-#include "pch.h"
 #include "Widgets.h"
+
+#include "Types/StaticString.h"
 
 #include "imgui.h"
 #include "imgui_internal.h"
-
-#include "Types/StaticString.h"
 
 namespace slc {
 

@@ -1,10 +1,9 @@
-#include "pch.h"
 #include "Window.h"
+
+#include "Events/EventManager.h"
 
 #include <glad/glad.h>
 #include "GLFW/glfw3.h"
-
-#include "Events/EventManager.h"
 
 namespace slc {
 
