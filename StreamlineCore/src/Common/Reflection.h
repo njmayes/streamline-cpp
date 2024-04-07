@@ -81,10 +81,38 @@ namespace slc {
     concept Castable = requires (From from) { static_cast<To>(from); };
 
     template<typename T>
+    concept Numeric = std::integral<T>;
+
+    template<typename T>
+    concept AddAssignable = requires (T t)
+    {
+        t += t;
+    };
+
+    template<typename T>
+    concept UnaryAddable = requires (T t)
+    {
+        { t + t } -> std::convertible_to<T>;
+    };
+
+    template<typename T>
+    concept Summable = std::is_default_constructible_v<T> and (AddAssignable<T> or UnaryAddable<T>);
+
+    template<typename T>
+    concept UNumeric = std::unsigned_integral<T>;
+
+    template<typename T>
     concept ComparableLess = requires (T t1, T t2) { std::less<T>(t1, t2); };
 
     template<typename T>
     concept ComparableGreater = requires (T t1, T t2) { std::greater<T>(t1, t2); };
+
+    template<typename T>
+    concept Sizeable = requires (T t)
+    {
+        { t.size() } -> std::convertible_to<size_t>;
+    };
+
 
     template<typename Func, typename TReturn, typename... TArgs>
     concept IsFunc = std::invocable<Func, TArgs...>&&

@@ -8,6 +8,18 @@
 
 namespace slc {
 
+	template<typename T, size_t TSize>
+	class Array;
+
+	template<typename T, typename Allocator>
+	class Vector;
+
+	template<typename TKey, typename TValue,
+		typename Hash,
+		typename KeyEqual,
+		typename Allocator>
+	class Dictionary;
+
 	template<typename T>
 	class Enumerator;
 
@@ -24,12 +36,28 @@ namespace slc {
 
 		template<typename T>
 		Enumerator<T> AsEnumerable() { return dynamic_cast<IEnumerable<T>*>(this)->GetEnumeratorImpl(); }
+
+		template<Numeric StartType, UNumeric CountType>
+		static Enumerator<StartType> Range(StartType start, CountType count)
+		{
+			// Would go out of range, return empty sequence.
+			if (start > Limits<StartType> - (count - 1)) [[unlikely]]
+			{
+				co_return;
+			}
+
+			for (StartType i = start; i < start + count; i++)
+			{
+				co_yield i;
+			}
+		}
 	};
 
 	inline IEnumerableBase::~IEnumerableBase() {}
 
 	/// <summary>
-	/// Provides support for lazy evaluation of an enumerable sequence and a C# IEnumerable style interface.
+	/// Provides support for lazy evaluation of an enumerable sequence and a C# IEnumerable style interface. The first element of the 
+	/// enumerable is evaluation eagerly to ensure the lifetime of temporary enumerable objects is maintained on chained functions.
 	/// If the derived type TEnum satisfies std::ranges::range<TEnum> then use the MAKE_RANGE_ENUMERABLE(TEnum) to override GetEnumerator(). 
 	/// Otherwise, provide an override for GetEnumerator() that yields each item in the enumeration in sequence.
 	/// </summary>
@@ -45,17 +73,63 @@ namespace slc {
 		virtual ~IEnumerable() {}
 		virtual EnumeratorType GetEnumerator() = 0;
 
+	protected:
+		template<std::ranges::range Self>
+		EnumeratorType GetEnumeratorForRange(this Self&& self)
+		{
+			for (auto&& val : std::forward<Self>(self))
+			{
+				co_yield std::forward<T>(val);
+			}
+		}
 #define MAKE_RANGE_ENUMERABLE(...)  EXPAND_TEMPLATE(__VA_ARGS__)::EnumeratorType GetEnumerator() override { return this->GetEnumeratorForRange(); }
+
+	private:
+		template<typename R>
+		static constexpr bool AlwaysFalse = false;
+
+		friend class IEnumerableBase;
+
+		template<Enumerable<T> Self>
+		EnumeratorType GetEnumeratorImpl(this Self&& self)
+		{
+			// If possible directly dispatch correct function at compile time rather than 
+			// resorting to virtual function. This is ossible when method is called on
+			// a derived type and type information can be determined from Self.
+
+			using Type = std::remove_reference_t<Self>;
+			if constexpr (std::same_as<Type, EnumeratorType>)
+			{
+				// Enumerator type is itself an IEnumerable so it can be used to chain functions.
+				// Move it along the chain so that when the destructor is called on the temporary
+				// Enumerator the coroutine is not destroyed.
+				return std::move(self);
+			}
+			else if constexpr (std::ranges::range<Type>)
+			{
+				// Use std::ranges::range concept to get Enumerator
+				return self.GetEnumeratorForRange();
+			}
+			else if constexpr (Internal::UserDefinedEnumerable<Type, T> or std::same_as<Type, IEnumerable<T>>)
+			{
+				// Use overriden GetEnumerator method. Used for user defined types or when called from IEnumerableBase
+				return self.GetEnumerator();
+			}
+		}
 
 		// C# LINQ-like functions
 	public:
 		template<typename Self, IsFunc<T, const T&, const T&> Func>
 		T Aggregate(this Self&& self, Func&& func)
 		{
-			T result = self.First();
-			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
+			auto&& enumerator = std::forward<Self>(self).GetEnumeratorImpl();
+
+			auto it = enumerator.begin();
+			T result = *it++;
+
+			while (it != enumerator.end())
 			{
-				result = func(result, std::forward<T>(val));
+				result = func(result, *it++);
 			}
 
 			return result;
@@ -142,9 +216,14 @@ namespace slc {
 		}
 
 		template<typename Self>
-		int Count(this Self&& self)
+		size_t Count(this Self&& self)
 		{
-			int i = 0;
+			size_t i = 0;
+			if (self.TryGetNonEnumeratedCount(i))
+			{
+				return i;
+			}
+
 			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
 				i++;
@@ -154,9 +233,9 @@ namespace slc {
 		}
 
 		template<typename Self, IsPredicate<const T&> Func>
-		int Count(this Self&& self, Func&& predicate)
+		size_t Count(this Self&& self, Func&& predicate)
 		{
-			int i = 0;
+			size_t i = 0;
 			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
 				if (predicate(std::forward<T>(val)))
@@ -174,15 +253,13 @@ namespace slc {
 			return !std::forward<Self>(self).Any();
 		}
 
-		template<typename Self, typename Other> requires std::derived_from<Other, IEnumerable<T>> and std::equality_comparable<T>
-		EnumeratorType Except(this Self&& self, Other&& other) 
+		template<typename Self>
+		Enumerator<std::tuple<size_t, T>> Enumerate(this Self&& self)
 		{
+			size_t i = 0;
 			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
-				if (!other.Contains(val))
-				{
-					co_yield std::forward<T>(val);
-				}
+				co_yield std::make_tuple(i++, std::forward<T>(val));
 			}
 		}
 
@@ -264,6 +341,16 @@ namespace slc {
 			return *valPtr;
 		}
 
+		template<typename Self>
+		EnumeratorType Prepend(this Self&& self, T&& newVal)
+		{
+			co_yield std::forward<T>(newVal);
+			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
+			{
+				co_yield std::forward<T>(val);
+			}
+		}
+
 		template<typename R, typename Self, typename Func> requires IsFunc<Func, R, T&>
 		Enumerator<R> Select(this Self&& self, Func&& op)
 		{
@@ -271,6 +358,148 @@ namespace slc {
 			{
 				co_yield op(std::forward<T>(val));
 			}
+		}
+
+		template<typename R, typename Self, typename Func> requires IsFunc<Func, Enumerator<R>, T&>
+		Enumerator<R> SelectMany(this Self&& self, Func&& selector)
+		{
+			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
+			{
+				Enumerator<R> valEnumerable = selector(val);
+				for (auto&& val : valEnumerable.GetEnumerator())
+				{
+					co_yield val;
+				}
+			}
+		}
+
+		template<typename Self, Numeric Count>
+		EnumeratorType Skip(this Self&& self, Count count)
+		{
+			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
+			{
+				if (count > 0)
+				{
+					count--;
+				}
+				else
+				{
+					co_yield std::forward<T>(val);
+				}
+			}
+		}
+
+		template<typename Self, IsPredicate<const T&> Func> 
+		EnumeratorType SkipWhile(this Self&& self, Func&& predicate)
+		{
+			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
+			{
+				if (!predicate(val))
+				{
+					co_yield std::forward<T>(val);
+				}
+			}
+		}
+
+		template<typename Self> requires Summable<T>
+		T Sum(this Self&& self)
+		{
+			T result;
+			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
+			{
+				if constexpr (AddAssignable<T>)
+				{
+					result += std::forward<T>(val);
+				}
+				else if constexpr (UnaryAddable<T>)
+				{
+					result = result + std::forward<T>(val);
+				}
+			}
+			return result;
+		}
+
+
+		template<typename Self> 
+		EnumeratorType Take(this Self&& self, Numeric auto count)
+		{
+			if (count <= 0)
+			{
+				co_return;
+			}
+
+			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
+			{
+				if (count-- == 0)
+					co_return;
+
+				co_yield std::forward<T>(val);
+			}
+		}
+
+		template<typename Self, IsPredicate<const T&> Func>
+		EnumeratorType TakeWhile(this Self&& self, Func&& predicate)
+		{
+			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
+			{
+				if (predicate(val))
+				{
+					co_yield std::forward<T>(val);
+				}
+			}
+		}
+
+		template<typename Self, typename TKey, typename TValue,
+			typename Hash = std::hash<TKey>,
+			typename KeyEqual = std::equal_to<TKey>,
+			typename Allocator = std::allocator<TKey>
+		>
+		Dictionary<TKey, TValue, Hash, KeyEqual, Allocator> ToDictionary(this Self&& self) requires std::convertible_to<T, std::pair<TKey, TValue>>
+		{
+			Dictionary<TKey, TValue, Hash, KeyEqual, Allocator> result;
+			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
+			{
+				result.emplace(std::forward<std::pair<TKey, TValue>>(val));
+			}
+			return result;
+		}
+
+		template<typename Self, typename Allocator = std::allocator<T>>
+		Vector<T, Allocator> ToVector(this Self&& self)
+		{
+			size_t count = self.Count();
+
+			Vector<T, Allocator> result;
+			result.reserve(count);
+
+			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
+			{
+				result.emplace_back(std::move(val));
+			}
+			return result;
+		}
+
+		template<size_t Size, typename Self>
+		Array<T, Size> ToArray(this Self&& self)
+		{
+			Array<const T*, Size> result;
+			for (auto&& [i, val] : std::forward<Self>(self).Enumerate().Take(Size))
+			{
+				result[i] = std::addressof(val);
+			}
+
+			return ArrayConversion(result);
+		}
+
+		template<typename Self>
+		bool TryGetNonEnumeratedCount(this Self&& self, size_t& count)
+		{
+			if constexpr (Sizeable<Self>)
+			{
+				count = self.size();
+				return true;
+			}
+			return false;
 		}
 
 		template<typename Self, typename Func> requires IsFunc<Func, bool, const T&>
@@ -285,47 +514,70 @@ namespace slc {
 			}
 		}
 
-	protected:
-		template<std::ranges::range Self>
-		EnumeratorType GetEnumeratorForRange(this Self&& self)
+		template<typename Self, typename TOut, typename Other, typename TIn, IsFunc<TOut, const T&, const TIn&> Func> requires std::derived_from<Other, IEnumerable<TIn>>
+		Enumerator<TOut> Zip(this Self&& self, const Other& other, Func&& resultSelector)
 		{
-			for (auto&& val : std::forward<Self>(self))
-			{
-				co_yield std::forward<T>(val);
-			}
-		} 
+			auto&& firstEnumerator = std::forward<Self>(self).GetEnumeratorImpl();
+			auto&& secondEnumerator = other.GetEnumeratorImpl();
 
-	private:
-		template<typename R>
-		static constexpr bool AlwaysFalse = false;
+			auto firstIt = firstEnumerator.begin();
+			auto secondIt = secondEnumerator.begin();
 
-		friend class IEnumerableBase;
+			while (firstIt != firstEnumerator.end() && secondIt != secondEnumerator.end())
+			{
+				co_yield resultSelector(*firstIt, *secondIt);
 
-		template<Enumerable<T> Self>
-		EnumeratorType GetEnumeratorImpl(this Self&& self)
-		{
-			// If possible directly dispatch correct function at compile time rather than 
-			// resorting to virtual function. Possible when method is called on derived type.
-
-			using Type = std::remove_reference_t<Self>;
-			if constexpr (std::same_as<Type, EnumeratorType>)
-			{
-				// Enumerator type is itself an IEnumerable so it can be used to chain functions.
-				// Move it along the chain so that when the destructor is called on the temporary
-				// Enumerator the coroutine is not destroyed.
-				return std::move(self);
-			}
-			else if constexpr (std::ranges::range<Type>)
-			{
-				// Use std::ranges::range concept to get Enumerator
-				return self.GetEnumeratorForRange();
-			}
-			else if constexpr (Internal::UserDefinedEnumerable<Type, T> or std::same_as<Type, IEnumerable<T>>)
-			{
-				// Use overriden GetEnumerator method. Used for user defined types or when called from IEnumerableBase
-				return self.GetEnumerator();
+				firstIt++;
+				secondIt++;
 			}
 		}
+
+		template<typename Self, typename TOther, typename Other> requires std::derived_from<Other, IEnumerable<TOther>>
+		Enumerator<std::tuple<T&, TOther&>> Zip(this Self&& self, const Other& other)
+		{
+			auto&& firstEnumerator = std::forward<Self>(self).GetEnumeratorImpl();
+			auto&& secondEnumerator = other.GetEnumeratorImpl();
+
+			auto firstIt = firstEnumerator.begin();
+			auto secondIt = secondEnumerator.begin();
+
+			while (firstIt != firstEnumerator.end() && secondIt != secondEnumerator.end())
+			{
+				co_yield std::make_tuple(*firstIt, *secondIt);
+
+				firstIt++;
+				secondIt++;
+			}
+		}
+
+	public:
+		template<Numeric Count>
+		static Enumerator<T> Repeat(const T& val, Count count) requires std::is_copy_constructible_v<T>
+		{
+			if (count <= 0)
+				co_return;
+
+			for (Count i = 0; i < count; i++)
+			{
+				co_yield T(val);
+			}
+		}
+
+
+	private:
+		template<std::size_t N, std::size_t... Is>
+		static Array<T, N> ArrayConversion(const Array<const T*, N>& values)
+		{
+			return ArrayConversionInternal(values, std::make_index_sequence<N>());
+		}
+
+		template<std::size_t N, std::size_t... Is>
+		static std::array<T, N> ArrayConversionInternal(const Array<const T*, N>& values, std::index_sequence<Is...>)
+		{
+			return { { CopyOrDefault(values[Is])... } };
+		}
+
+		static T CopyOrDefault(const T* ptr) { return ptr ? T(*ptr) : T(); }
 	};
 
 	template<typename T>

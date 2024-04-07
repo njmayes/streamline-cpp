@@ -8,7 +8,7 @@
 #include "Containers/Array.h"
 #include "Containers/Deque.h"
 #include "Containers/ForwardList.h"
-#include "Containers/HashMap.h"
+#include "Containers/Dictionary.h"
 #include "Containers/HashSet.h"
 #include "Containers/List.h"
 #include "Containers/Map.h"
