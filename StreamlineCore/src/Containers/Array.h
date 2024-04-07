@@ -13,8 +13,10 @@ namespace slc {
         using std::array<T, TSize>::array;
 
         Array() { memset(this->data(), 0, TSize * sizeof(T)); }
+        Array(std::array<T, TSize>&& arr) :
+            std::array<T, TSize>(std::move(arr)) {}
 
         MAKE_RANGE_ENUMERABLE(Array)
-    };
 
+    };
 }
