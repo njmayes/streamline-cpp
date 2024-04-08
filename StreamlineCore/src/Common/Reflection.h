@@ -77,6 +77,9 @@ namespace slc {
     template<typename T>
     concept IsEnum = TypeTraits<T>::IsEnum;
 
+    template<typename T>
+    concept IsStandard = std::is_standard_layout_v<T>;
+
     template<typename From, typename To>
     concept Castable = requires (From from) { static_cast<To>(from); };
 
@@ -118,11 +121,11 @@ namespace slc {
     concept IsFunc = std::invocable<Func, TArgs...>&&
         requires (Func&& fn, TArgs&&... args) { { fn(std::forward<TArgs>(args)...) } -> std::convertible_to<TReturn>; };
 
-    template<typename... TArgs>
-    concept IsAction = IsFunc<void, TArgs...>;
+    template<typename Func, typename... TArgs>
+    concept IsAction = IsFunc<Func, void, TArgs...>;
 
-    template<typename... TArgs>
-    concept IsPredicate = IsFunc<bool, TArgs...>;
+    template<typename Func, typename... TArgs>
+    concept IsPredicate = IsFunc<Func, bool, TArgs...>;
 
     template<typename T>
     struct FunctionTraits;
