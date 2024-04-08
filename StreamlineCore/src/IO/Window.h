@@ -6,7 +6,7 @@ struct GLFWwindow;
 
 namespace slc {
 
-    struct Event; 
+    class Event; 
 
 	struct Resolution
 	{

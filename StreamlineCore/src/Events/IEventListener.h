@@ -17,11 +17,11 @@ namespace slc {
 		bool Accept(Event& event) const
 		{ 
 			//   Not already handled		Valid Event Type				Satisfies additional condition
-			return !event.handled && (GetListeningEvents() & event.type) && mAcceptCondition();
+			return !event.Handled() && (GetListeningEvents() & event.Type()) && mAcceptCondition();
 		}
 
 	private:
-		IEventListener(ListenerType type)
+		IEventListener(EventManager::ListenerType type)
 			: mType(type)
 		{ 
 			EventManager::RegisterListener(this, mType);
@@ -31,10 +31,10 @@ namespace slc {
 		friend class ImGuiController;
 
 	private:
-		ListenerType mType = ListenerType::Generic;
+		EventManager::ListenerType mType = EventManager::ListenerType::Generic;
 		Predicate<> mAcceptCondition = [](){ return true; };
 	};
 
-#define LISTENING_EVENTS(...)	static constexpr slc::EventTypeFlag GetStaticType() { return EXPAND_EVENTS(__VA_ARGS__); }\
+#define LISTENING_EVENTS(...)	static constexpr slc::EventTypeFlag GetStaticType() { return EventType::BuildEventTypeMask(__VA_ARGS__); }\
 								virtual constexpr slc::EventTypeFlag GetListeningEvents() const override { return GetStaticType(); }
 }

@@ -2,11 +2,11 @@
 
 #include "IO/MouseCodes.h"
 
-#include "EventTypes.h"
+#include "Event.h"
 
 namespace slc {
 
-	struct MouseMovedEvent
+	struct MouseMovedEvent : public EventBase
 	{
 		float mouseX, mouseY;
 
@@ -15,7 +15,7 @@ namespace slc {
 		EVENT_DATA_TYPE(MouseMoved)
 	};
 
-	struct MouseScrolledEvent
+	struct MouseScrolledEvent : public EventBase
 	{
 		float xOffset, yOffset;
 
@@ -24,7 +24,7 @@ namespace slc {
 		EVENT_DATA_TYPE(MouseScrolled)
 	};
 
-	struct MouseButtonPressedEvent
+	struct MouseButtonPressedEvent : public EventBase
 	{
 		MouseCode button;
 
@@ -33,7 +33,7 @@ namespace slc {
 		EVENT_DATA_TYPE(MouseButtonPressed)
 	};
 
-	struct MouseButtonReleasedEvent
+	struct MouseButtonReleasedEvent : public EventBase
 	{
 		MouseCode button;
 

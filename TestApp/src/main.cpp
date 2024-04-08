@@ -100,7 +100,7 @@ namespace slc {
 		}
 		virtual void OnRender() override {}
 
-        void OnEvent(Event& e) override {}
+		LISTENING_EVENTS(EventType::KeyPressed, EventType::MouseButtonPressed)
 
 		LISTENING_EVENTS(KeyPressed, MouseButtonPressed)
     };
