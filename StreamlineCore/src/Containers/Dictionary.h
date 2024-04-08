@@ -9,7 +9,7 @@ namespace slc {
     template<typename TKey, typename TValue,
         typename Hash = std::hash<TKey>,
         typename KeyEqual = std::equal_to<TKey>,
-        typename Allocator = std::allocator<TKey>>
+        typename Allocator = std::allocator<std::pair<const TKey, TValue>>>
         class Dictionary : public std::unordered_map<TKey, TValue, Hash, KeyEqual, Allocator>, public IEnumerable<std::pair<const TKey, TValue>>
     {
     public:

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Containers/Array.h"
+#include "Array.h"
 
 namespace slc {
 

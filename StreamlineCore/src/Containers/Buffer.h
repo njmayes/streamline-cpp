@@ -4,9 +4,6 @@
 
 namespace slc {
 
-	template<typename T>
-	concept IsStandard = std::is_standard_layout_v<T>;
-
 	class Buffer
 	{
 	public:
@@ -52,8 +49,13 @@ namespace slc {
 			Resize(mSize - DataSize);
 		}
 
-		Byte* Data() { return (Byte*)mData; }
-		const Byte* Data() const { return (Byte*)mData; }
+		Byte* Data(size_t offset = 0) { return (Byte*)mData + offset; }
+		const Byte* Data(size_t offset = 0) const { return (Byte*)mData + offset; }
+
+		template<IsStandard T>
+		Byte* Data(size_t offset = 0) { return (Byte*)mData + (sizeof(T) * offset); }
+		template<IsStandard T>
+		const Byte* Data(size_t offset = 0) const { return (Byte*)mData + (sizeof(T) * offset); }
 
 		size_t Size() const { return mSize; }
 		void Resize(size_t newSize);

@@ -1,6 +1,6 @@
 #include "Widgets.h"
 
-#include "Types/StaticString.h"
+#include "Containers/StaticString.h"
 
 #include "imgui.h"
 #include "imgui_internal.h"
