@@ -2,11 +2,11 @@
 
 #include "IO/KeyCodes.h"
 
-#include "EventTypes.h"
+#include "Event.h"
 
 namespace slc {
 
-	struct KeyPressedEvent
+	struct KeyPressedEvent : public EventBase
 	{
 		KeyCode keyCode;
 		bool repeat;
@@ -16,7 +16,7 @@ namespace slc {
 		EVENT_DATA_TYPE(KeyPressed)
 	};
 
-	struct KeyReleasedEvent
+	struct KeyReleasedEvent : public EventBase
 	{
 		KeyCode keyCode;
 
@@ -25,7 +25,7 @@ namespace slc {
 		EVENT_DATA_TYPE(KeyReleased)
 	};
 
-	struct KeyTypedEvent
+	struct KeyTypedEvent : public EventBase
 	{
 		KeyCode keyCode;
 

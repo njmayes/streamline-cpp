@@ -15,7 +15,7 @@
 namespace slc {
 
 	ImGuiController::ImGuiController(GLFWwindow* window)
-        : IEventListener(ListenerType::ImGui)
+        : IEventListener(EventManager::ListenerType::ImGui)
 	{
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
@@ -81,9 +81,15 @@ namespace slc {
         if (!mBlockEvents)
             return;
 
+        auto eventType = e.Type();
+
         ImGuiIO& io = ImGui::GetIO();
-        e.handled |= (e.type & EventType::EVENT_CATEGORY_MOUSE) && io.WantCaptureMouse;
-        e.handled |= (e.type & EventType::EVENT_CATEGORY_KEY) && io.WantCaptureKeyboard;
+
+        bool setHandled = ((eventType & EVENT_CATEGORY_MOUSE) && io.WantCaptureMouse) or
+            ((eventType & EVENT_CATEGORY_KEY) && io.WantCaptureKeyboard);
+
+        if (setHandled)
+            e.SetHandled();
     }
 
     void ImGuiController::SetDarkThemeColours()

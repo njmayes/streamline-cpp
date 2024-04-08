@@ -6,7 +6,7 @@
 namespace slc {
 
 	Application::Application(ApplicationSpecification* spec)
-		: IEventListener(ListenerType::App), mSpecification(spec)
+		: IEventListener(EventManager::ListenerType::App), mSpecification(spec)
 	{
 		if (sInstance)
 		{

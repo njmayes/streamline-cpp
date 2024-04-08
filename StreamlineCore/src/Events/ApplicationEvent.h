@@ -1,10 +1,10 @@
 #pragma once
 
-#include "EventTypes.h"
+#include "Event.h"
 
 namespace slc {
 
-	struct WindowResizeEvent
+	struct WindowResizeEvent : public EventBase
 	{
 		unsigned width, height;
 
@@ -13,22 +13,22 @@ namespace slc {
 		EVENT_DATA_TYPE(WindowResize)
 	};
 
-	struct WindowCloseEvent
+	struct WindowCloseEvent : public EventBase
 	{
 		EVENT_DATA_TYPE(WindowClose)
 	};
 
-	struct WindowFocusEvent
+	struct WindowFocusEvent : public EventBase
 	{
 		EVENT_DATA_TYPE(WindowFocus)
 	};
 
-	struct WindowFocusLostEvent
+	struct WindowFocusLostEvent : public EventBase
 	{
 		EVENT_DATA_TYPE(WindowLostFocus)
 	};
 
-	struct WindowMovedEvent
+	struct WindowMovedEvent : public EventBase
 	{
 		unsigned xpos, ypos;
 
@@ -38,17 +38,17 @@ namespace slc {
 	};
 
 
-	struct AppTickEvent
+	struct AppTickEvent : public EventBase
 	{
 		EVENT_DATA_TYPE(AppTick)
 	};
 
-	struct AppUpdateEvent
+	struct AppUpdateEvent : public EventBase
 	{
 		EVENT_DATA_TYPE(AppUpdate)
 	};
 
-	struct AppRenderEvent
+	struct AppRenderEvent : public EventBase
 	{
 		EVENT_DATA_TYPE(AppRender)
 	};
