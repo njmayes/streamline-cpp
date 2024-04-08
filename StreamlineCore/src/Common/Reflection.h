@@ -1,5 +1,7 @@
 #pragma once
 
+#include "magic_enum.hpp"
+
 #include <functional>
 #include <variant>
 #include <string_view>
@@ -76,6 +78,41 @@ namespace slc {
 
     template<typename T>
     concept IsEnum = TypeTraits<T>::IsEnum;
+
+    namespace Enum {
+
+        template<IsEnum T>
+        inline static constexpr std::string_view ToString(T enumVal)
+        {
+            SASSERT(MAGIC_ENUM_SUPPORTED, "Compiler does not support magic enums! Define your own conversions!");
+
+            return magic_enum::enum_name(enumVal);
+        }
+
+        template<IsEnum T>
+        inline static constexpr T FromString(std::string_view enumStr)
+        {
+            SASSERT(MAGIC_ENUM_SUPPORTED, "Compiler does not support magic enums! Define your own conversions!");
+
+            auto enumVal = magic_enum::enum_cast<T>(enumStr);
+            if (enumVal.has_value())
+                return enumVal.value();
+
+            return T();
+        }
+
+        template<IsEnum T>
+        inline static constexpr bool Contains(std::underlying_type_t<T> value)
+        {
+            return magic_enum::enum_contains<T>(value);
+        }
+
+        template<IsEnum T>
+        inline static constexpr size_t Count()
+        {
+            return magic_enum::enum_count<T>();
+        }
+    }
 
     template<typename T>
     concept IsStandard = std::is_standard_layout_v<T>;

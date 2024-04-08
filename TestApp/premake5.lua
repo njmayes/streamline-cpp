@@ -21,6 +21,7 @@ project "TestApp"
     {
         "%{IncludeDir.StreamlineCore}",
         "%{IncludeDir.imgui}",
+        "%{IncludeDir.magic_enum}",
     }
 
 	links

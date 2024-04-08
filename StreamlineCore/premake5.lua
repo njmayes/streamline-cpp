@@ -26,6 +26,7 @@ project "StreamlineCore"
         "%{IncludeDir.glad}",
         "%{IncludeDir.imgui}",
         "%{IncludeDir.ImGuizmo}",
+        "%{IncludeDir.magic_enum}",
     }
 
 	links

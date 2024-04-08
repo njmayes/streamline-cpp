@@ -31,6 +31,7 @@ IncludeDir["glfw"] 	            = "%{wks.location}/StreamlineCore/dependencies/g
 IncludeDir["glad"] 	            = "%{wks.location}/StreamlineCore/dependencies/glad/include"
 IncludeDir["imgui"] 	        = "%{wks.location}/StreamlineCore/dependencies/imgui"
 IncludeDir["ImGuizmo"] 			= "%{wks.location}/StreamlineCore/dependencies/ImGuizmo"
+IncludeDir["magic_enum"] 		= "%{wks.location}/StreamlineCore/dependencies/magic_enum"
 
 include "StreamlineCore"
 include "TestApp"
