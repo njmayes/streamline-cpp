@@ -2,24 +2,12 @@
 
 #include "EventModelAllocator.h"
 
-#include "ApplicationEvent.h"
-#include "KeyEvent.h"
-#include "MouseEvent.h"
-
 #include "Containers/Vector.h"
 #include "Containers/Deque.h"
 
 namespace slc {
 
 	class IEventListener;
-
-	using slcEventList = TypeList<
-		WindowCloseEvent, WindowResizeEvent, WindowFocusEvent, WindowFocusLostEvent, WindowMovedEvent,
-		AppTickEvent, AppUpdateEvent, AppRenderEvent,
-		KeyPressedEvent, KeyReleasedEvent, KeyTypedEvent,
-		MouseButtonPressedEvent, MouseButtonReleasedEvent,
-		MouseMovedEvent, MouseScrolledEvent
-	>;
 
 	/// <summary>
 	/// The interface by which events are queued and handled. Use the Post(...) method to submit an event

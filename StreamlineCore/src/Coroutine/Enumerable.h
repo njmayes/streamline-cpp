@@ -57,8 +57,8 @@ namespace slc {
 
 	/// <summary>
 	/// Provides support for lazy evaluation of an enumerable sequence and a C# IEnumerable style interface. The first element of the 
-	/// enumerable is evaluation eagerly to ensure the lifetime of temporary enumerable objects is maintained on chained functions.
-	/// If the derived type TEnum satisfies std::ranges::range<TEnum> then use the MAKE_RANGE_ENUMERABLE(TEnum) to override GetEnumerator(). 
+	/// enumerable is evaluated eagerly to ensure the lifetime of temporary enumerable objects is maintained on chained functions.
+	/// If the derived type T satisfies std::ranges::range&lt;T&gt; then use the MAKE_RANGE_ENUMERABLE(T) macro to override GetEnumerator(). 
 	/// Otherwise, provide an override for GetEnumerator() that yields each item in the enumeration in sequence.
 	/// </summary>
 	/// <typeparam name="T">The type returned on each evaluation of the enumeration.</typeparam>
@@ -449,10 +449,10 @@ namespace slc {
 			}
 		}
 
-		template<typename Self, typename TKey, typename TValue,
+		template<typename TKey, typename TValue, typename Self,
 			typename Hash = std::hash<TKey>,
 			typename KeyEqual = std::equal_to<TKey>,
-			typename Allocator = std::allocator<TKey>
+			typename Allocator = std::allocator<std::pair<const TKey, TValue>>
 		>
 		Dictionary<TKey, TValue, Hash, KeyEqual, Allocator> ToDictionary(this Self&& self) requires std::convertible_to<T, std::pair<TKey, TValue>>
 		{
@@ -565,7 +565,7 @@ namespace slc {
 
 
 	private:
-		template<std::size_t N, std::size_t... Is>
+		template<std::size_t N>
 		static Array<T, N> ArrayConversion(const Array<const T*, N>& values)
 		{
 			return ArrayConversionInternal(values, std::make_index_sequence<N>());

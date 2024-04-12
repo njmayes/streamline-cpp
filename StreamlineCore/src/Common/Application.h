@@ -62,7 +62,7 @@ namespace slc {
 	class Application : public IEventListener
 	{
 	public:
-		LISTENING_EVENTS(WindowClose, WindowResize)
+		LISTENING_EVENTS(EventType::WindowClose, EventType::WindowResize)
 
 	public:
 		Application(ApplicationSpecification* spec);

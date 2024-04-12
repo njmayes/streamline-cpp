@@ -2,10 +2,26 @@
 
 #include "Event.h"
 
+#include "ApplicationEvent.h"
+#include "KeyEvent.h"
+#include "MouseEvent.h"
+
 #include "Allocators/PoolAllocator.h"
 #include "Containers/Dictionary.h"
+#include "Containers/Array.h"
 
 namespace slc {
+
+	namespace EventList
+	{
+		using All = TypeList<
+			WindowCloseEvent, WindowResizeEvent, WindowFocusEvent, WindowFocusLostEvent, WindowMovedEvent,
+			AppTickEvent, AppUpdateEvent, AppRenderEvent,
+			KeyPressedEvent, KeyReleasedEvent, KeyTypedEvent,
+			MouseButtonPressedEvent, MouseButtonReleasedEvent,
+			MouseMovedEvent, MouseScrolledEvent
+		>;
+	}
 
 	/// <summary>
 	/// Allocates and constructs event models for any given event type.
@@ -13,6 +29,9 @@ namespace slc {
 	class EventModelAllocator
 	{
 	private:
+		using TypeName = std::string_view;
+		SCONSTEXPR size_t DefaultModelChunkSize = 4;
+
 		struct ModelAllocator
 		{
 			Impl<IAllocator> allocator = nullptr;
@@ -23,8 +42,35 @@ namespace slc {
 				: allocator(std::move(alloc)), remaining(allocator->Size()) {}
 		};
 
+		using InternalAllocatorElement = std::pair<TypeName, ModelAllocator>;
+		using InternalAllocatorArray = std::array<InternalAllocatorElement, EventList::All::Size>;
+
+		template<size_t I> requires (I < EventList::All::Size)
+		inline static InternalAllocatorElement BuildEventAllocator()
+		{
+			using Type = EventList::All::Type<I>;
+			return std::make_pair(TypeTraits<Type>::LongName, MakeImpl<PoolAllocator<EventModel<Type>>>(DefaultModelChunkSize));
+		}
+
+		template<size_t... Is> 
+		inline static InternalAllocatorArray BuildAllEventAllocators(std::index_sequence<Is...>)
+		{
+			return { { BuildEventAllocator<Is>()... } };
+		}
+
+		inline static Array<InternalAllocatorElement, EventList::All::Size> BuildInternalEventAllocators()
+		{
+			return BuildAllEventAllocators(std::make_index_sequence<EventList::All::Size>());
+		}
+
+		inline static Dictionary<TypeName, ModelAllocator> ConstructAllocatorDictionary() { return BuildInternalEventAllocators().ToDictionary<TypeName, ModelAllocator>(); }
+
 	public:
-		EventModelAllocator() = default;
+		EventModelAllocator()
+			: mModelAllocators(ConstructAllocatorDictionary())
+		{
+
+		}
 		~EventModelAllocator()
 		{
 			CleanupDefaultNewPointers();
@@ -112,9 +158,6 @@ namespace slc {
 		}
 
 	private:
-		using TypeName = std::string_view;
-		SCONSTEXPR size_t DefaultModelChunkSize = 4;
-
 		Dictionary<TypeName, ModelAllocator> mModelAllocators;
 		std::vector<EventConcept*> mOverflowPointers;
 	};

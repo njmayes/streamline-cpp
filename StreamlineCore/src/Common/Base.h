@@ -20,9 +20,9 @@ namespace slc {
     using Ref = std::shared_ptr<T>;
 
     template<typename T, typename... Args>
-    inline static Impl<T> MakeImpl(Args&&... args) { return std::make_unique<T>(std::forward<Args>(args)...); }
+    inline static constexpr Impl<T> MakeImpl(Args&&... args) { return std::make_unique<T>(std::forward<Args>(args)...); }
     template<typename T, typename... Args>
-    inline static Ref<T> MakeRef(Args&&... args) { return std::make_shared<T>(std::forward<Args>(args)...); }
+    inline static constexpr Ref<T> MakeRef(Args&&... args) { return std::make_shared<T>(std::forward<Args>(args)...); }
 
     template<typename TResult, typename... TArgs>
     using Func = std::function<TResult(TArgs...)>;
