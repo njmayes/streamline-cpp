@@ -5,7 +5,6 @@
 #include "Widgets/Combobox.h"
 #include "Widgets/MenuBar.h"
 #include "Widgets/PopUp.h"
-#include "Widgets/Payload.h"
 
 #include "Containers/Span.h"
 
@@ -70,26 +69,39 @@ namespace slc {
 		static void NextColumn();
 		static void EndColumns();
 
-		static void TreeNode(void* id, std::string_view text, bool selected, Action<> whileOpen);
+		static void TreeNode(void* id, std::string_view text, bool selected, IsAction auto&& whileOpen)
+		{
+			if (TreeNodeExInternal(id, text, selected))
+			{
+				whileOpen();
+				TreePopInternal();
+			}
+		}
 		static bool TreeNodeEx(void* id, std::string_view text, ImGuiTreeNodeFlags flags);
 
-		static void Selectable(std::string_view label, bool selected, Action<> action);
+		static void Selectable(std::string_view label, bool selected, IsAction auto&& action)
+		{
+			if (SelectableInternal(label, selected))
+			{
+				action();
+			}
+		}
 
 		static void BeginMenuBar();
 		static void AddMenuBarHeading(std::string_view heading);
-		static void AddMenuBarItem(std::string_view heading, Action<> action);
-		static void AddMenuBarItem(std::string_view heading, std::string_view shortcut, Action<> action);
+		static void AddMenuBarItem(std::string_view heading, Action<>&& action);
+		static void AddMenuBarItem(std::string_view heading, std::string_view shortcut, Action<>&& action);
 		static void AddMenuBarItem(std::string_view heading, bool& displayed);
 		static void AddMenuBarSeparator();
 		static void EndMenuBar();
 
 		static void OpenPopup(std::string_view popupName);
 		static void BeginPopup(std::string_view popupName);
-		static void AddPopupItem(std::string_view heading, Action<> action);
+		static void AddPopupItem(std::string_view heading, Action<>&& action);
 		static void EndPopup();
 
 		static void BeginContextPopup();
-		static void AddContextItem(std::string_view heading, Action<> action);
+		static void AddContextItem(std::string_view heading, Action<>&& action);
 		static void EndContextPopup();
 
 		static void Label(std::string_view fmt);
@@ -109,8 +121,8 @@ namespace slc {
 
 			field = (T)result;
 		}
-		template<std::signed_integral T>
-		static void IntEdit(std::string_view label, T field, Action<T> onEdit)
+		template<std::signed_integral T, typename Func> requires IsAction<T>
+		static void IntEdit(std::string_view label, T field, Func&& onEdit)
 		{
 			int64_t result = ScalarEdit(label, field);
 			if (result < Limits<T>::Min)
@@ -118,8 +130,9 @@ namespace slc {
 			else if (result > Limits<T>::Max)
 				result = Limits<T>::Max;
 
-			field = (T)result;
-			onEdit(field);
+			T resultVal = (T)result;
+			if (field != resultVal)
+				onEdit(resultVal);
 		}
 
 		template<std::unsigned_integral T>
@@ -133,8 +146,8 @@ namespace slc {
 
 			field = (T)result;
 		}
-		template<std::unsigned_integral T>
-		static void UIntEdit(std::string_view label, T field, Action<T> onEdit)
+		template<std::unsigned_integral T, typename Func> requires IsAction<T>
+		static void UIntEdit(std::string_view label, T field, Func&& onEdit)
 		{
 			uint64_t result = UScalarEdit(label, field);
 			if (result < Limits<T>::Min)
@@ -142,42 +155,75 @@ namespace slc {
 			else if (result > Limits<T>::Max)
 				result = Limits<T>::Max;
 
-			field = (T)result;
-			onEdit(field);
+			T resultVal = (T)result;
+			if (field != resultVal)
+				onEdit(resultVal);
 		}
 
-		static void FloatEdit(std::string_view label, float& field, float speed = 1.0f, float mix = 0.0f, float max = 0.0f);
-		static void FloatEdit(std::string_view label, float field, Action<float> onEdit, float speed = 1.0f, float mix = 0.0f, float max = 0.0f);
-		static void DoubleEdit(std::string_view label, double& field, float speed = 1.0f, float mix = 0.0f, float max = 0.0f);
-		static void DoubleEdit(std::string_view label, double field, Action<double> onEdit, float speed = 1.0f, float mix = 0.0f, float max = 0.0f);
+		static void FloatEdit(std::string_view label, float& field, float speed = 1.0f, float min = 0.0f, float max = 0.0f)
+		{
+			field = FloatEditInternal(label, field, speed, min, max);
+		}
+		template<typename Func> requires IsAction<float>
+		static void FloatEdit(std::string_view label, float field, Func&& onEdit, float speed = 1.0f, float min = 0.0f, float max = 0.0f)
+		{
+			float result = FloatEditInternal(label, field, speed, min, max);
+
+			if (field != result)
+				onEdit(result);
+		}
 
 		template<VecSized<ImVec2> T>
 		static void Vector2Edit(std::string_view label, T& values, float resetVal = 0.0f, float colWidth = 100.0f)
 		{
 			ImVec2 imValues = Utils::ToImVec<ImVec2>(values);
-			Vector2EditInternal(label, imValues, resetVal, colWidth);
+			Vector2EditInternalRef(label, imValues, resetVal, colWidth);
 			values = Utils::FromImVec<T>(imValues);
 		}
 		template<VecSized<ImVec3> T>
 		static void Vector3Edit(std::string_view label, T& values, float resetVal = 0.0f, float colWidth = 100.0f)
 		{
 			ImVec3 imValues = Utils::ToImVec<ImVec3>(values);
-			Vector3EditInternal(label, imValues, resetVal, colWidth);
+			Vector3EditInternalRef(label, imValues, resetVal, colWidth);
 			values = Utils::FromImVec<T>(imValues);
 		}
 		template<VecSized<ImVec4> T>
 		static void Vector4Edit(std::string_view label, T& values, float resetVal = 0.0f, float colWidth = 100.0f)
 		{
 			ImVec4 imValues = Utils::ToImVec<ImVec4>(values);
-			Vector4EditInternal(label, imValues, resetVal, colWidth);
+			Vector4EditInternalRef(label, imValues, resetVal, colWidth);
 			values = Utils::FromImVec<T>(imValues);
 		}
-		template<VecSized<ImVec2> T>
-		static void Vector2Edit(std::string_view label, T values, Action<const ImVec2&> onEdit, float resetVal = 0.0f, float colWidth = 100.0f) { Vector2EditInternal(label, Utils::ToImVec<ImVec2>(values), onEdit, resetVal, colWidth); }
-		template<VecSized<ImVec3> T>
-		static void Vector3Edit(std::string_view label, T values, Action<const ImVec3&> onEdit, float resetVal = 0.0f, float colWidth = 100.0f) { Vector3EditInternal(label, Utils::ToImVec<ImVec3>(values), onEdit, resetVal, colWidth); }
-		template<VecSized<ImVec4> T>
-		static void Vector4Edit(std::string_view label, T values, Action<const ImVec4&> onEdit, float resetVal = 0.0f, float colWidth = 100.0f) { Vector4EditInternal(label, Utils::ToImVec<ImVec4>(values), onEdit, resetVal, colWidth); }
+		template<VecSized<ImVec2> T, IsAction<const ImVec2&> Func>
+		static void Vector2Edit(std::string_view label, T values, Func&& onEdit, float resetVal = 0.0f, float colWidth = 100.0f)
+		{ 
+			auto cmpVal = Utils::ToImVec<ImVec2>(values);
+			auto newValues = Vector2EditInternal(label, cmpVal, resetVal, colWidth);
+			if (newValues.x != cmpVal.x or newValues.y != cmpVal.y)
+			{
+				onEdit(Utils::FromImVec<T>(newValues));
+			}
+		}
+		template<VecSized<ImVec3> T, IsAction<const ImVec3&> Func>
+		static void Vector3Edit(std::string_view label, T values, Func&& onEdit, float resetVal = 0.0f, float colWidth = 100.0f)
+		{
+			auto cmpVal = Utils::ToImVec<ImVec3>(values);
+			auto newValues = Vector3EditInternal(label, cmpVal, resetVal, colWidth);
+			if (newValues.x != cmpVal.x or newValues.y != cmpVal.y or newValues.z != cmpVal.z)
+			{
+				onEdit(Utils::FromImVec<T>(newValues));
+			}
+		}
+		template<VecSized<ImVec4> T, IsAction<const ImVec4&> Func>
+		static void Vector4Edit(std::string_view label, T values, Func&& onEdit, float resetVal = 0.0f, float colWidth = 100.0f)
+		{
+			auto cmpVal = Utils::ToImVec<ImVec4>(values);
+			auto newValues = Vector4EditInternal(label, cmpVal, resetVal, colWidth);
+			if (newValues.x != cmpVal.x or newValues.y != cmpVal.y or newValues.z != cmpVal.z or newValues.w != cmpVal.w)
+			{
+				onEdit(Utils::FromImVec<T>(newValues));
+			}
+		}
 
 		template<VecSized<ImVec4> T>
 		static void ColourEdit(std::string_view label, T& colour)
@@ -195,21 +241,34 @@ namespace slc {
 			ImageInternal((ImTextureID)image, Utils::ToImVec<ImVec2>(size), rotation, Utils::ToImVec<ImVec2>(uv0), Utils::ToImVec<ImVec2>(uv1));
 		}
 
-		template<VecSized<ImVec2> T>
-		static void ImageButton(uintptr_t image, const T& size, Action<> action = {}) { ImageButtonInternal((ImTextureID)image, Utils::ToImVec<ImVec2>(size), action); }
-		template<VecSized<ImVec2> T>
-		static void ImageButton(uintptr_t image, const T& size, Action<> action, const T& uv0, const T& uv1, int padding = -1)
+		template<VecSized<ImVec2> T, IsAction Func>
+		static void ImageButton(uintptr_t image, const T& size, Func&& action = {}) 
+		{ 
+			if (ImageButtonInternal((ImTextureID)image, Utils::ToImVec<ImVec2>(size)) && action)
+			{
+				action();
+			}
+
+		}
+		template<VecSized<ImVec2> T, IsAction Func>
+		static void ImageButton(uintptr_t image, const T& size, Func&& action, const T& uv0, const T& uv1, int padding = -1)
 		{
-			ImageButtonInternal((ImTextureID)image, Utils::ToImVec<ImVec2>(size), action, Utils::ToImVec<ImVec2>(uv0), Utils::ToImVec<ImVec2>(uv1), padding);
+			if (ImageButtonInternal((ImTextureID)image, Utils::ToImVec<ImVec2>(size), Utils::ToImVec<ImVec2>(uv0), Utils::ToImVec<ImVec2>(uv1), padding))
+			{
+				action();
+			}
 		}
 
 		template<typename T>
 		static void AddDragDropSource(std::string_view strID, const T& data)
 		{
-			DragDropSourceInternal(strID, [&]() { sCurrentPayload = std::make_unique<Payload<T>>(data); });
+			if (!BeginDragDropSourceInternal())
+				return;
+
+			EndDragDropSourceInternal(strID, &data, sizeof(T));
 		}
-		template<typename T>
-		static void AddDragDropTarget(std::string_view strID, Action<const T&> response)
+		template<typename T, IsAction<const T&> Func>
+		static void AddDragDropTarget(std::string_view strID, Func&& response)
 		{
 			void* imguiPayload = DragDropTargetInternal(strID);
 			if (!imguiPayload)
@@ -219,14 +278,45 @@ namespace slc {
 			response(payload);
 		}
 
-		static void OnWidgetSelected(Action<> action);
-		static void OnWidgetHovered(Action<> action, Action<> elseAction = {});
+		static void OnWidgetSelected(IsAction auto&& action)
+		{
+			if (Utils::ItemHovered() and Utils::IsLeftMouseDoubleClicked())
+			{
+				action();
+			}
+		}
+		static void OnWidgetHovered(IsAction auto&& action, IsAction auto&& elseAction = {})
+		{
+			if (Utils::ItemHovered())
+				action();
+			else if (elseAction)
+				elseAction();
+		}
 
-		static void Checkbox(std::string_view label, bool& value, Action<> action = {});
+		static void Checkbox(std::string_view label, bool& value, IsAction auto&& action = {})
+		{
+			if (CheckboxInternal(label, value) and action)
+			{
+				action();
+			}
+		}
 
-		static void Button(std::string_view label, Action<> action = {});
-		template<typename T> requires VecSized<ImVec2, T>
-		static void Button(const T& size, std::string_view label, Action<> action = {}) { ButtonInternal(label, Utils::ToImVec<ImVec2>(size), action); }
+		template<IsAction Func>
+		static void Button(std::string_view label, Func&& action = {})
+		{
+			if (ButtonInternal(label) && action)
+			{
+				action();
+			}
+		}
+		template<typename T, IsAction Func> requires VecSized<ImVec2, T>
+		static void Button(const T& size, std::string_view label, Func&& action = {}) 
+		{ 
+			if (ButtonInternal(label, Utils::ToImVec<ImVec2>(size)) && action)
+			{
+				action();
+			}
+		}
 
 		template<typename T> requires std::copy_constructible<T>
 		static void Combobox(std::string_view label, std::string_view preview, T& value, Span<const ComboEntry<T>> table)
@@ -252,8 +342,8 @@ namespace slc {
 			value = T(*(const T*)comboEntry->getVal());
 		}
 
-		template<typename T>
-		static void Combobox(std::string_view label, std::string_view preview, T value, Span<const ComboEntry<T>> table, Action<std::string_view, const T&> onSelection)
+		template<typename T, typename Func> requires IsAction<Func, std::string_view, const T&>
+		static void Combobox(std::string_view label, std::string_view preview, T value, Span<const ComboEntry<T>> table, Func&& onSelection)
 		{
 			if (!BeginCombo(label, preview))
 				return;
@@ -277,30 +367,36 @@ namespace slc {
 		}
 
 	private:
+		static bool TreeNodeExInternal(void* id, std::string_view text, bool selected);
+		static void TreePopInternal();
+
+		static bool SelectableInternal(std::string_view label, bool selected);
+
 		static void BeginChildInternal(std::string_view strID, const ImVec2& size = { 0.0f, 0.0f }, bool border = true);
 
-		static void ButtonInternal(std::string_view label, const ImVec2& size, Action<> action = {});
+		static bool CheckboxInternal(std::string_view label, bool& value);
+		static bool ButtonInternal(std::string_view label);
+		static bool ButtonInternal(std::string_view label, const ImVec2& size);
 
 		static int64_t ScalarEdit(std::string_view label, int64_t field);
-		static void ScalarEdit(std::string_view label, int64_t field, Action<int64_t> onEdit);
 		static uint64_t UScalarEdit(std::string_view label, uint64_t field);
-		static void UScalarEdit(std::string_view label, uint64_t field, Action<uint64_t> onEdit);
 
-		static void Vector2EditInternal(std::string_view label, ImVec2& values, float resetVal = 0.0f, float colWidth = 100.0f);
-		static void Vector3EditInternal(std::string_view label, ImVec3& values, float resetVal = 0.0f, float colWidth = 100.0f);
-		static void Vector4EditInternal(std::string_view label, ImVec4& values, float resetVal = 0.0f, float colWidth = 100.0f);
-		static void Vector2EditInternal(std::string_view label, ImVec2 values, Action<const ImVec2&> onEdit, float resetVal = 0.0f, float colWidth = 100.0f);
-		static void Vector3EditInternal(std::string_view label, ImVec3 values, Action<const ImVec3&> onEdit, float resetVal = 0.0f, float colWidth = 100.0f);
-		static void Vector4EditInternal(std::string_view label, ImVec4 values, Action<const ImVec4&> onEdit, float resetVal = 0.0f, float colWidth = 100.0f);
+		static float FloatEditInternal(std::string_view label, float field, float speed, float min, float max);
+
+		static void Vector2EditInternalRef(std::string_view label, ImVec2& values, float resetVal = 0.0f, float colWidth = 100.0f);
+		static void Vector3EditInternalRef(std::string_view label, ImVec3& values, float resetVal = 0.0f, float colWidth = 100.0f);
+		static void Vector4EditInternalRef(std::string_view label, ImVec4& values, float resetVal = 0.0f, float colWidth = 100.0f);
+		static ImVec2 Vector2EditInternal(std::string_view label, ImVec2 values, float resetVal = 0.0f, float colWidth = 100.0f);
+		static ImVec3 Vector3EditInternal(std::string_view label, ImVec3 values, float resetVal = 0.0f, float colWidth = 100.0f);
+		static ImVec4 Vector4EditInternal(std::string_view label, ImVec4 values, float resetVal = 0.0f, float colWidth = 100.0f);
 
 		static void ColourEditInternal(std::string_view label, ImVec4& colour);
 
-		static void TreeNodeInternal(void* id, std::string_view text, bool selected, ImGuiTreeNodeFlags flags, Action<> whileOpen);
-
 		static void ImageInternal(ImTextureID image, const ImVec2& size, float rotation = 0.0f, const ImVec2& uv0 = { 0.0f, 0.0f }, const ImVec2& uv1 = { 1.0f, 1.0f });
-		static void ImageButtonInternal(ImTextureID image, const ImVec2& size, Action<> action = {}, const ImVec2& uv0 = { 0.0f, 0.0f }, const ImVec2& uv1 = { 1.0f, 1.0f }, int padding = -1);
+		static bool ImageButtonInternal(ImTextureID image, const ImVec2& size, const ImVec2& uv0 = { 0.0f, 0.0f }, const ImVec2& uv1 = { 1.0f, 1.0f }, int padding = -1);
 
-		static void DragDropSourceInternal(std::string_view strID, Action<> createPayload);
+		static bool BeginDragDropSourceInternal();
+		static void EndDragDropSourceInternal(std::string_view strID, const void* data, size_t size);
 		static void* DragDropTargetInternal(std::string_view strID);
 
 		static bool BeginCombo(std::string_view label, std::string_view preview);
@@ -308,7 +404,6 @@ namespace slc {
 		static void EndCombo();
 
 	private:
-		inline static Impl<IPayload>	sCurrentPayload  = nullptr;
 		inline static UI::MenuBar		sCurrentMenuBar;
 		inline static UI::PopUp			sCurrentPopup;
 		inline static UI::PopUpContext	sCurrentPopupCtx;

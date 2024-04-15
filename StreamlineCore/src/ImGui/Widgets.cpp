@@ -142,9 +142,9 @@ namespace slc {
 		ImGui::EndGroup();
 	}
 
-	void Widgets::TreeNode(void* id, std::string_view text, bool selected, Action<> whileOpen)
+	bool Widgets::SelectableInternal(std::string_view label, bool selected)
 	{
-		TreeNodeInternal(id, text, selected, ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth, whileOpen);
+		return ImGui::Selectable(label.data(), selected);
 	}
 
 	bool Widgets::TreeNodeEx(void* id, std::string_view text, ImGuiTreeNodeFlags flags)
@@ -152,20 +152,16 @@ namespace slc {
 		return ImGui::TreeNodeEx(id, flags, "%s", text.data());
 	}
 
-	void Widgets::Selectable(std::string_view label, bool selected, Action<> action)
+	bool Widgets::TreeNodeExInternal(void* id, std::string_view text, bool selected)
 	{
-		if (ImGui::Selectable(label.data(), selected))
-			action();
+		ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
+		flags |= selected ? ImGuiTreeNodeFlags_Selected : 0;
+		return ImGui::TreeNodeEx((void*)&id, flags, "%s", text.data());
 	}
 
-	void Widgets::TreeNodeInternal(void* id, std::string_view text, bool selected, ImGuiTreeNodeFlags flags, Action<> whileOpen)
+	void Widgets::TreePopInternal()
 	{
-		flags |= selected ? ImGuiTreeNodeFlags_Selected : 0;
-		if (ImGui::TreeNodeEx((void*)&id, flags, "%s", text.data()))
-		{
-			whileOpen();
-			ImGui::TreePop();
-		}
+		ImGui::TreePop();
 	}
 
 	void Widgets::BeginMenuBar()
@@ -178,14 +174,14 @@ namespace slc {
 		sCurrentMenuBar.AddHeading(heading);
 	}
 
-	void Widgets::AddMenuBarItem(std::string_view heading, Action<> action)
+	void Widgets::AddMenuBarItem(std::string_view heading, Action<>&& action)
 	{
-		sCurrentMenuBar.AddMenuItemAction(heading, "", action);
+		sCurrentMenuBar.AddMenuItemAction(heading, "", std::move(action));
 	}
 
-	void Widgets::AddMenuBarItem(std::string_view heading, std::string_view shortcut, Action<> action)
+	void Widgets::AddMenuBarItem(std::string_view heading, std::string_view shortcut, Action<>&& action)
 	{
-		sCurrentMenuBar.AddMenuItemAction(heading, shortcut, action);
+		sCurrentMenuBar.AddMenuItemAction(heading, shortcut, std::move(action));
 	}
 
 	void Widgets::AddMenuBarItem(std::string_view heading, bool& displayed)
@@ -213,9 +209,9 @@ namespace slc {
 		sCurrentPopup = UI::PopUp(popupName);
 	}
 
-	void Widgets::AddPopupItem(std::string_view heading, Action<> action)
+	void Widgets::AddPopupItem(std::string_view heading, Action<>&& action)
 	{
-		sCurrentPopup.AddPopUpItem(heading, action);
+		sCurrentPopup.AddPopUpItem(heading, std::move(action));
 	}
 
 	void Widgets::EndPopup()
@@ -228,9 +224,9 @@ namespace slc {
 		sCurrentPopupCtx = UI::PopUpContext();
 	}
 
-	void Widgets::AddContextItem(std::string_view heading, Action<> action)
+	void Widgets::AddContextItem(std::string_view heading, Action<>&& action)
 	{
-		sCurrentPopupCtx.AddPopUpItem(heading, action);
+		sCurrentPopupCtx.AddPopUpItem(heading, std::move(action));
 	}
 
 	void Widgets::EndContextPopup()
@@ -273,13 +269,15 @@ namespace slc {
 			field = stringEditBuffer.toString();
 	}
 
-	void Widgets::DragDropSourceInternal(std::string_view strID, Action<> createPayload)
+	bool Widgets::BeginDragDropSourceInternal()
 	{
-		if (!ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID))
-			return;
+		return ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID);
+	}
 
-		createPayload();
-		ImGui::SetDragDropPayload(strID.data(), sCurrentPayload->data(), sCurrentPayload->size());
+
+	void Widgets::EndDragDropSourceInternal(std::string_view strID, const void* data, size_t size)
+	{
+		ImGui::SetDragDropPayload(strID.data(), data, size);
 		ImGui::EndDragDropSource();
 	}
 
@@ -296,67 +294,22 @@ namespace slc {
 		return payload->Data;
 	}
 
-	void Widgets::OnWidgetSelected(Action<> action)
+	bool Widgets::CheckboxInternal(std::string_view label, bool& value)
 	{
-		if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
-			action();
+		return ImGui::Checkbox(label.data(), &value);
 	}
 
-	void Widgets::OnWidgetHovered(Action<> action, Action<> elseAction)
+	bool Widgets::ButtonInternal(std::string_view label)
 	{
-		if (ImGui::IsItemHovered(ImGuiHoveredFlags_RectOnly))
-			action();
-		else if (elseAction)
-			elseAction();
+		return ImGui::Button(label.data());
 	}
 
-	void Widgets::Checkbox(std::string_view label, bool& value, Action<> action)
+	bool Widgets::ButtonInternal(std::string_view label, const ImVec2& size)
 	{
-		if (ImGui::Checkbox(label.data(), &value) && action)
-			action();
+		return ImGui::Button(label.data(), size);
 	}
 
-	void Widgets::Button(std::string_view label, Action<> action)
-	{
-		if (ImGui::Button(label.data()) && action)
-			action();
-	}
-
-	void Widgets::ButtonInternal(std::string_view label, const ImVec2& size, Action<> action)
-	{
-		if (ImGui::Button(label.data(), size) && action)
-			action();
-	}
-
-	void Widgets::FloatEdit(std::string_view label, float& field, float speed, float mix, float max)
-	{
-		ImGui::DragFloat(label.data(), &field);
-	}
-
-	void Widgets::FloatEdit(std::string_view label, float field, Action<float> onEdit, float speed, float mix, float max)
-	{
-		if (ImGui::DragFloat(label.data(), &field))
-			onEdit(field);
-	}
-
-	void Widgets::DoubleEdit(std::string_view label, double field, Action<double> onEdit, float speed, float mix, float max)
-	{
-		float tmp = (float)field;
-		if (ImGui::DragFloat(label.data(), &tmp))
-		{
-			field = (double)tmp;
-			onEdit(field);
-		}
-	}
-
-	void Widgets::DoubleEdit(std::string_view label, double& field, float speed, float mix, float max)
-	{
-		float tmp = (float)field;
-		ImGui::DragFloat(label.data(), &tmp);
-		field = (double)tmp;
-	}
-
-	void Widgets::Vector2EditInternal(std::string_view label, ImVec2& values, float resetVal, float colWidth)
+	void Widgets::Vector2EditInternalRef(std::string_view label, ImVec2& values, float resetVal, float colWidth)
 	{
 		ImGuiIO& io = ImGui::GetIO();
 		auto boldFont = io.Fonts->Fonts[0];
@@ -408,7 +361,7 @@ namespace slc {
 		ImGui::PopID();
 	}
 
-	void Widgets::Vector3EditInternal(std::string_view label, ImVec3& values, float resetVal, float colWidth)
+	void Widgets::Vector3EditInternalRef(std::string_view label, ImVec3& values, float resetVal, float colWidth)
 	{
 		ImGuiIO& io = ImGui::GetIO();
 		auto boldFont = io.Fonts->Fonts[0];
@@ -474,7 +427,7 @@ namespace slc {
 		ImGui::PopID();
 	}
 
-	void Widgets::Vector4EditInternal(std::string_view label, ImVec4& values, float resetVal, float colWidth)
+	void Widgets::Vector4EditInternalRef(std::string_view label, ImVec4& values, float resetVal, float colWidth)
 	{
 		ImGuiIO& io = ImGui::GetIO();
 		auto boldFont = io.Fonts->Fonts[0];
@@ -554,10 +507,8 @@ namespace slc {
 		ImGui::PopID();
 	}
 
-	void Widgets::Vector2EditInternal(std::string_view label, ImVec2 values, Action<const ImVec2&> onEdit, float resetVal, float colWidth)
+	ImVec2 Widgets::Vector2EditInternal(std::string_view label, ImVec2 values, float resetVal, float colWidth)
 	{
-		ImVec2 tmp = values;
-
 		ImGuiIO& io = ImGui::GetIO();
 		auto boldFont = io.Fonts->Fonts[0];
 
@@ -607,14 +558,11 @@ namespace slc {
 
 		ImGui::PopID();
 
-		if (tmp.x != values.x || tmp.y != values.y)
-			onEdit(values);
+		return values;
 	}
 
-	void Widgets::Vector3EditInternal(std::string_view label, ImVec3 values, Action<const ImVec3&> onEdit, float resetVal, float colWidth)
+	ImVec3 Widgets::Vector3EditInternal(std::string_view label, ImVec3 values, float resetVal, float colWidth)
 	{
-		ImVec3 tmp = values;
-
 		ImGuiIO& io = ImGui::GetIO();
 		auto boldFont = io.Fonts->Fonts[0];
 
@@ -678,14 +626,11 @@ namespace slc {
 
 		ImGui::PopID();
 
-		if (tmp.x != values.x || tmp.y != values.y || tmp.z != values.z)
-			onEdit(values);
+		return values;
 	}
 
-	void Widgets::Vector4EditInternal(std::string_view label, ImVec4 values, Action<const ImVec4&> onEdit, float resetVal, float colWidth)
+	ImVec4 Widgets::Vector4EditInternal(std::string_view label, ImVec4 values, float resetVal, float colWidth)
 	{
-		ImVec4 tmp = values;
-
 		ImGuiIO& io = ImGui::GetIO();
 		auto boldFont = io.Fonts->Fonts[0];
 
@@ -763,8 +708,7 @@ namespace slc {
 
 		ImGui::PopID();
 
-		if (tmp.x != values.x || tmp.y != values.y || tmp.z != values.z || tmp.w != values.w)
-			onEdit(values);
+		return values;
 	}
 
 	void Widgets::ColourEditInternal(std::string_view label, ImVec4& colour)
@@ -777,24 +721,16 @@ namespace slc {
 		ImGui::Image(image, size, uv0, uv1);
 	}
 
-	void Widgets::ImageButtonInternal(ImTextureID image, const ImVec2& size, Action<> action, const ImVec2& uv0, const ImVec2& uv1, int padding)
+	bool Widgets::ImageButtonInternal(ImTextureID image, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1, int padding)
 	{
-		if (ImGui::ImageButton(image, size, uv0, uv1, padding) && action)
-			action();
+		return ImGui::ImageButton(image, size, uv0, uv1, padding);
 	}
 
 	int64_t Widgets::ScalarEdit(std::string_view label, int64_t field)
 	{
-		int width = (int)field;
-		ImGui::InputInt(label.data(), &width);
-		return (int64_t)width;
-	}
-
-	void Widgets::ScalarEdit(std::string_view label, int64_t field, Action<int64_t> onEdit)
-	{
-		int val = (int)field;
-		ImGui::InputInt(label.data(), &val);
-		onEdit((int64_t)val);
+		int scalar = (int)field;
+		ImGui::InputInt(label.data(), &scalar);
+		return (int64_t)scalar;
 	}
 
 	uint64_t Widgets::UScalarEdit(std::string_view label, uint64_t field)
@@ -806,13 +742,11 @@ namespace slc {
 		return (uint64_t)val;
 	}
 
-	void Widgets::UScalarEdit(std::string_view label, uint64_t field, Action<uint64_t> onEdit)
+	float Widgets::FloatEditInternal(std::string_view label, float field, float speed, float min, float max)
 	{
-		int val = (int)field;
-		ImGui::InputInt(label.data(), &val);
-		if (val < 0)
-			val = 0;
-		onEdit((uint64_t)val);
+		float val = (float)field;
+		ImGui::DragFloat(label.data(), &val, speed, min, max);
+		return (float)val;
 	}
 
 	bool Widgets::BeginCombo(std::string_view label, std::string_view preview)

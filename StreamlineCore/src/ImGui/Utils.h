@@ -77,6 +77,9 @@ namespace slc {
 		static float WindowWidth();
 		static float WindowHeight();
 
+		static bool ItemFocused();
+		static bool ItemHovered();
+
 		static bool WindowFocused();
 		static bool WindowHovered();
 
@@ -92,6 +95,9 @@ namespace slc {
 
 		static void PushStyleColour(ImGuiCol flags, const ImVec4& var);
 		static void PopStyleColour(int count = 1);
+
+		static bool IsLeftMouseClicked();
+		static bool IsLeftMouseDoubleClicked();
 
 	private:
 		static ImVec2 CursorPosInternal();
