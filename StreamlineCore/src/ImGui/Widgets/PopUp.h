@@ -10,8 +10,8 @@ namespace slc::UI {
 		std::string_view label;
 		Action<> action;
 
-		PopUpItem(std::string_view heading, Action<> delegate)
-			: label(heading), action(delegate) {}
+		PopUpItem(std::string_view heading, Action<>&& delegate)
+			: label(heading), action(std::move(delegate)) {}
 	};
 
 	class PopUp
@@ -21,7 +21,7 @@ namespace slc::UI {
 		PopUp(std::string_view strID) : mStrID(strID) {}
 		~PopUp();
 
-		void AddPopUpItem(std::string_view label, Action<> action);
+		void AddPopUpItem(std::string_view label, Action<>&& action);
 
 	private:
 		std::string_view mStrID;
@@ -33,7 +33,7 @@ namespace slc::UI {
 	public:
 		~PopUpContext();
 
-		void AddPopUpItem(std::string_view label, Action<> action);
+		void AddPopUpItem(std::string_view label, Action<>&& action);
 
 	private:
 		Vector<PopUpItem> mPopUpItems;

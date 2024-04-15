@@ -132,6 +132,16 @@ namespace slc {
 		return ImGui::GetWindowHeight();
 	}
 
+	bool Utils::ItemFocused()
+	{
+		return ImGui::IsItemFocused();
+	}
+
+	bool Utils::ItemHovered()
+	{
+		return ImGui::IsItemHovered();
+	}
+
 	bool Utils::WindowFocused()
 	{
 		return ImGui::IsWindowFocused();
@@ -185,5 +195,15 @@ namespace slc {
 	void Utils::PopStyleColour(int count)
 	{
 		ImGui::PopStyleColor(count);
+	}
+
+	bool Utils::IsLeftMouseClicked()
+	{
+		return ImGui::IsMouseClicked(ImGuiMouseButton_Left);
+	}
+
+	bool Utils::IsLeftMouseDoubleClicked()
+	{
+		return ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left);
 	}
 }

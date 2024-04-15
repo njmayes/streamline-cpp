@@ -23,9 +23,9 @@ namespace slc::UI {
 		ImGui::EndPopup();
 	}
 
-	void PopUp::AddPopUpItem(std::string_view label, Action<> action)
+	void PopUp::AddPopUpItem(std::string_view label, Action<>&& action)
 	{
-		mPopUpItems.emplace_back(label, action);
+		mPopUpItems.emplace_back(label, std::move(action));
 	}
 
 	PopUpContext::~PopUpContext()
@@ -43,8 +43,8 @@ namespace slc::UI {
 		ImGui::EndPopup();
 	}
 
-	void PopUpContext::AddPopUpItem(std::string_view label, Action<> action)
+	void PopUpContext::AddPopUpItem(std::string_view label, Action<>&& action)
 	{
-		mPopUpItems.emplace_back(label, action);
+		mPopUpItems.emplace_back(label, std::move(action));
 	}
 }

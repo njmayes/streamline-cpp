@@ -46,10 +46,10 @@ namespace slc::UI {
 		mMenuItems.emplace_back(heading);
 	}
 
-	void MenuBar::AddMenuItemAction(std::string_view label, std::string_view shortcut, Action<> action)
+	void MenuBar::AddMenuItemAction(std::string_view label, std::string_view shortcut, Action<>&& action)
 	{
 		MenuHeading& lastMenu = mMenuItems.back();
-		lastMenu.menu.emplace_back(MenuItemType::Action, label, shortcut, action);
+		lastMenu.menu.emplace_back(MenuItemType::Action, label, shortcut, std::move(action));
 	}
 
 	void MenuBar::AddMenuItemSwitch(std::string_view label, std::string_view shortcut, bool& show)

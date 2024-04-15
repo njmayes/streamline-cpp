@@ -19,8 +19,8 @@ namespace slc::UI {
 		bool* display = nullptr;
 
 		MenuItem(MenuItemType itemType) : type(itemType) {}
-		MenuItem(MenuItemType itemType, std::string_view heading, std::string_view key, Action<> delegate)
-			: type(itemType), label(heading), shortcut(key), action(delegate) {}
+		MenuItem(MenuItemType itemType, std::string_view heading, std::string_view key, Action<>&& delegate)
+			: type(itemType), label(heading), shortcut(key), action(std::move(delegate)) {}
 		MenuItem(MenuItemType itemType, std::string_view heading, std::string_view key, bool& show)
 			: type(itemType), label(heading), shortcut(key), display(&show) {}
 	};
@@ -41,7 +41,7 @@ namespace slc::UI {
 
 	public:
 		void AddHeading(std::string_view heading);
-		void AddMenuItemAction(std::string_view label, std::string_view shortcut, Action<> action);
+		void AddMenuItemAction(std::string_view label, std::string_view shortcut, Action<>&& action);
 		void AddMenuItemSwitch(std::string_view label, std::string_view shortcut, bool& show);
 		void AddSeparator();
 
