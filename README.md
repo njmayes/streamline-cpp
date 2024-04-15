@@ -1,17 +1,17 @@
 # streamline-cpp
 
-A general purpose C++20 desktop application framework.
+A general purpose C++23 desktop application framework.
 
 ## Description
 
-This is a general purpose C++20 framework/library, that contains a collection of shared code from various projects I have made over the years.
+This is a general purpose C++23 framework/library, that contains a collection of shared code from various projects I have made over the years.
 
 The core application framework uses a mixture of code from my WIP game engine [Labyrinth Engine](https://github.com/amayesingnathan/LabyrinthEngine) 
 as well as my C++20 Dear ImGui wrapper [imgui-cpp](https://github.com/amayesingnathan/imgui-cpp).
 
-This core framework combined with various other common bits of code and ideas, such as Rust-style Result types, complete with a form of basic
-pattern matching and Do notation, provides a selection of tools to save time rewriting application boilerplate code and reusing code ideas in 
-different places.
+This core framework combined with various other common bits of code and ideas, such as Rust-style Result types complete with a form of basic
+pattern matching and Do notation, or C# style enumerable types, provides a selection of tools to save time rewriting application boilerplate code 
+and reusing code ideas in different places.
   
 ### Dependencies
 
