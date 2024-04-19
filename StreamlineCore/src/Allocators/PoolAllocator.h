@@ -31,7 +31,7 @@ namespace slc {
         auto operator=(const PoolAllocator&) = delete;
         auto operator=(PoolAllocator&& other)
         {
-            if (mMemBlock)
+            if (mMemBlock != other.mMemBlock)
             {
                 ::operator delete(mMemBlock);
             }

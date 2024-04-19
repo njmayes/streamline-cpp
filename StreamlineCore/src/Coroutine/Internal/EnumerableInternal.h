@@ -15,16 +15,6 @@ namespace slc {
 }
 
 namespace slc::Internal {
-
-	template<typename T, typename R>
-	concept HasEnumeratorMemberFunction = std::derived_from<std::remove_reference_t<T>, IEnumerable<R>> and requires (T&& t)
-	{
-		{ t.GetEnumerator() } -> std::same_as<Enumerator<R>>;
-	};
-
-	template<typename T, typename R>
-	concept UserDefinedEnumerable = HasEnumeratorMemberFunction<T, R> and
-		!std::same_as<decltype(&std::remove_reference_t<T>::GetEnumerator), decltype(&IEnumerable<R>::GetEnumerator)>;
 	
 	template<typename T>
 	class EnumeratorPromise

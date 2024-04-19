@@ -16,15 +16,15 @@ namespace slc {
 			memcpy(this->mData.data(), string.c_str(), string.size());;
 		}
 
-		constexpr size_t length() const { return TSize; }
+		constexpr size_t Length() const { return TSize; }
 
-		operator char* ()
+		char* Data()
 		{
 			ASSERT(this->mData[TSize - 1] == 0); // At least the last character should be null
 			return (char*)this->mData.data();
 		}
 
-		std::string toString() const
+		std::string ToString() const
 		{
 			ASSERT(this->mData[TSize - 1] == 0); // At least the last character should be null
 			return (const char*)this->mData.data();

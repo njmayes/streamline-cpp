@@ -7,8 +7,8 @@
 #include "MouseEvent.h"
 
 #include "Allocators/PoolAllocator.h"
-#include "Containers/Dictionary.h"
-#include "Containers/Array.h"
+#include "Collections/Dictionary.h"
+#include "Collections/Array.h"
 
 namespace slc {
 

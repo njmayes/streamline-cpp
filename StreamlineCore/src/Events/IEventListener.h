@@ -17,7 +17,7 @@ namespace slc {
 		bool Accept(Event& event) const
 		{ 
 			//   Not already handled		Valid Event Type				Satisfies additional condition
-			return !event.Handled() && (GetListeningEvents() & event.Type()) && mAcceptCondition();
+			return !event.IsHandled() && (GetListeningEvents() & event.GetType()) && mAcceptCondition();
 		}
 
 	private:
