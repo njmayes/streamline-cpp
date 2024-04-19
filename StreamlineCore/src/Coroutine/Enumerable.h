@@ -27,7 +27,7 @@ namespace slc {
 	class IEnumerable;
 
 	template<typename T, typename R>
-	concept Enumerable = std::ranges::range<T> or Internal::UserDefinedEnumerable<T, R> or std::same_as<std::remove_reference_t<T>, IEnumerable<R>>;
+	concept Enumerable = std::derived_from<std::remove_reference_t<T>, IEnumerable<R>>;
 
 	class IEnumerableBase
 	{
@@ -37,13 +37,13 @@ namespace slc {
 		template<typename T>
 		Enumerator<T> AsEnumerable() { return dynamic_cast<IEnumerable<T>*>(this)->GetEnumeratorImpl(); }
 
-		template<Numeric StartType, UNumeric CountType>
-		static Enumerator<StartType> Range(StartType start, CountType count)
+		template<Numeric StartType>
+		static Enumerator<StartType> Range(StartType start, UNumeric auto count)
 		{
-			// Would go out of range, return empty sequence.
-			if (start > Limits<StartType> - (count - 1)) [[unlikely]]
+			// Would go out of range, iterate to max value
+			if (start > Limits<StartType>::Max - (count - 1)) [[unlikely]]
 			{
-				co_return;
+				count = Limits<StartType>::Max - start + 1;
 			}
 
 			for (StartType i = start; i < start + count; i++)
@@ -94,7 +94,7 @@ namespace slc {
 		EnumeratorType GetEnumeratorImpl(this Self&& self)
 		{
 			// If possible directly dispatch correct function at compile time rather than 
-			// resorting to virtual function. This is ossible when method is called on
+			// resorting to virtual function. This is possible when method is called on
 			// a derived type and type information can be determined from Self.
 
 			using Type = std::remove_reference_t<Self>;
@@ -108,12 +108,12 @@ namespace slc {
 			else if constexpr (std::ranges::range<Type>)
 			{
 				// Use std::ranges::range concept to get Enumerator
-				return self.GetEnumeratorForRange();
+				return std::forward<Self>(self).GetEnumeratorForRange();
 			}
-			else if constexpr (Internal::UserDefinedEnumerable<Type, T> or std::same_as<Type, IEnumerable<T>>)
+			else
 			{
 				// Use overriden GetEnumerator method. Used for user defined types or when called from IEnumerableBase
-				return self.GetEnumerator();
+				return std::forward<Self>(self).GetEnumerator();
 			}
 		}
 

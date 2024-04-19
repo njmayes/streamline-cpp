@@ -4,8 +4,18 @@
 
 namespace slc {
 
-	// Forward declare for use in IsEvent concept
-	struct EventBase;
+	/// <summary>
+	/// The base class for all events that contains metadata like the event type and 
+	/// whether the event has been handled. Metadata only accessible from EventConcept.
+	/// </summary>
+	struct EventBase
+	{
+	private:
+		bool handled = false;
+		EventTypeFlag type = EventType::None;
+
+		friend struct EventConcept;
+	};
 
 	/// <summary>
 	/// Event types must derive from EventBase and implement a static function
@@ -19,31 +29,28 @@ namespace slc {
 	};
 
 	/// <summary>
-	/// The base class for all events that contains metadata like the event type and 
-	/// whether the event has been handled. Can only be accessed from friend classes.
-	/// </summary>
-	struct EventBase
-	{
-	private:
-		bool handled = false;
-		EventTypeFlag type = EventType::None;
-
-		friend class Event;
-		friend class EventManager;
-
-		template<IsEvent T>
-		friend struct EventModel;
-	};
-
-	/// <summary>
-	/// Type erasure interface base class with access methods for metadata
+	/// Type erasure interface base class with access methods for metadata.
 	/// </summary>
 	struct EventConcept
 	{
-		virtual ~EventConcept() {}
-		virtual bool Handled() const = 0;
-		virtual void SetHandled() = 0;
-		virtual EventTypeFlag Type() const = 0;
+		EventConcept(EventBase* base)
+			: metadata(base) {}
+
+		virtual ~EventConcept() = default;
+
+		bool Handled() const { return metadata->handled; }
+		EventTypeFlag Type() const { return metadata->type; }
+
+	protected:
+		template<IsEvent T>
+		void SetType() { metadata->type = T::GetStaticType(); }
+
+		void SetHandled(bool handled = true) { metadata->handled = handled; }
+
+	private:
+		EventBase* metadata;
+
+		friend class Event;
 	};
 
 
@@ -53,20 +60,19 @@ namespace slc {
 	/// </summary>
 	/// <typeparam name="T">The event type this class models</typeparam>
 	template<IsEvent T>
-	struct EventModel : public EventConcept
+	struct EventModel final : public EventConcept
 	{
 		template<typename... Args>
 		EventModel(Args&&... args)
-			: object(std::forward<Args>(args)...) 
+			: EventConcept(&object), object(std::forward<Args>(args)...) 
 		{
-			object.type = T::GetStaticType();
+			SetType<T>();
 		}
 
-		bool Handled() const override { return object.handled; }
-		void SetHandled() override { object.handled = true; }
-		EventTypeFlag Type() const override { return object.type; }
-
+	private:
 		T object;
+
+		friend class Event;
 	};
 
 #define SLC_BIND_EVENT_FUNC(fn) [this](IsEvent auto& event) -> bool { return this->fn(event); }
@@ -96,19 +102,28 @@ namespace slc {
 		template<IsEvent T, IsPredicate<T&> Func>
 		void Dispatch(Func&& func) noexcept(noexcept(func(std::declval<T&>()))) 
 		{
-			if (Handled())
+			if (IsHandled())
 				return;
 
-			if (Type() != T::GetStaticType())
+			if (GetType() != T::GetStaticType())
 				return;
 
 			EventModel<T>* pImpl = dynamic_cast<EventModel<T>*>(mImpl);
-			pImpl->object.handled = func(pImpl->object);
+			bool handled = func(pImpl->object);
+
+			mImpl->SetHandled(handled);
 		}
 		
-		EventTypeFlag Type() const { return mImpl->Type(); }
-		bool Handled() const { return mImpl->Handled(); }
-		void SetHandled() { mImpl->SetHandled(); }
+		bool IsHandled() const { return mImpl->Handled(); }
+		EventTypeFlag GetType() const { return mImpl->Type(); }
+
+	private:
+		// Handled flag should not be set by the user manually. It should be handled using the Dispatch method instead.
+		// Exception is that ImGuiController has specialised behaviour and needs to be able to set the handled flag
+		// more generally than for individual event types.
+		void SetHandled(bool handled = true) { mImpl->SetHandled(handled); }
+
+		friend class ImGuiController;
 
 	private:
 		EventConcept* mImpl;

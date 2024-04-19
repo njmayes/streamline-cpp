@@ -2,8 +2,8 @@
 
 #include "EventModelAllocator.h"
 
-#include "Containers/Vector.h"
-#include "Containers/Deque.h"
+#include "Collections/Deque.h"
+#include "Collections/Vector.h"
 
 namespace slc {
 

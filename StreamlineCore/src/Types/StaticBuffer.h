@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Array.h"
+#include "Collections/Array.h"
 
 namespace slc {
 

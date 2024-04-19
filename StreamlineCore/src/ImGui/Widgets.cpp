@@ -1,6 +1,6 @@
 #include "Widgets.h"
 
-#include "Containers/StaticString.h"
+#include "Types/StaticString.h"
 
 #include "imgui.h"
 #include "imgui_internal.h"
@@ -258,15 +258,15 @@ namespace slc {
 	void Widgets::StringEdit(std::string_view label, std::string& field)
 	{
 		StaticString<256> stringEditBuffer(field);
-		if (ImGui::InputText(label.data(), stringEditBuffer, stringEditBuffer.length()))
-			field = stringEditBuffer.toString();
+		if (ImGui::InputText(label.data(), stringEditBuffer.Data(), stringEditBuffer.Length()))
+			field = stringEditBuffer.ToString();
 	}
 
 	void Widgets::PathEdit(std::string_view label, fs::path& field)
 	{
-		StaticString<256> stringEditBuffer(field.string());
-		if (ImGui::InputText(label.data(), stringEditBuffer, stringEditBuffer.length()))
-			field = stringEditBuffer.toString();
+		StaticString<512> pathEditBuffer(field.string());
+		if (ImGui::InputText(label.data(), pathEditBuffer.Data(), pathEditBuffer.Length()))
+			field = pathEditBuffer.ToString();
 	}
 
 	bool Widgets::BeginDragDropSourceInternal()

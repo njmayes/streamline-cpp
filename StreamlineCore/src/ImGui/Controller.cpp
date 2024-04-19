@@ -81,15 +81,13 @@ namespace slc {
         if (!mBlockEvents)
             return;
 
-        auto eventType = e.Type();
-
         ImGuiIO& io = ImGui::GetIO();
 
-        bool setHandled = ((eventType & EVENT_CATEGORY_MOUSE) && io.WantCaptureMouse) or
+        auto eventType = e.GetType();
+        bool handled = ((eventType & EVENT_CATEGORY_MOUSE) && io.WantCaptureMouse) or
             ((eventType & EVENT_CATEGORY_KEY) && io.WantCaptureKeyboard);
 
-        if (setHandled)
-            e.SetHandled();
+        e.SetHandled(handled);
     }
 
     void ImGuiController::SetDarkThemeColours()

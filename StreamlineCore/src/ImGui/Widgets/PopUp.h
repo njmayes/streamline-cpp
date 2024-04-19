@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Common/Base.h"
-#include "Containers/Vector.h"
+#include "Collections/Vector.h"
 
 namespace slc::UI {
 
