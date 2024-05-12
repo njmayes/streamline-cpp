@@ -13,6 +13,8 @@ namespace slc {
     {
     public:
         using std::map<TKey, TValue, Compare, Allocator>::map;
+        using std::map<TKey, TValue, Compare, Allocator>::begin;
+        using std::map<TKey, TValue, Compare, Allocator>::end;
 
         MAKE_RANGE_ENUMERABLE(Map)
     };

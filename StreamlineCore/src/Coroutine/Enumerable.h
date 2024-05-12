@@ -5,8 +5,13 @@
 #include <ranges>
 #include <iostream>
 
-
 namespace slc {
+
+	template<typename T>
+	class IEnumerable;
+
+	template<typename T>
+	class Enumerator;
 
 	template<typename T, size_t TSize>
 	class Array;
@@ -19,12 +24,6 @@ namespace slc {
 		typename KeyEqual,
 		typename Allocator>
 	class Dictionary;
-
-	template<typename T>
-	class Enumerator;
-
-	template<typename T>
-	class IEnumerable;
 
 	template<typename T, typename R>
 	concept Enumerable = std::derived_from<std::remove_reference_t<T>, IEnumerable<R>>;
@@ -73,16 +72,25 @@ namespace slc {
 		virtual ~IEnumerable() {}
 		virtual EnumeratorType GetEnumerator() = 0;
 
+		template<typename Self>
+		auto begin(this Self&& self) -> decltype(auto)
+		{
+			return std::forward<Self>(self).GetEnumeratorImpl().begin();
+		}
+		template<typename Self>
+		auto end(this Self&& self) { return EnumeratorType::sentinel(); }
+
 	protected:
 		template<std::ranges::range Self>
 		EnumeratorType GetEnumeratorForRange(this Self&& self)
 		{
 			for (auto&& val : std::forward<Self>(self))
 			{
-				co_yield std::forward<T>(val);
+				co_yield val;
 			}
 		}
-#define MAKE_RANGE_ENUMERABLE(...)  EXPAND_TEMPLATE(__VA_ARGS__)::EnumeratorType GetEnumerator() override { return this->GetEnumeratorForRange(); }
+#define MAKE_RANGE_ENUMERABLE(...)  \
+		EXPAND_TEMPLATE(__VA_ARGS__)::EnumeratorType GetEnumerator() override { return this->GetEnumeratorForRange(); } 
 
 	private:
 		template<typename R>
@@ -140,7 +148,7 @@ namespace slc {
 		{
 			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
-				if (!predicate(std::forward<T>(val)))
+				if (!predicate(val))
 					return false;
 			}
 
@@ -163,7 +171,7 @@ namespace slc {
 		{
 			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
-				if (predicate(std::forward<T>(val)))
+				if (predicate(val))
 					return true;
 			}
 
@@ -175,9 +183,9 @@ namespace slc {
 		{
 			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
-				co_yield std::forward<T>(val);
+				co_yield val;
 			}
-			co_yield std::forward<T>(newVal);
+			co_yield newVal;
 		}
 
 
@@ -195,11 +203,11 @@ namespace slc {
 		{
 			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
-				co_yield std::forward<T>(val);
+				co_yield val;
 			}
 			for (auto&& val : std::forward<Other>(other).GetEnumeratorImpl())
 			{
-				co_yield std::forward<T>(val);
+				co_yield val;
 			}
 		}
 
@@ -208,7 +216,7 @@ namespace slc {
 		{
 			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
-				if (std::forward<T>(val) == value)
+				if (val == value)
 					return true;
 			}
 
@@ -238,7 +246,7 @@ namespace slc {
 			size_t i = 0;
 			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
-				if (predicate(std::forward<T>(val)))
+				if (predicate(val))
 				{
 					i++;
 				}
@@ -259,7 +267,7 @@ namespace slc {
 			size_t i = 0;
 			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
-				co_yield std::make_tuple(i++, std::forward<T>(val));
+				co_yield std::make_tuple(i++, val);
 			}
 		}
 
@@ -268,7 +276,7 @@ namespace slc {
 		{
 			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
-				return std::forward<T>(val);
+				return val;
 			}
 		}
 
@@ -277,7 +285,7 @@ namespace slc {
 		{
 			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
-				return std::forward<T>(val);
+				return val;
 			}
 
 			return T();
@@ -347,16 +355,39 @@ namespace slc {
 			co_yield std::forward<T>(newVal);
 			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
-				co_yield std::forward<T>(val);
+				co_yield val;
 			}
 		}
 
-		template<typename R, typename Self, typename Func> requires IsFunc<Func, R, T&>
+		template<typename Self>
+		Enumerator<T> Reverse(this Self&& self)
+		{
+			using StoragePointerType = std::conditional_t<std::is_const_v<Self>, const T*, T*>;
+			std::vector<StoragePointerType> tmp;
+
+			size_t size;
+			if (self.TryGetNonEnumeratedCount(size))
+			{
+				tmp.reserve(size);
+			}
+
+			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
+			{
+				tmp.emplace_back(&val);
+			}
+
+			for (auto it = tmp.rbegin(); it != tmp.rend(); ++it)
+			{
+				co_yield **it;
+			}
+		}
+
+		template<typename R, typename Self, typename Func> requires IsFunc<Func, R, const T&>
 		Enumerator<R> Select(this Self&& self, Func&& op)
 		{
 			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
-				co_yield op(std::forward<T>(val));
+				co_yield op(val);
 			}
 		}
 
@@ -384,7 +415,7 @@ namespace slc {
 				}
 				else
 				{
-					co_yield std::forward<T>(val);
+					co_yield val;
 				}
 			}
 		}
@@ -396,7 +427,7 @@ namespace slc {
 			{
 				if (!predicate(val))
 				{
-					co_yield std::forward<T>(val);
+					co_yield val;
 				}
 			}
 		}
@@ -409,11 +440,11 @@ namespace slc {
 			{
 				if constexpr (AddAssignable<T>)
 				{
-					result += std::forward<T>(val);
+					result += val;
 				}
 				else if constexpr (UnaryAddable<T>)
 				{
-					result = result + std::forward<T>(val);
+					result = result + val;
 				}
 			}
 			return result;
@@ -433,7 +464,7 @@ namespace slc {
 				if (count-- == 0)
 					co_return;
 
-				co_yield std::forward<T>(val);
+				co_yield val;
 			}
 		}
 
@@ -444,7 +475,7 @@ namespace slc {
 			{
 				if (predicate(val))
 				{
-					co_yield std::forward<T>(val);
+					co_yield val;
 				}
 			}
 		}
@@ -509,7 +540,7 @@ namespace slc {
 			{
 				if (predicate(val))
 				{
-					co_yield std::forward<T>(val);
+					co_yield val;
 				}
 			}
 		}
@@ -587,6 +618,7 @@ namespace slc {
 		using promise_type = Internal::EnumeratorPromise<T>;
 		using iterator = Internal::EnumeratorIterator<T>;
 		using sentinel = Internal::EnumeratorSentinel;
+		using const_iterator = Internal::EnumeratorIterator<const T>;
 
 	public:
 		using CoroutineHandle = std::coroutine_handle<promise_type>;
@@ -621,11 +653,17 @@ namespace slc {
 			mHandle.destroy();
 		}
 
-		auto begin() const -> iterator
+		auto begin() -> iterator
 		{
 			iterator it{ mHandle };
 			return it;
 		}
+		auto begin() const -> const_iterator
+		{
+			const_iterator it{ mHandle };
+			return it;
+		}
+
 		auto end() const noexcept -> sentinel { return {}; }
 
 

@@ -36,7 +36,7 @@ namespace slc {
 
 		delete mSpecification;
 
-		for (const auto& shutdownTask : mAppSystems | std::views::reverse)
+		for (const auto& shutdownTask : mAppSystems.Reverse())
 			shutdownTask();
 	}
 

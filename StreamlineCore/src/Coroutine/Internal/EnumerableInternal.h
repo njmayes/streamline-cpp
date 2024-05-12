@@ -21,7 +21,7 @@ namespace slc::Internal {
 	{
 	public:
 		using ValueType = std::remove_reference_t<T>;
-		using ReferenceType = std::conditional_t<std::is_reference_v<T>, T, T&>;
+		using ReferenceType = ValueType&;
 		using PointerType = ValueType*;
 		using ErrorType = std::exception_ptr;
 
