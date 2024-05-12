@@ -12,6 +12,8 @@ namespace slc {
     {
     public:
         using std::span<T, Extent>::span;
+        using std::span<T, Extent>::begin;
+        using std::span<T, Extent>::end;
 
         MAKE_RANGE_ENUMERABLE(Span)
     };

@@ -11,6 +11,8 @@ namespace slc {
     {
     public:
         using std::array<T, TSize>::array;
+        using std::array<T, TSize>::begin;
+        using std::array<T, TSize>::end;
 
         Array() { memset(this->data(), 0, TSize * sizeof(T)); }
         Array(std::array<T, TSize>&& arr) :

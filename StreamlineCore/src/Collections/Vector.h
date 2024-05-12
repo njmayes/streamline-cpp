@@ -12,6 +12,8 @@ namespace slc {
     {
     public:
         using std::vector<T, Allocator>::vector;
+        using std::vector<T, Allocator>::begin;
+        using std::vector<T, Allocator>::end;
 
         MAKE_RANGE_ENUMERABLE(Vector)
     };

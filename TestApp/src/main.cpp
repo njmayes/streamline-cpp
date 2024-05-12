@@ -61,7 +61,7 @@ namespace slc {
     public:
 		virtual void OnAttach() override {}
 		virtual void OnDetach() override {}
-		virtual void OnUpdate(Timestep ts) 
+		virtual void OnUpdate(Timestep ts) override
 		{
 			auto a = Do<float>(
 				GetRandom(),
@@ -99,10 +99,9 @@ namespace slc {
 			auto dVal = d.unwrap_or_else([]() { return 0; });
 		}
 		virtual void OnRender() override {}
+		virtual void OnEvent(Event& e) override {}
 
 		LISTENING_EVENTS(EventType::KeyPressed, EventType::MouseButtonPressed)
-
-		LISTENING_EVENTS(KeyPressed, MouseButtonPressed)
     };
 
 	class TestApp : public Application
@@ -246,6 +245,15 @@ namespace slc {
 
 using namespace slc;
 
+void RefTest(const IEnumerable<double>& test)
+{
+	std::cout << "Enumerable B" << std::endl;
+	for (const auto& val : test)
+	{
+		std::cout << val << std::endl;
+	}
+}
+
 int main(int argc, char* argv[])
 {
 	Vector<int> foo = { 0, 1, 2, 3, 4, 5 };
@@ -281,12 +289,8 @@ int main(int argc, char* argv[])
 		.Append(4123)
 		.Append(32);
 
+	RefTest(baz2);
 
-	std::cout << "Enumerable B" << std::endl;
-	for (const auto& val : baz2)
-	{
-		std::cout << val << std::endl;
-	}
 
 	//auto task = TaskTestAsyncInt();
 	return 0;
