@@ -8,14 +8,14 @@ namespace slc
 	{
 	}
 
-	void FileLogTarget::DoWriteTarget(std::vector<char> const& buffer, std::size_t count)
+	void FileLogTarget::DoWriteTarget()
 	{
-		mFile.write(buffer.data(), count);
+		mFile.write(mBuffer.data(), mToWrite);
 	}
 
-	void FileLogTarget::DoPreFlush(std::vector<char>& buffer)
+	void FileLogTarget::DoPreFlush()
 	{
-		mFile.rdbuf()->pubsetbuf(buffer.data(), buffer.size());
+		mFile.rdbuf()->pubsetbuf(mBuffer.data(), mBuffer.size());
 	}
 
 	void FileLogTarget::DoFlush()

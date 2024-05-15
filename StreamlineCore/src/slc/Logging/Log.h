@@ -4,6 +4,21 @@
 
 namespace slc::Log {
 
+	/*
+	*   Utility Functions
+	*/
+
+	inline void SetGlobalLogLevel(LogLevel level)
+	{
+		auto& logger = Logger::GetGlobalLogger();
+		logger.SetLogLevel(level);
+	}
+
+
+	/*
+	*	Logging Functions
+	*/
+
 	inline void Trace(std::string_view message)
 	{
 		auto& logger = Logger::GetGlobalLogger();

@@ -15,7 +15,7 @@ namespace slc::FileUtils {
 		if (!stream)
 		{
 			// Failed to open the file
-			LOG("Failed to open {}", filepath);
+			Log::Warn("Failed to open {}", filepath);
 			return nullptr;
 		}
 

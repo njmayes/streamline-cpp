@@ -1,5 +1,7 @@
 #include "GraphicsContext.h"
 
+#include "slc/Logging/Log.h"
+
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
@@ -21,10 +23,10 @@ namespace slc {
 		const char* renderer = (char*)glGetString(GL_RENDERER);
 		const char* version = (char*)glGetString(GL_VERSION);
 
-		LOG("OpenGL Info:");
-		LOG("  Vendor: {0}", vendor);
-		LOG("  Renderer: {0}", renderer);
-		LOG("  Version: {0}", version);
+		Log::Info("OpenGL Info:");
+		Log::Info("  Vendor: {0}", vendor);
+		Log::Info("  Renderer: {0}", renderer);
+		Log::Info("  Version: {0}", version);
 
 		ASSERT(GLVersion.major > 4 || (GLVersion.major == 4 && GLVersion.minor >= 5), "Labyrinth requires at least OpenGL version 4.5!");
 	}
