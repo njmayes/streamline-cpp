@@ -35,11 +35,14 @@ namespace slc {
 
 	public:
 		static Logger& GetGlobalLogger();
+		static Logger& GetErrorLogger();
 
 		Logger(std::size_t message_size_limit = MessageSizeLimit, std::size_t max_messages_before_flus = MaxMessagesBeforeFlush);
 		~Logger();
 
 		LoggerStats const& GetStats() const { return mStats; }
+
+		void SetLogLevel(LogLevel level);
 
 		template<typename target_t, typename... Args> requires
 			std::derived_from<target_t, ILogTarget> and

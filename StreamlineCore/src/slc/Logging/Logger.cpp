@@ -1,13 +1,32 @@
 #include "Logger.h"
 
+#include "Targets/FileLogTarget.h"
+
 #include "slc/Common/Time.h"
 #include "slc/Types/ScopedTimer.h"
+
+namespace
+{
+	static slc::Logger& MakeErrorLogger()
+	{
+		static slc::Logger logger;
+		logger.AddLogTarget<slc::FileLogTarget>("log_error.log", slc::LogLevel::Error);
+		return logger;
+	}
+}
+
 
 namespace slc {
 
 	Logger& Logger::GetGlobalLogger()
 	{
 		static Logger sLogger;
+		return sLogger;
+	}
+
+	Logger& Logger::GetErrorLogger()
+	{
+		static Logger& sLogger = MakeErrorLogger();
 		return sLogger;
 	}
 
@@ -31,6 +50,11 @@ namespace slc {
 		}
 		mCV.notify_all();
 		mWorker.join();
+	}
+
+	void Logger::SetLogLevel(LogLevel level)
+	{
+		mMinLogLevel = level;
 	}
 
 	void Logger::Log(LogLevel level, std::string_view message)
@@ -117,7 +141,7 @@ namespace slc {
 
 			for (auto const& target : mLogTargets)
 			{
-				target->PreFlush(mMessageBuffer);
+				target->PreFlush();
 			}
 		}
 
@@ -126,7 +150,7 @@ namespace slc {
 
 			for (auto const& target : mLogTargets)
 			{
-				target->WriteTarget(mMessageQueue, mMessageBuffer);
+				target->WriteTarget(mMessageQueue);
 				target->Flush();
 			}
 		}

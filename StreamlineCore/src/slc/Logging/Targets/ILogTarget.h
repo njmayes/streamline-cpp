@@ -15,11 +15,13 @@ namespace slc {
 		}
 		virtual ~ILogTarget() = default;
 
-		void WriteTarget(std::span<MessageEntry> data, std::vector<char>& buffer);
+		void SetInitialBufferSize(std::size_t size);
 
-		void PreFlush(std::vector<char>& buffer)
+		void WriteTarget(std::span<MessageEntry> data);
+
+		void PreFlush()
 		{
-			DoPreFlush(buffer);
+			DoPreFlush();
 		}
 
 		void Flush()
@@ -28,17 +30,26 @@ namespace slc {
 		}
 
 		void SetLogLevel(LogLevel level) { mLogLevel = level; }
-		LogLevel GetLogLevel() const { return mLogLevel; }
 
 	private:
-		virtual void DoWriteTarget(std::vector<char> const& buffer, std::size_t count) = 0;
-		virtual void DoPreFlush(std::vector<char>& buffer) = 0;
+		virtual void DoWriteTarget() = 0;
+		virtual void DoPreFlush() = 0;
 		virtual void DoFlush() = 0;
+
+		virtual void PopulateBuffer(std::span<MessageEntry> data);
+
+	protected:
+		void PopulateBufferSingleEntry(MessageEntry const& entry);
+		void PopulateBufferNewLine();
 
 		bool ShouldWriteMessage(MessageEntry const& entry) const
 		{
 			return std::to_underlying(entry.level) >= std::to_underlying(mLogLevel);
 		}
+
+	protected:
+		std::vector<char> mBuffer;
+		std::size_t mToWrite;
 
 	private:
 		LogLevel mLogLevel;

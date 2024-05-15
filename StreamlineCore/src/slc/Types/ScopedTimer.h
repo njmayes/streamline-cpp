@@ -2,6 +2,8 @@
 
 #include "Timer.h"
 
+#include <iostream>
+
 namespace slc {
 
 	class ScopedTimer
