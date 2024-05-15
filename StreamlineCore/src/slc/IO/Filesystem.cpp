@@ -15,7 +15,7 @@ namespace slc::FileUtils {
 		if (!stream)
 		{
 			// Failed to open the file
-			Log::Warn("Failed to open {}", filepath);
+			Log::Warn("Failed to open {}", filepath.string());
 			return nullptr;
 		}
 
@@ -26,7 +26,7 @@ namespace slc::FileUtils {
 		if (size == 0)
 		{
 			// File is empty
-			Log::Warn("File {} was empty!", filepath);
+			Log::Warn("File {} was empty!", filepath.string());
 			return nullptr;
 		}
 
@@ -44,7 +44,7 @@ namespace slc::FileUtils {
 		if (!stream)
 		{
 			// Failed to open the file
-			Log::Warn("Failed to open {}", filepath);
+			Log::Warn("Failed to open {}", filepath.string());
 			return {};
 		}
 
@@ -55,7 +55,7 @@ namespace slc::FileUtils {
 		if (size == 0)
 		{
 			// File is empty
-			Log::Warn("File {} was empty!", filepath);
+			Log::Warn("File {} was empty!", filepath.string());
 			return {};
 		}
 
@@ -74,7 +74,7 @@ namespace slc::FileUtils {
 		if (!stream)
 		{
 			// Failed to open the file
-			Log::Warn("Failed to open file {}", filepath);
+			Log::Warn("Failed to open file {}", filepath.string());
 			return;
 		}
 
@@ -91,7 +91,7 @@ namespace slc::FileUtils {
 		if (!stream)
 		{
 			// Failed to open the file
-			Log::Warn("Failed to open file {}", filepath);
+			Log::Warn("Failed to open file {}", filepath.string());
 			return;
 		}
 
@@ -107,7 +107,7 @@ namespace slc::FileUtils {
 		if (!stream)
 		{
 			// Failed to open the file
-			Log::Warn("Failed to create file {}", filepath);
+			Log::Warn("Failed to create file {}", filepath.string());
 			return;
 		}
 	}

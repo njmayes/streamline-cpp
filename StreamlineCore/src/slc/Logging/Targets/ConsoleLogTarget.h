@@ -62,6 +62,7 @@ namespace slc {
 
 		void WriteColourCode(LogLevel level);
 		void WriteColourAttribute(ConsoleAttributes::Attribute colour);
+		void WriteStyleAttribute(ConsoleAttributes::Attribute style);
 		void WriteResetColourCode();
 
 	private:

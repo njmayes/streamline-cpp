@@ -95,9 +95,9 @@ namespace slc {
 		ASSERT(status, "Failed to initialize Glad!");
 
 		Log::Info("OpenGL Info:");
-		Log::Info("  Vendor: {0}", glGetString(GL_VENDOR));
-		Log::Info("  Renderer: {0}", glGetString(GL_RENDERER));
-		Log::Info("  Version: {0}", glGetString(GL_VERSION));
+		Log::Info("  Vendor: {0}", reinterpret_cast<const char*>(glGetString(GL_VENDOR)));
+		Log::Info("  Renderer: {0}", reinterpret_cast<const char*>(glGetString(GL_RENDERER)));
+		Log::Info("  Version: {0}", reinterpret_cast<const char*>(glGetString(GL_VERSION)));
 
 		ASSERT(GLVersion.major > 4 || (GLVersion.major == 4 && GLVersion.minor >= 5), "Streamline requires at least OpenGL version 4.5!");
 
