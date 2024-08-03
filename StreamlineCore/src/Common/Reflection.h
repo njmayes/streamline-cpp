@@ -114,8 +114,14 @@ namespace slc {
         }
     }
 
+    template<typename T, typename Base>
+    concept DerivedFromOnly = std::derived_from<T, Base> and not std::same_as<T, Base>;
+
     template<typename T>
     concept IsStandard = std::is_standard_layout_v<T>;
+
+    template<typename T>
+    concept IsConst = std::is_const_v<T>;
 
     template<typename From, typename To>
     concept Castable = requires (From from) { static_cast<To>(from); };
@@ -124,13 +130,13 @@ namespace slc {
     concept Numeric = std::integral<T>;
 
     template<typename T>
-    concept AddAssignable = requires (T t)
+    concept AddAssignable = requires (T&& t)
     {
         t += t;
     };
 
     template<typename T>
-    concept UnaryAddable = requires (T t)
+    concept UnaryAddable = requires (T&& t)
     {
         { t + t } -> std::convertible_to<T>;
     };
@@ -142,15 +148,15 @@ namespace slc {
     concept UNumeric = std::unsigned_integral<T>;
 
     template<typename T>
-    concept ComparableLess = requires (T t1, T t2) { std::less<T>(t1, t2); };
+    concept ComparableLess = requires (T&& t1, T&& t2) { std::less<T>(t1, t2); };
 
     template<typename T>
-    concept ComparableGreater = requires (T t1, T t2) { std::greater<T>(t1, t2); };
+    concept ComparableGreater = requires (T&& t1, T&& t2) { std::greater<T>(t1, t2); };
 
     template<typename T>
-    concept Sizeable = requires (T t)
+    concept Sizeable = requires (T&& t)
     {
-        { t.size() } -> std::convertible_to<size_t>;
+        { std::size(t) } -> std::convertible_to<size_t>;
     };
 
 
@@ -242,7 +248,7 @@ namespace slc {
         static constexpr size_t Index = TypeUtils::IndexFunction<0, R, TupleType>();
 
         template<size_t I>
-        using Type = typename std::tuple_element<I, TupleType>::type;
+        using Type = std::tuple_element<I, TupleType>::type;
     };
 
 }

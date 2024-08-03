@@ -32,16 +32,17 @@ namespace slc::Internal {
 		auto initial_suspend() const { return std::suspend_never{}; }
 		auto final_suspend() const noexcept { return std::suspend_always{}; }
 
-		template<typename U = T> requires !std::is_rvalue_reference_v<U>
-		auto yield_value(ValueType& value) noexcept
+		template<typename Self, typename U = T> requires !std::is_rvalue_reference_v<U>
+		auto yield_value(this Self&& self, ValueType& value) noexcept
 		{
-			mStorage.emplace<PointerType>(std::addressof(value));
+			std::forward<Self>(self).mStorage.emplace<PointerType>(std::addressof(value));
 			return std::suspend_always{};
 		}
 
-		auto yield_value(ValueType&& value) noexcept
+		template<typename Self>
+		auto yield_value(this Self&& self, ValueType&& value) noexcept
 		{
-			mStorage.emplace<PointerType>(std::addressof(value));
+			std::forward<Self>(self).mStorage.emplace<PointerType>(std::addressof(value));
 			return std::suspend_always{};
 		}
 
@@ -99,20 +100,23 @@ namespace slc::Internal {
 		friend auto operator==(EnumeratorSentinel s, const EnumeratorIterator& it) noexcept -> bool { return (it == s); }
 		friend auto operator!=(EnumeratorSentinel s, const EnumeratorIterator& it) noexcept -> bool { return it != s; }
 
-		EnumeratorIterator& operator++()
+		template<typename Self>
+		auto operator++(this Self&& self) -> decltype(auto)
 		{
-			mHandle.resume();
-			if (mHandle.done())
+			std::forward<Self>(self).mHandle.resume();
+			if (std::forward<Self>(self).mHandle.done())
 			{
-				mHandle.promise().try_rethrow();
+				std::forward<Self>(self).mHandle.promise().try_rethrow();
 			}
 			
-			return *this;
+			return std::forward<Self>(self);
 		}
 		auto operator++(int) { operator++(); }
 
-		auto operator*() const noexcept -> reference { return mHandle.promise().extract_value(); }
-		auto operator->() const noexcept -> pointer { return std::addressof(operator*()); }
+		template<typename Self>
+		auto operator*(this Self&& self) noexcept -> reference { return std::forward<Self>(self).mHandle.promise().extract_value(); }
+		template<typename Self>
+		auto operator->(this Self&& self) noexcept -> pointer { return std::addressof(std::forward<Self>(self).operator*()); }
 
 	private:
 		CoroutineHandle mHandle = nullptr; 
