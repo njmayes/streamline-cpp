@@ -69,7 +69,17 @@ namespace slc {
 		};
 
 		template<typename... T> requires (... and std::convertible_to<T, EventTypeFlag>)
-		static constexpr EventTypeFlag BuildEventTypeMask(T&&... flags) { return (... | flags); }
+		static constexpr EventTypeFlag BuildEventTypeMask(T&&... flags) 
+		{ 
+			if constexpr (sizeof...(T) == 0)
+			{
+				return EventType::None;
+			}
+			else
+			{
+				return (... | flags);
+			}
+		}
 	}
 
 	static constexpr EventTypeFlag EVENT_CATEGORY_APP = EventType::WindowClose | EventType::WindowResize | EventType::WindowFocus
