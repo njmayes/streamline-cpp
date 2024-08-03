@@ -39,8 +39,8 @@ namespace slc {
 		static bool IsTracked(void* data);
 
 	private:
-		static void AddToTrackedRefs(void* data);
-		static void RemoveFromTrackedRefs(void* data);
+		static void AddToReferenceTracker(void* data);
+		static void RemoveFromReferenceTracker(void* data);
 
 	private:
 		using RefSet = std::unordered_set<void*>;
@@ -155,7 +155,7 @@ namespace slc {
 				return;
 
 			mData->IncRefCount();
-			RefTracker::AddToTrackedRefs((void*)mData);
+			RefTracker::AddToReferenceTracker(static_cast<void*>(mData));
 		}
 
 		void DecRef() const
@@ -167,7 +167,7 @@ namespace slc {
 			if (mData->GetRefCount() == 0)
 			{
 				delete mData;
-				RefTracker::RemoveFromTrackedRefs(mData);
+				RefTracker::RemoveFromReferenceTracker(static_cast<void*>(mData));
 				mData = nullptr;
 			}
 		}

@@ -2,9 +2,9 @@
 
 #include <Types/Buffer.h>
 
-namespace slc {
+namespace fs = std::filesystem;
 
-	namespace fs = std::filesystem;
+namespace slc {
 
 	class FileUtils
 	{

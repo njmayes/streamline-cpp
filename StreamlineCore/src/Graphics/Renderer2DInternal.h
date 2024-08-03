@@ -20,9 +20,6 @@ namespace slc {
 
 		float texIndex;
 		float tilingFactor;
-
-		// Editor-only
-		int entityID;
 	};
 
 	struct CircleVertex
@@ -31,18 +28,12 @@ namespace slc {
 		float thickness;
 		Vector2 localPosition;
 		Vector4 colour;
-
-		// Editor-only
-		int entityID;
 	};
 
 	struct LineVertex
 	{
 		Vector3 position;
 		Vector4 colour;
-
-		// Editor-only
-		int entityID;
 	};
 
 	struct RenderStatistics
