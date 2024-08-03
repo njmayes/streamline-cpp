@@ -21,6 +21,8 @@ namespace slc {
 		mWindow = Window::Create(WindowProperties(mSpecification->name, mSpecification->resolution, mSpecification->fullscreen));
 
 		mImGuiController = ImGuiController::Create(mWindow->GetNativeWindow());
+
+		RegisterSystem<Renderer>();
 	}
 
 	Application::~Application()
