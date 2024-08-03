@@ -108,8 +108,8 @@ namespace slc {
 	class TestApp : public Application
 	{
 	public:
-		TestApp(ApplicationSpecification* spec)
-			: Application(spec)
+		TestApp(Impl<ApplicationSpecification> spec)
+			: Application(std::move(spec))
 		{
 			PushLayer<TestLayer>();
 		}
@@ -207,14 +207,6 @@ namespace slc {
 		return Err<StringInputResult>(InputError::InvalidFormatString);
 	}
 
-	Application* CreateApplication(int argc, char** argv)
-	{
-		ApplicationSpecification* spec = new ApplicationSpecification;
-		spec->name = "TestApp";
-
-		return new TestApp(spec);
-	}
-
 
 
 	using namespace std::chrono_literals;
@@ -245,6 +237,14 @@ namespace slc {
 }
 
 using namespace slc;
+
+Application* CreateApplication(int argc, char** argv)
+{
+	Impl<ApplicationSpecification> spec = MakeImpl<ApplicationSpecification>();
+	spec->name = "TestApp";
+
+	return new TestApp(std::move(spec));
+}
 
 int main(int argc, char* argv[])
 {
