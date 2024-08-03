@@ -1,9 +1,9 @@
 #pragma once
 
 #include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
 
 #include <Common/Base.h>
+#include <Types/Math.h>
 
 #include "VertexArray.h"
 #include "Shader.h"
@@ -14,9 +14,9 @@ namespace slc {
 
 	struct QuadVertex
 	{
-		glm::vec3 position;
-		glm::vec4 colour;
-		glm::vec2 texCoord;
+		Vector3 position;
+		Vector4 colour;
+		Vector2 texCoord;
 
 		float texIndex;
 		float tilingFactor;
@@ -27,10 +27,10 @@ namespace slc {
 
 	struct CircleVertex
 	{
-		glm::vec3 worldPosition;
+		Vector3 worldPosition;
 		float thickness;
-		glm::vec2 localPosition;
-		glm::vec4 colour;
+		Vector2 localPosition;
+		Vector4 colour;
 
 		// Editor-only
 		int entityID;
@@ -38,8 +38,8 @@ namespace slc {
 
 	struct LineVertex
 	{
-		glm::vec3 position;
-		glm::vec4 colour;
+		Vector3 position;
+		Vector4 colour;
 
 		// Editor-only
 		int entityID;
@@ -60,7 +60,7 @@ namespace slc {
 		static constexpr uint32_t MaxVertices = MaxQuads * 4;
 		static constexpr uint32_t MaxIndices = MaxQuads * 6;
 		static constexpr uint32_t MaxTextureSlots = 32;
-		static constexpr glm::vec4 QuadVertexPositions[4] = 
+		static constexpr Vector4 QuadVertexPositions[4] = 
 		{ 
 			{ -0.5f, -0.5f, 0.0f, 1.0f },
 			{  0.5f, -0.5f, 0.0f, 1.0f },
@@ -105,7 +105,7 @@ namespace slc {
 
 		RenderStatistics stats;
 
-		using CameraData = glm::mat4;
+		using CameraData = Matrix4;
 		CameraData cameraMatrix;
 		Ref<UniformBuffer> cameraUniformBuffer;
 	};
