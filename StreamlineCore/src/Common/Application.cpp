@@ -15,10 +15,10 @@ namespace slc {
 		}
 		sInstance = this;
 
-		if (!spec->workingDir.empty())
-			std::filesystem::current_path(spec->workingDir);
+		if (!mSpecification->workingDir.empty())
+			std::filesystem::current_path(mSpecification->workingDir);
 
-		mWindow = Window::Create(WindowProperties(spec->name, spec->resolution, spec->fullscreen));
+		mWindow = Window::Create(WindowProperties(mSpecification->name, mSpecification->resolution, mSpecification->fullscreen));
 
 		mImGuiController = ImGuiController::Create(mWindow->GetNativeWindow());
 	}
