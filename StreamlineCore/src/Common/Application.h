@@ -106,8 +106,9 @@ namespace slc {
 
 		static const ApplicationSpecification& GetSpec() { return *sInstance->mSpecification; }
 		template<typename T> requires std::derived_from<T, ApplicationSpecification>
-		static const T& GetSpec() { return *dynamic_cast<const T*>(sInstance->mSpecification); }
+		static const T& GetSpec() { return *static_cast<const T*>(sInstance->mSpecification); }
 
+		static void SetSpec(const ApplicationSpecification& spec) { *sInstance->mSpecification = spec; }
 		template<typename T> requires std::derived_from<T, ApplicationSpecification>
 		static void SetSpec(const T& spec)
 		{

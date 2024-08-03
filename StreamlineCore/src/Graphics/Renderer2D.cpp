@@ -17,8 +17,7 @@ namespace slc {
 				{ ShaderDataType::Float4, "aColour"		  },
 				{ ShaderDataType::Float2, "aTexCoord"	  },
 				{ ShaderDataType::Float,  "aTexIndex"	  },
-				{ ShaderDataType::Float,  "aTilingFactor" },
-				{ ShaderDataType::Int,    "aEntityID"	  }
+				{ ShaderDataType::Float,  "aTilingFactor" }
 				});
 
 			sRenderData->quadVertexArray->AddVertexBuffer(sRenderData->quadVertexBuffer);
@@ -57,8 +56,7 @@ namespace slc {
 				{ ShaderDataType::Float3, "aWorldPosition" },
 				{ ShaderDataType::Float,  "aThickness"     },
 				{ ShaderDataType::Float2, "aLocalPosition" },
-				{ ShaderDataType::Float4, "aColour"        },
-				{ ShaderDataType::Int,    "aEntityID"      }
+				{ ShaderDataType::Float4, "aColour"        }
 				});
 
 			sRenderData->circleVertexArray->AddVertexBuffer(sRenderData->circleVertexBuffer);
@@ -76,8 +74,7 @@ namespace slc {
 			sRenderData->lineVertexBuffer = Ref<VertexBuffer>::Create(sRenderData->MaxVertices * (uint32_t)sizeof(QuadVertex));
 			sRenderData->lineVertexBuffer->SetLayout({
 				{ ShaderDataType::Float3, "aPosition" },
-				{ ShaderDataType::Float4, "aColour"   },
-				{ ShaderDataType::Int,    "aEntityID" }
+				{ ShaderDataType::Float4, "aColour"   }
 				});
 
 			sRenderData->lineVertexArray->AddVertexBuffer(sRenderData->lineVertexBuffer);
@@ -123,41 +120,41 @@ namespace slc {
 		Flush();
 	}
 
-	void Renderer2D::DrawQuad(const Vector2& position, const Vector2& size, const Vector4& colour, int entityID)
+	void Renderer2D::DrawQuad(const Vector2& position, const Vector2& size, const Vector4& colour)
 	{
 		Matrix4 transform = glm::translate(Matrix4(1.0f), { position, 0.0f })
 			* glm::scale(Matrix4(1.0f), { size.x, size.y, 1.0f });
 
-		DrawQuad(transform, colour, entityID);
+		DrawQuad(transform, colour);
 	}
 
-	void Renderer2D::DrawQuad(const Vector2& position, const Vector2& size, const Ref<IRenderable>& texture, float tilingFactor, const Vector4& tintColour, int entityID)
+	void Renderer2D::DrawQuad(const Vector2& position, const Vector2& size, const Ref<IRenderable>& texture, float tilingFactor, const Vector4& tintColour)
 	{
 		Matrix4 transform = glm::translate(Matrix4(1.0f), { position, 0.0f })
 			* glm::scale(Matrix4(1.0f), { size.x, size.y, 1.0f });
 
-		DrawQuad(transform, texture, tilingFactor, tintColour, entityID);
+		DrawQuad(transform, texture, tilingFactor, tintColour);
 	}
 
-	void Renderer2D::DrawRotatedQuad(const Vector2& position, const Vector2& size, float rotation, const Vector4& colour, int entityID)
-	{
-		Matrix4 transform = glm::translate(Matrix4(1.0f), { position, 0.0f })
-			* glm::rotate(Matrix4(1.0f), rotation, { 0.0f, 0.0f, 1.0f })
-			* glm::scale(Matrix4(1.0f), { size.x, size.y, 1.0f });
-
-		DrawQuad(transform, colour, entityID);
-	}
-
-	void Renderer2D::DrawRotatedQuad(const Vector2& position, const Vector2& size, float rotation, const Ref<IRenderable>& texture, float tilingFactor, const Vector4& tintColour, int entityID)
+	void Renderer2D::DrawRotatedQuad(const Vector2& position, const Vector2& size, float rotation, const Vector4& colour)
 	{
 		Matrix4 transform = glm::translate(Matrix4(1.0f), { position, 0.0f })
 			* glm::rotate(Matrix4(1.0f), rotation, { 0.0f, 0.0f, 1.0f })
 			* glm::scale(Matrix4(1.0f), { size.x, size.y, 1.0f });
 
-		DrawQuad(transform, texture, tilingFactor, tintColour, entityID);
+		DrawQuad(transform, colour);
 	}
 
-	void Renderer2D::DrawQuad(const Matrix4& transform, const Vector4& colour, int entityID)
+	void Renderer2D::DrawRotatedQuad(const Vector2& position, const Vector2& size, float rotation, const Ref<IRenderable>& texture, float tilingFactor, const Vector4& tintColour)
+	{
+		Matrix4 transform = glm::translate(Matrix4(1.0f), { position, 0.0f })
+			* glm::rotate(Matrix4(1.0f), rotation, { 0.0f, 0.0f, 1.0f })
+			* glm::scale(Matrix4(1.0f), { size.x, size.y, 1.0f });
+
+		DrawQuad(transform, texture, tilingFactor, tintColour);
+	}
+
+	void Renderer2D::DrawQuad(const Matrix4& transform, const Vector4& colour)
 	{
 		constexpr size_t quadVertexCount = 4;
 		constexpr Vector2 textureCoords[4] = { { 0.0f, 0.0f }, { 1.0f, 0.0f }, { 1.0f, 1.0f }, { 0.0f, 1.0f } };
@@ -174,7 +171,6 @@ namespace slc {
 			sRenderData->quadVertexBufferPtr->texCoord = textureCoords[i];
 			sRenderData->quadVertexBufferPtr->texIndex = textureIndex;
 			sRenderData->quadVertexBufferPtr->tilingFactor = tilingFactor;
-			sRenderData->quadVertexBufferPtr->entityID = entityID;
 			sRenderData->quadVertexBufferPtr++;
 		}
 
@@ -182,7 +178,7 @@ namespace slc {
 		sRenderData->stats.quadCount++;
 	}
 
-	void Renderer2D::DrawQuad(const Matrix4& transform, const Ref<IRenderable>& textureSlot, float tilingFactor, const Vector4& tintColour, int entityID)
+	void Renderer2D::DrawQuad(const Matrix4& transform, const Ref<IRenderable>& textureSlot, float tilingFactor, const Vector4& tintColour)
 	{
 		constexpr size_t quadVertexCount = 4;
 		const Vector2* textureCoords = textureSlot->GetTextureCoords();
@@ -217,7 +213,6 @@ namespace slc {
 			sRenderData->quadVertexBufferPtr->texCoord = textureCoords[i];
 			sRenderData->quadVertexBufferPtr->texIndex = textureIndex;
 			sRenderData->quadVertexBufferPtr->tilingFactor = tilingFactor;
-			sRenderData->quadVertexBufferPtr->entityID = entityID;
 			sRenderData->quadVertexBufferPtr++;
 		}
 
@@ -225,42 +220,40 @@ namespace slc {
 		sRenderData->stats.quadCount++;
 	}
 
-	void Renderer2D::DrawLine(const Vector3& p0, const Vector3& p1, const Vector4& colour, int entityID)
+	void Renderer2D::DrawLine(const Vector3& p0, const Vector3& p1, const Vector4& colour)
 	{
 		sRenderData->lineVertexBufferPtr->position = p0;
 		sRenderData->lineVertexBufferPtr->colour = colour;
-		sRenderData->lineVertexBufferPtr->entityID = entityID;
 		sRenderData->lineVertexBufferPtr++;
 
 		sRenderData->lineVertexBufferPtr->position = p1;
 		sRenderData->lineVertexBufferPtr->colour = colour;
-		sRenderData->lineVertexBufferPtr->entityID = entityID;
 		sRenderData->lineVertexBufferPtr++;
 
 		sRenderData->lineVertexCount += 2;
 	}
 
-	void Renderer2D::DrawRect(const Vector2& position, const Vector2& size, const Vector4& colour, int entityID)
+	void Renderer2D::DrawRect(const Vector2& position, const Vector2& size, const Vector4& colour)
 	{
 		Matrix4 transform = glm::translate(Matrix4(1.0f), { position, 0.0f })
 			* glm::scale(Matrix4(1.0f), { size.x, size.y, 1.0f });
 
-		DrawRect(transform, colour, entityID);
+		DrawRect(transform, colour);
 	}
 
-	void Renderer2D::DrawRect(const Matrix4& transform, const Vector4& colour, int entityID)
+	void Renderer2D::DrawRect(const Matrix4& transform, const Vector4& colour)
 	{
 		Vector3 lineVertices[4];
 		for (size_t i = 0; i < 4; i++)
 			lineVertices[i] = transform * Renderer2DData::QuadVertexPositions[i];
 
-		DrawLine(lineVertices[0], lineVertices[1], colour, entityID);
-		DrawLine(lineVertices[1], lineVertices[2], colour, entityID);
-		DrawLine(lineVertices[2], lineVertices[3], colour, entityID);
-		DrawLine(lineVertices[3], lineVertices[0], colour, entityID);
+		DrawLine(lineVertices[0], lineVertices[1], colour);
+		DrawLine(lineVertices[1], lineVertices[2], colour);
+		DrawLine(lineVertices[2], lineVertices[3], colour);
+		DrawLine(lineVertices[3], lineVertices[0], colour);
 	}
 
-	void Renderer2D::DrawCircle(const Matrix4& transform, const Vector4& colour, float thickness, int entityID)
+	void Renderer2D::DrawCircle(const Matrix4& transform, const Vector4& colour, float thickness)
 	{
 		if (sRenderData->circleIndexCount >= Renderer2DData::MaxIndices)
 			NextBatch();
@@ -271,7 +264,6 @@ namespace slc {
 			sRenderData->circleVertexBufferPtr->thickness = thickness;
 			sRenderData->circleVertexBufferPtr->localPosition = Renderer2DData::QuadVertexPositions[i] * 2.0f;
 			sRenderData->circleVertexBufferPtr->colour = colour;
-			sRenderData->circleVertexBufferPtr->entityID = entityID;
 			sRenderData->circleVertexBufferPtr++;
 		}
 

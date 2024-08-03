@@ -8,16 +8,16 @@ namespace slc {
 		return sRefSet.count(data) != 0;
 	}
 
-	void RefTracker::AddToTrackedRefs(void* data)
+	void RefTracker::AddToReferenceTracker(void* data)
 	{
 		ASSERT(data);
 		sRefSet.insert(data);
 	}
 
-	void RefTracker::RemoveFromTrackedRefs(void* data)
+	void RefTracker::RemoveFromReferenceTracker(void* data)
 	{
 		ASSERT(data, "Data is null!");
-		ASSERT(sRefSet.count(data) != 0, "Ref not being tracked!");
+		ASSERT(sRefSet.contains(data), "Ref not being tracked!");
 		sRefSet.erase(data);
 	}
 }
