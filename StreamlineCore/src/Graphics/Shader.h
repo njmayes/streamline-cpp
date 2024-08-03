@@ -1,8 +1,7 @@
 #pragma once
 
-#include <glm/glm.hpp>
-
 #include <Common/Ref.h>
+#include <Types/Math.h>
 
 typedef unsigned int GLenum;
 
@@ -22,10 +21,10 @@ namespace slc {
 
 		void SetInt(std::string_view name, int value);
 		void SetIntArray(std::string_view name, int* values, uint32_t count);
-		void SetMat4(std::string_view name, const glm::mat4& value);
+		void SetMat4(std::string_view name, const Matrix4& value);
 		void SetFloat(std::string_view name, float value);
-		void SetFloat3(std::string_view name, const glm::vec3& value);
-		void SetFloat4(std::string_view name, const glm::vec4& value);
+		void SetFloat3(std::string_view name, const Vector3& value);
+		void SetFloat4(std::string_view name, const Vector4& value);
 
 	private:
 		int GetUniformLocation(std::string_view name) const;

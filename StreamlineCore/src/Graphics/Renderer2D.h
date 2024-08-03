@@ -14,24 +14,24 @@ namespace slc {
 		static void Shutdown();
 
 		static void BeginState();
-		static void BeginState(const glm::mat4& transform);
+		static void BeginState(const Matrix4& transform);
 		static void EndState();
 
-		static void DrawQuad(const glm::vec2& position, const glm::vec2& size, const glm::vec4& colour, int entityID = -1);
-		static void DrawQuad(const glm::mat4& transform, const glm::vec4& colour, int entityID = -1);
+		static void DrawQuad(const Vector2& position, const Vector2& size, const Vector4& colour, int entityID = -1);
+		static void DrawQuad(const Matrix4& transform, const Vector4& colour, int entityID = -1);
 
-		static void DrawQuad(const glm::vec2& position, const glm::vec2& size, const Ref<IRenderable>& texture, float tilingFactor = 1.0f, const glm::vec4& tintColour = glm::vec4(1.0f), int entityID = -1);
-		static void DrawQuad(const glm::mat4& transform, const Ref<IRenderable>& textureSlot, float tilingFactor = 1.0f, const glm::vec4& tintColour = glm::vec4(1.0f), int entityID = -1);
+		static void DrawQuad(const Vector2& position, const Vector2& size, const Ref<IRenderable>& texture, float tilingFactor = 1.0f, const Vector4& tintColour = Vector4(1.0f), int entityID = -1);
+		static void DrawQuad(const Matrix4& transform, const Ref<IRenderable>& textureSlot, float tilingFactor = 1.0f, const Vector4& tintColour = Vector4(1.0f), int entityID = -1);
 
-		static void DrawRotatedQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const glm::vec4& colour, int entityID = -1);
-		static void DrawRotatedQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const Ref<IRenderable>& texture, float tilingFactor = 1.0f, const glm::vec4& tintColour = glm::vec4(1.0f), int entityID = -1);
+		static void DrawRotatedQuad(const Vector2& position, const Vector2& size, float rotation, const Vector4& colour, int entityID = -1);
+		static void DrawRotatedQuad(const Vector2& position, const Vector2& size, float rotation, const Ref<IRenderable>& texture, float tilingFactor = 1.0f, const Vector4& tintColour = Vector4(1.0f), int entityID = -1);
 
-		static void DrawCircle(const glm::mat4& transform, const glm::vec4& colour, float thickness = 1.0f, int entityID = -1);
+		static void DrawCircle(const Matrix4& transform, const Vector4& colour, float thickness = 1.0f, int entityID = -1);
 
-		static void DrawLine(const glm::vec3& p0, const glm::vec3& p1, const glm::vec4& colour, int entityID = -1);
+		static void DrawLine(const Vector3& p0, const Vector3& p1, const Vector4& colour, int entityID = -1);
 
-		static void DrawRect(const glm::vec2& position, const glm::vec2& size, const glm::vec4& colour, int entityID = -1);
-		static void DrawRect(const glm::mat4& transform, const glm::vec4& colour, int entityID = -1);
+		static void DrawRect(const Vector2& position, const Vector2& size, const Vector4& colour, int entityID = -1);
+		static void DrawRect(const Matrix4& transform, const Vector4& colour, int entityID = -1);
 
 		static void ResetStats();
 		static const RenderStatistics& GetStats();

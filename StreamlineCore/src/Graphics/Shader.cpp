@@ -355,7 +355,7 @@ namespace slc {
 		glUniform1iv(location, count, values);
 	}
 
-	void Shader::SetMat4(std::string_view name, const glm::mat4& value)
+	void Shader::SetMat4(std::string_view name, const Matrix4& value)
 	{
 		GLint location = GetUniformLocation(name);
 		if (location == -1) return;
@@ -371,7 +371,7 @@ namespace slc {
 		glUniform1f(location, value);
 	}
 
-	void Shader::SetFloat3(std::string_view name, const glm::vec3& value)
+	void Shader::SetFloat3(std::string_view name, const Vector3& value)
 	{
 		GLint location = GetUniformLocation(name);
 		if (location == -1) return;
@@ -379,7 +379,7 @@ namespace slc {
 		glUniform3f(location, value.x, value.y, value.z);
 	}
 
-	void Shader::SetFloat4(std::string_view name, const glm::vec4& value)
+	void Shader::SetFloat4(std::string_view name, const Vector4& value)
 	{
 		GLint location = GetUniformLocation(name);
 		if (location == -1) return;

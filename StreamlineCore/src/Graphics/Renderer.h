@@ -1,6 +1,6 @@
 #pragma once
 
-#include <glm/glm.hpp>
+#include "Types/Math.h"
 
 #include "VertexArray.h"
 
@@ -13,7 +13,7 @@ namespace slc {
 		static void Shutdown();
 
 		static void SetViewport(uint32_t w, uint32_t h);
-		static void SetClearColor(const glm::vec4& colour);
+		static void SetClearColor(const Vector4& colour);
 		static void Clear();
 
 		static void SetLineWidth(float width);
