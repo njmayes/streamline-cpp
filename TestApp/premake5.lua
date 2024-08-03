@@ -20,6 +20,7 @@ project "TestApp"
     includedirs
     {
         "%{IncludeDir.StreamlineCore}",
+        "%{IncludeDir.glm}",
         "%{IncludeDir.imgui}",
         "%{IncludeDir.magic_enum}",
     }

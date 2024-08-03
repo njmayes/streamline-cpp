@@ -10,8 +10,11 @@ project "StreamlineCore"
     { 
         "src/**.h", 
         "src/**.cpp",
+        "dependencies/stb_image/**.h",
+        "dependencies/stb_image/**.cpp",
         "dependencies/ImGuizmo/ImGuizmo.h",
         "dependencies/ImGuizmo/ImGuizmo.cpp",
+        "dependencies/glm/glm/**.hpp",
     }
 	
 	defines
@@ -24,9 +27,13 @@ project "StreamlineCore"
         "%{IncludeDir.StreamlineCore}",
         "%{IncludeDir.glfw}",
         "%{IncludeDir.glad}",
+        "%{IncludeDir.glm}",
         "%{IncludeDir.imgui}",
         "%{IncludeDir.ImGuizmo}",
         "%{IncludeDir.magic_enum}",
+        "%{IncludeDir.pfd}",
+        "%{IncludeDir.stb_image}",
+        "%{IncludeDir.VulkanSDK}",
     }
 
 	links
@@ -52,6 +59,19 @@ project "StreamlineCore"
     filter "configurations:Debug"
 		runtime "Debug"
         symbols "on"
+        links
+		{
+			"%{Library.ShaderC_Debug}",
+			"%{Library.SPIRV_Cross_Debug}",
+			"%{Library.SPIRV_Cross_GLSL_Debug}"
+		}
+
     filter "configurations:Release"
 		runtime "Release"
         optimize "on"
+        links
+		{
+			"%{Library.ShaderC_Release}",
+			"%{Library.SPIRV_Cross_Release}",
+			"%{Library.SPIRV_Cross_GLSL_Release}"
+		}
