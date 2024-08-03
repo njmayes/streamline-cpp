@@ -66,7 +66,7 @@ namespace slc {
 		LISTENING_EVENTS(EventType::WindowClose, EventType::WindowResize)
 
 	public:
-		Application(ApplicationSpecification* spec);
+		Application(Impl<ApplicationSpecification> spec);
 		~Application();
 
 		void OnEvent(Event& e) override;
@@ -134,7 +134,7 @@ namespace slc {
 		static void Run(int argc, char** argv);
 
 	protected:
-		ApplicationSpecification* 	mSpecification;
+		Impl<ApplicationSpecification>	mSpecification;
 
 	private:
 		ApplicationState 			mState;

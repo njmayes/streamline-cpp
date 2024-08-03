@@ -5,8 +5,8 @@
 
 namespace slc {
 
-	Application::Application(ApplicationSpecification* spec)
-		: IEventListener(EventManager::ListenerType::App), mSpecification(spec)
+	Application::Application(Impl<ApplicationSpecification> spec)
+		: IEventListener(EventManager::ListenerType::App), mSpecification(std::move(spec))
 	{
 		if (sInstance)
 		{
@@ -33,8 +33,6 @@ namespace slc {
 
 		mImGuiController.reset();
 		mWindow.reset();
-
-		delete mSpecification;
 
 		for (const auto& shutdownTask : mAppSystems.Reverse())
 			shutdownTask();
