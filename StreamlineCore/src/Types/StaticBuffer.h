@@ -35,7 +35,7 @@ namespace slc {
 			return mData[index];
 		}
 
-		constexpr size_t size() const { return TSize; }
+		constexpr size_t Size() const { return TSize; }
 
 	protected:
 		Array<Byte, TSize> mData;

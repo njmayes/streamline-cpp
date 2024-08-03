@@ -75,7 +75,7 @@ namespace slc {
 		friend class Event;
 	};
 
-#define SLC_BIND_EVENT_FUNC(fn) [this](IsEvent auto& event) -> bool { return this->fn(event); }
+#define SLC_BIND_EVENT_FUNC(fn) [this](::slc::IsEvent auto& event) -> bool { return this->fn(event); }
 	
 	/// <summary>
 	/// Type erased event class. Contains a pointer to the base event concept
@@ -108,7 +108,7 @@ namespace slc {
 			if (GetType() != T::GetStaticType())
 				return;
 
-			EventModel<T>* pImpl = dynamic_cast<EventModel<T>*>(mImpl);
+			EventModel<T>* pImpl = static_cast<EventModel<T>*>(mImpl);
 			bool handled = func(pImpl->object);
 
 			mImpl->SetHandled(handled);
