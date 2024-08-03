@@ -99,6 +99,7 @@ namespace slc {
 			auto dVal = d.unwrap_or_else([]() { return 0; });
 		}
 		virtual void OnRender() override {}
+		virtual void OnOverlayRender() override {}
 		virtual void OnEvent(Event& e) override {}
 
 		LISTENING_EVENTS(EventType::KeyPressed, EventType::MouseButtonPressed)
