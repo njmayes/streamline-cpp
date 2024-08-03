@@ -39,3 +39,12 @@
     /* Unknown compiler/platform */
     #error "Unknown platform!"
 #endif // End of platform detection
+
+
+
+// Build configuration detection using predefined macros
+#ifdef NDEBUG
+    #define SLC_RELEASE
+#else
+    #define SLC_DEBUG
+#endif

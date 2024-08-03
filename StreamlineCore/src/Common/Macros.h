@@ -4,7 +4,12 @@
 
 #define SLC_EXPAND_MACRO(x) x
 
-#define ASSERT(x, ...)  assert(x)
+#ifdef SLC_DEBUG
+	#define ASSERT(x, ...)  assert(x)
+#else
+	#define ASSERT(...) [[assume(x)]]
+#endif
+
 #define SASSERT(x, ...) static_assert(x)
 
 #define SCONSTEXPR static constexpr
