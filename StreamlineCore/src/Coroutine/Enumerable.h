@@ -28,6 +28,9 @@ namespace slc {
 	template<typename T, typename R>
 	concept Enumerable = std::derived_from<std::remove_reference_t<T>, IEnumerable<R>>;
 
+	template<typename T, typename R>
+	concept IsNotRangeEnumerable = !DerivedFromOnly<T, IEnumerable<R>> or not std::ranges::range<T>;
+
 	class IEnumerableBase
 	{
 	public:
@@ -68,20 +71,31 @@ namespace slc {
 		using BaseType = IEnumerable<T>;
 		using EnumeratorType = Enumerator<T>;
 
+	private:
+		SCONSTEXPR bool IsReferenceType = std::is_reference_v<T>;
+		SCONSTEXPR bool IsPointerType = std::is_pointer_v<T>;
+
+		using ValueType = std::remove_cvref_t<T>;
+		using ReferenceType = std::conditional_t<IsReferenceType, T, T&>;
+		using PointerType = std::conditional_t<IsPointerType, T, T*>;
+
+		template<typename R>
+		using OtherReferenceType = std::conditional_t<std::is_reference_v<R>, R, R&>;
+
 	public:
 		virtual ~IEnumerable() {}
 		virtual EnumeratorType GetEnumerator() = 0;
 
-		template<typename Self>
+		template<typename Self> requires IsNotRangeEnumerable<Self, T>
 		auto begin(this Self&& self) -> decltype(auto)
 		{
 			return std::forward<Self>(self).GetEnumeratorImpl().begin();
 		}
-		template<typename Self>
+		template<typename Self> requires IsNotRangeEnumerable<Self, T>
 		auto end(this Self&& self) { return EnumeratorType::sentinel(); }
 
 	protected:
-		template<std::ranges::range Self>
+		template<typename Self> requires std::ranges::range<Self>
 		EnumeratorType GetEnumeratorForRange(this Self&& self)
 		{
 			for (auto&& val : std::forward<Self>(self))
@@ -106,29 +120,32 @@ namespace slc {
 			// a derived type and type information can be determined from Self.
 
 			using Type = std::remove_reference_t<Self>;
+			using NonConstType = std::remove_cvref_t<Self>;
+
 			if constexpr (std::same_as<Type, EnumeratorType>)
 			{
 				// Enumerator type is itself an IEnumerable so it can be used to chain functions.
 				// Move it along the chain so that when the destructor is called on the temporary
 				// Enumerator the coroutine is not destroyed.
+				 
 				return std::move(self);
 			}
-			else if constexpr (std::ranges::range<Type>)
+			else if constexpr (std::ranges::range<Type> and not std::same_as<NonConstType, BaseType>)
 			{
-				// Use std::ranges::range concept to get Enumerator
+				// Use std::ranges::range concept to get Enumerator. IEnumerable<T> satisfies range concept but will cause recursion if used so use virtual method.
 				return std::forward<Self>(self).GetEnumeratorForRange();
 			}
 			else
 			{
-				// Use overriden GetEnumerator method. Used for user defined types or when called from IEnumerableBase
+				// Use overriden GetEnumerator method. Used for user defined types, a.k.a. method overriden manually.
 				return std::forward<Self>(self).GetEnumerator();
 			}
 		}
 
-		// C# LINQ-like functions
+#pragma region LINQ
 	public:
 		template<typename Self, IsFunc<T, const T&, const T&> Func>
-		T Aggregate(this Self&& self, Func&& func)
+		ValueType Aggregate(this Self&& self, Func&& func)
 		{
 			auto&& enumerator = std::forward<Self>(self).GetEnumeratorImpl();
 
@@ -148,7 +165,7 @@ namespace slc {
 		{
 			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
-				if (!predicate(val))
+				if (!predicate(std::forward_like<Self>(val)))
 					return false;
 			}
 
@@ -171,7 +188,7 @@ namespace slc {
 		{
 			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
-				if (predicate(val))
+				if (predicate(std::forward_like<Self>(val)))
 					return true;
 			}
 
@@ -183,7 +200,7 @@ namespace slc {
 		{
 			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
-				co_yield val;
+				co_yield std::forward_like<Self>(val);
 			}
 			co_yield newVal;
 		}
@@ -194,7 +211,7 @@ namespace slc {
 		{
 			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
-				co_yield std::forward<R>(val);
+				co_yield static_cast<R>(std::forward_like<Self>(val));
 			}
 		}
 
@@ -203,11 +220,11 @@ namespace slc {
 		{
 			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
-				co_yield val;
+				co_yield std::forward_like<Self>(val);
 			}
 			for (auto&& val : std::forward<Other>(other).GetEnumeratorImpl())
 			{
-				co_yield val;
+				co_yield std::forward_like<Other>(val);
 			}
 		}
 
@@ -216,7 +233,7 @@ namespace slc {
 		{
 			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
-				if (val == value)
+				if (std::forward_like<Self>(val) == value)
 					return true;
 			}
 
@@ -246,7 +263,7 @@ namespace slc {
 			size_t i = 0;
 			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
-				if (predicate(val))
+				if (predicate(std::forward_like<Self>(val)))
 				{
 					i++;
 				}
@@ -262,72 +279,85 @@ namespace slc {
 		}
 
 		template<typename Self>
-		Enumerator<std::tuple<size_t, T>> Enumerate(this Self&& self)
+		Enumerator<std::tuple<size_t, ReferenceType>> Enumerate(this Self&& self)
 		{
 			size_t i = 0;
 			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
-				co_yield std::make_tuple(i++, val);
+				co_yield std::make_tuple(i++, std::forward_like<Self>(val));
 			}
 		}
 
 		template<typename Self>
-		auto First(this Self&& self) -> decltype(auto)
+		ReferenceType First(this Self&& self)
 		{
 			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
-				return val;
+				return std::forward_like<Self>(val);
 			}
 		}
 
-		template<typename Self> requires std::is_default_constructible_v<Self>
+		template<typename Self> requires 
+			std::is_default_constructible_v<T> and 
+			std::is_copy_constructible_v<T> and 
+			not IsReferenceType
 		T FirstOrDefault(this Self&& self)
 		{
 			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
-				return val;
+				return std::forward_like<Self>(val);
 			}
 
-			return T();
+			return {};
 		}
 
 		template<typename Self>
-		T& Last(this Self&& self)
+		ReferenceType Last(this Self&& self)
 		{
 			T* valPtr = nullptr;
 			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
-				valPtr = std::addressof(val);
+				valPtr = std::addressof(std::forward_like<Self>(val));
 			}
 
 			return *valPtr;
 		}
 
-		template<typename Self> requires std::is_default_constructible_v<Self> and std::is_copy_constructible_v<Self>
+		template<typename Self> requires 
+			std::is_default_constructible_v<T> and 
+			std::is_copy_constructible_v<T> and 
+			not IsReferenceType
 		T LastOrDefault(this Self&& self)
 		{
 			T* valPtr = nullptr;
 
 			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
-				valPtr = std::addressof(val);
+				valPtr = std::addressof(std::forward_like<Self>(val));
 			}
 
 			if (!valPtr)
-				return T();
+				return {};
 
 			return *valPtr;
 		}
 
 		template<typename Self> requires ComparableGreater<T>
-		T& Max(this Self&& self)
+		ReferenceType Max(this Self&& self)
 		{
 			T* valPtr = nullptr;
 			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
-				if (!valPtr || std::greater<T>(val, *valPtr))
+				if (!valPtr || std::greater<T>(std::forward_like<Self>(val), *valPtr))
 				{
-					valPtr = std::addressof(val);
+					if constexpr (IsPointerType)
+					{
+						valPtr = std::forward_like<Self>(val);
+					}
+					else
+					{
+						valPtr = std::addressof(std::forward_like<Self>(val));
+					}
 				}
 			}
 
@@ -335,7 +365,7 @@ namespace slc {
 		}
 
 		template<typename Self> requires ComparableLess<T>
-		T& Min(this Self&& self)
+		ReferenceType Min(this Self&& self)
 		{
 			T* valPtr = nullptr;
 			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
@@ -352,18 +382,18 @@ namespace slc {
 		template<typename Self>
 		EnumeratorType Prepend(this Self&& self, T&& newVal)
 		{
-			co_yield std::forward<T>(newVal);
+			co_yield std::forward_like<Self>(newVal);
+
 			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
-				co_yield val;
+				co_yield std::forward_like<Self>(val);
 			}
 		}
 
 		template<typename Self>
-		Enumerator<T> Reverse(this Self&& self)
+		EnumeratorType Reverse(this Self&& self)
 		{
-			using StoragePointerType = std::conditional_t<std::is_const_v<Self>, const T*, T*>;
-			std::vector<StoragePointerType> tmp;
+			std::vector<T*> tmp;
 
 			size_t size;
 			if (self.TryGetNonEnumeratedCount(size))
@@ -373,33 +403,33 @@ namespace slc {
 
 			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
-				tmp.emplace_back(&val);
+				tmp.emplace_back(std::addressof(std::forward_like<Self>(val)));
 			}
 
-			for (auto it = tmp.rbegin(); it != tmp.rend(); ++it)
+			for (auto&& val : tmp | std::views::reverse)
 			{
-				co_yield **it;
+				co_yield *std::forward_like<Self>(val);
 			}
 		}
 
-		template<typename R, typename Self, typename Func> requires IsFunc<Func, R, const T&>
+		template<typename R, typename Self, typename Func> requires IsFunc<Func, R, ReferenceType>
 		Enumerator<R> Select(this Self&& self, Func&& op)
 		{
 			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
-				co_yield op(val);
+				co_yield op(std::forward_like<Self>(val));
 			}
 		}
 
 		template<typename R, typename Self, typename Func> requires IsFunc<Func, Enumerator<R>, T&>
 		Enumerator<R> SelectMany(this Self&& self, Func&& selector)
 		{
-			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
+			for (auto&& first_val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
-				Enumerator<R> valEnumerable = selector(val);
-				for (auto&& val : valEnumerable.GetEnumerator())
+				Enumerator<R> valEnumerable = selector(std::forward_like<Self>(first_val));
+				for (auto&& second_val : valEnumerable.GetEnumerator())
 				{
-					co_yield val;
+					co_yield std::forward_like<Self>(second_val);
 				}
 			}
 		}
@@ -415,36 +445,38 @@ namespace slc {
 				}
 				else
 				{
-					co_yield val;
+					co_yield std::forward_like<Self>(val);
 				}
 			}
 		}
 
-		template<typename Self, IsPredicate<const T&> Func> 
+		template<typename Self, IsPredicate<ReferenceType> Func> 
 		EnumeratorType SkipWhile(this Self&& self, Func&& predicate)
 		{
 			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
 				if (!predicate(val))
 				{
-					co_yield val;
+					co_yield std::forward_like<Self>(val);
 				}
 			}
 		}
 
-		template<typename Self> requires Summable<T>
-		T Sum(this Self&& self)
+		template<typename Self> requires 
+			Summable<T> and
+			not IsPointerType
+		ValueType Sum(this Self&& self) 
 		{
-			T result;
+			ValueType result;
 			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
 				if constexpr (AddAssignable<T>)
 				{
-					result += val;
+					result += std::forward_like<Self>(val);
 				}
 				else if constexpr (UnaryAddable<T>)
 				{
-					result = result + val;
+					result = result + std::forward_like<Self>(val);
 				}
 			}
 			return result;
@@ -464,18 +496,18 @@ namespace slc {
 				if (count-- == 0)
 					co_return;
 
-				co_yield val;
+				co_yield std::forward_like<Self>(val);
 			}
 		}
 
-		template<typename Self, IsPredicate<const T&> Func>
+		template<typename Self, IsPredicate<ReferenceType> Func>
 		EnumeratorType TakeWhile(this Self&& self, Func&& predicate)
 		{
 			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
 				if (predicate(val))
 				{
-					co_yield val;
+					co_yield std::forward_like<Self>(val);
 				}
 			}
 		}
@@ -490,7 +522,7 @@ namespace slc {
 			Dictionary<TKey, TValue, Hash, KeyEqual, Allocator> result;
 			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
-				result.emplace(std::forward<std::pair<TKey, TValue>>(val));
+				result.emplace(static_cast<std::pair<TKey, TValue>>(std::forward_like<Self>(val)));
 			}
 			return result;
 		}
@@ -505,7 +537,7 @@ namespace slc {
 
 			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
-				result.emplace_back(std::move(val));
+				result.emplace_back(std::move(std::forward_like<Self>(val)));
 			}
 			return result;
 		}
@@ -513,10 +545,17 @@ namespace slc {
 		template<size_t Size, typename Self>
 		Array<T, Size> ToArray(this Self&& self)
 		{
-			Array<const T*, Size> result;
+			Array<PointerType, Size> result;
 			for (auto&& [i, val] : std::forward<Self>(self).Enumerate().Take(Size))
 			{
-				result[i] = std::addressof(val);
+				if constexpr (IsPointerType)
+				{
+					result[i] = std::forward_like<Self>(val);
+				}
+				else
+				{
+					result[i] = std::addressof(std::forward_like<Self>(val));
+				}
 			}
 
 			return ArrayConversion(result);
@@ -527,29 +566,29 @@ namespace slc {
 		{
 			if constexpr (Sizeable<Self>)
 			{
-				count = self.size();
+				count = std::size(std::forward<Self>(self));
 				return true;
 			}
 			return false;
 		}
 
-		template<typename Self, typename Func> requires IsFunc<Func, bool, const T&>
+		template<typename Self, typename Func> requires IsFunc<Func, bool, ReferenceType>
 		EnumeratorType Where(this Self&& self, Func&& predicate)
 		{
 			for (auto&& val : std::forward<Self>(self).GetEnumeratorImpl())
 			{
 				if (predicate(val))
 				{
-					co_yield val;
+					co_yield std::forward_like<Self>(val);
 				}
 			}
 		}
 
-		template<typename Self, typename TOut, typename Other, typename TIn, IsFunc<TOut, const T&, const TIn&> Func> requires std::derived_from<Other, IEnumerable<TIn>>
+		template<typename Self, typename TOut, typename Other, typename TIn, IsFunc<TOut, ReferenceType, OtherReferenceType<TIn>> Func> requires std::derived_from<Other, IEnumerable<TIn>>
 		Enumerator<TOut> Zip(this Self&& self, const Other& other, Func&& resultSelector)
 		{
 			auto&& firstEnumerator = std::forward<Self>(self).GetEnumeratorImpl();
-			auto&& secondEnumerator = other.GetEnumeratorImpl();
+			auto&& secondEnumerator = std::forward<Other>(other).GetEnumeratorImpl();
 
 			auto firstIt = firstEnumerator.begin();
 			auto secondIt = secondEnumerator.begin();
@@ -564,10 +603,10 @@ namespace slc {
 		}
 
 		template<typename Self, typename TOther, typename Other> requires std::derived_from<Other, IEnumerable<TOther>>
-		Enumerator<std::tuple<T&, TOther&>> Zip(this Self&& self, const Other& other)
+		Enumerator<std::tuple<ReferenceType, OtherReferenceType<TOther>>> Zip(this Self&& self, Other&& other)
 		{
 			auto&& firstEnumerator = std::forward<Self>(self).GetEnumeratorImpl();
-			auto&& secondEnumerator = other.GetEnumeratorImpl();
+			auto&& secondEnumerator = std::forward<Other>(other).GetEnumeratorImpl();
 
 			auto firstIt = firstEnumerator.begin();
 			auto secondIt = secondEnumerator.begin();
@@ -583,7 +622,7 @@ namespace slc {
 
 	public:
 		template<Numeric Count>
-		static Enumerator<T> Repeat(const T& val, Count count) requires std::is_copy_constructible_v<T>
+		static Enumerator<T> Repeat(ReferenceType val, Count count) requires std::is_copy_constructible_v<T>
 		{
 			if (count <= 0)
 				co_return;
@@ -594,21 +633,32 @@ namespace slc {
 			}
 		}
 
+#pragma endregion
 
 	private:
 		template<std::size_t N>
-		static Array<T, N> ArrayConversion(const Array<const T*, N>& values)
+		static Array<T, N> ArrayConversion(const Array<PointerType, N>& values)
 		{
 			return ArrayConversionInternal(values, std::make_index_sequence<N>());
 		}
 
 		template<std::size_t N, std::size_t... Is>
-		static std::array<T, N> ArrayConversionInternal(const Array<const T*, N>& values, std::index_sequence<Is...>)
+		static std::array<T, N> ArrayConversionInternal(const Array<PointerType, N>& values, std::index_sequence<Is...>)
 		{
 			return { { CopyOrDefault(values[Is])... } };
 		}
 
-		static T CopyOrDefault(const T* ptr) { return ptr ? T(*ptr) : T(); }
+		static T CopyOrDefault(PointerType ptr) 
+		{ 
+			if constexpr (IsPointerType)
+			{
+				return ptr;
+			}
+			else 
+			{
+				return ptr ? T(*ptr) : T();
+			}
+		}
 	};
 
 	template<typename T>
@@ -624,7 +674,12 @@ namespace slc {
 		using CoroutineHandle = std::coroutine_handle<promise_type>;
 		using EnumeratorType = IEnumerable<T>::EnumeratorType;
 
-		EnumeratorType GetEnumerator() override { return std::move(*this); }
+		EnumeratorType GetEnumerator() override 
+		{ 
+			using NonConstPointerType = std::remove_const_t<decltype(this)>;
+
+			return std::move(*this);
+		}
 
 	public:
 		Enumerator() noexcept = default;

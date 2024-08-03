@@ -245,53 +245,6 @@ namespace slc {
 
 using namespace slc;
 
-void RefTest(const IEnumerable<double>& test)
-{
-	std::cout << "Enumerable B" << std::endl;
-	for (const auto& val : test)
-	{
-		std::cout << val << std::endl;
-	}
-}
-
 int main(int argc, char* argv[])
 {
-	Vector<int> foo = { 0, 1, 2, 3, 4, 5 };
-	Vector<int> bar = { 0, 1, 2, 3, 4, 5 };
-
-	//auto tmp = foo
-	//	.Select<double>([](int a) { return (double)a * 2.1878; });
-
-	//auto baz = tmp
-	//	.Append(2.0);
-
-	//std::cout << "Enumerable A" << std::endl;
-	//for (const auto& val : baz)
-	//{
-	//	std::cout << val << std::endl;
-	//}
-
-	IEnumerableBase& fooBase = foo;
-	auto baz1 = fooBase.AsEnumerable<int>();
-
-
-	std::cout << "Enumerable A" << std::endl;
-	for (const auto& val : baz1)
-	{
-		std::cout << val << std::endl;
-	}
-
-	auto baz2 = bar
-		.Select<double>([](int a) { return (double)a * 2.1878; })
-		.Append(0)
-		.Append(41)
-		.Append(432)
-		.Append(4123)
-		.Append(32);
-
-	RefTest(baz2);
-
-
-	//auto task = TaskTestAsyncInt();
-	return 0;
 }
