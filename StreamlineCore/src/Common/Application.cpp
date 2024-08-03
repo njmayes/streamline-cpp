@@ -65,7 +65,7 @@ namespace slc {
 		return false;
 	}
 
-	void Application::ExecuteMainThread()
+	void Application::ExecuteQueuedJobs()
 	{
 		std::scoped_lock<std::mutex> lock(sInstance->mState.mainThreadQueueMutex);
 
@@ -92,16 +92,19 @@ namespace slc {
 			sInstance->mState.lastFrameTime = time;
 
 			// Process any queued tasks that could not be performed within main loop.
-			sInstance->ExecuteMainThread();
+			sInstance->ExecuteQueuedJobs();
 
 			// Process any events in the event queue
 			EventManager::Dispatch();
 
-			// Run update method for each frame
+			// Run update and render method for each frame
 			if (!sInstance->mState.minimised)
 			{
 				for (auto* layer : sInstance->mLayerStack)
 					layer->OnUpdate(timestep);
+
+				for (auto* layer : sInstance->mLayerStack)
+					layer->OnRender();
 			}
 
 			// Begin ImGui rendering
@@ -109,7 +112,7 @@ namespace slc {
 
 			// Render each ImGui controls in each layer
 			for (ApplicationLayer* layer : sInstance->mLayerStack)
-				layer->OnRender();
+				layer->OnOverlayRender();
 
 			// End ImGui rendering
 			sInstance->mImGuiController->EndFrame();

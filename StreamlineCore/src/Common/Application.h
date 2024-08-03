@@ -30,6 +30,7 @@ namespace slc {
 		virtual void OnDetach() = 0;
 		virtual void OnUpdate(Timestep ts) = 0;
 		virtual void OnRender() = 0;
+		virtual void OnOverlayRender() = 0;
 	};
 
 	template<typename T>
@@ -119,7 +120,7 @@ namespace slc {
 			sInstance->mState.mainThreadQueue.emplace_back(std::move(function));
 		}
 
-		static void ExecuteMainThread();
+		static void ExecuteQueuedJobs();
 
 		static void BlockEsc(bool block = true);
 		static void BlockEvents(bool block);
