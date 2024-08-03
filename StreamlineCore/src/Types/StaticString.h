@@ -10,7 +10,7 @@ namespace slc {
 	public:
 		StaticString(const std::string& string)
 		{
-			ASSERT(string.size() <= TSize);
+			ASSERT(string.size() < TSize);
 
 			memset(this->mData.data(), 0, TSize);
 			memcpy(this->mData.data(), string.c_str(), string.size());;
