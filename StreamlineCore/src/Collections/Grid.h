@@ -83,6 +83,8 @@ namespace slc {
 		void Resize(size_t width, size_t height) { mData.clear(); mData.resize(width * height); }
 		void Reset() { mData.clear(); mData.resize(mWidth * mHeight); }
 
+		T* Data() { return mData.data(); }
+
 		auto begin() { return mData.begin(); }
 		auto begin() const { return mData.cbegin(); }
 		auto end() { return mData.end(); }
