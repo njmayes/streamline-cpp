@@ -36,7 +36,7 @@ namespace slc {
 	};
 
 	template<typename T>
-	concept IsLayer = std::is_base_of_v<ApplicationLayer, T>;
+	concept IsLayer = std::derived_from<T, ApplicationLayer>;
 
 	using LayerStack = Vector<ApplicationLayer*>;
 	using ApplicationSystems = Vector<Action<>>;
