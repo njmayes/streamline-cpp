@@ -1,13 +1,9 @@
 #pragma once
 
 #include "Texture.h"
+#include "Pixel.h"
 
 namespace slc {
-
-	struct Pixel
-	{
-		int8_t r, g, b, a;
-	};
 
 	class PixelBuffer : public IRenderable
 	{
