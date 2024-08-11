@@ -9,10 +9,10 @@
 	url = https://github.com/amayesingnathan/imgui.git
 [submodule "StreamlineCore/dependencies/ImGuizmo"]
 	path = StreamlineCore/dependencies/ImGuizmo
-	url = git@github.com:CedricGuillemet/ImGuizmo.git
+	url = https://github.com/CedricGuillemet/ImGuizmo.git
 [submodule "StreamlineCore/dependencies/glm"]
 	path = StreamlineCore/dependencies/glm
-	url = git@github.com:g-truc/glm.git
+	url = https://github.com/g-truc/glm.git
 [submodule "StreamlineCore/dependencies/portable-file-dialogs"]
 	path = StreamlineCore/dependencies/portable-file-dialogs
-	url = git@github.com:amayesingnathan/portable-file-dialogs.git
+	url = https://github.com/amayesingnathan/portable-file-dialogs.git
