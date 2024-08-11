@@ -41,9 +41,9 @@ namespace slc {
 
             auto future = returnPromise.get_future();
 
-            auto task = [job = std::move(f), ret = std::move(returnPromise), ...args = std::forward<Args>(args)]() mutable {
+            auto task = [ret = std::move(returnPromise), job = std::move(f), ...args = std::forward<Args>(args)]() mutable {
                 ret.set_value(std::invoke(job, std::forward<Args>(args)...));
-                };
+            };
 
             {
                 std::unique_lock<std::mutex> lock(mQueueMutex);
@@ -60,7 +60,7 @@ namespace slc {
         {
             auto task = [job = std::move(f), ...args = std::forward<Args>(args)]() mutable {
                 std::invoke(job, std::forward<Args>(args)...);
-                };
+            };
 
             {
                 std::unique_lock<std::mutex> lock(mQueueMutex);
