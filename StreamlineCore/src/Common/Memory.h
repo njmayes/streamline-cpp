@@ -1,10 +1,21 @@
 #pragma once
 
 #include <unordered_set>
-
-#include "Base.h"
+#include <memory>
 
 namespace slc {
+
+	// Unique Pointer
+
+	template<typename T>
+	using Impl = std::unique_ptr<T>;
+
+	template<typename T, typename... Args>
+	inline static constexpr Impl<T> MakeImpl(Args&&... args) { return std::make_unique<T>(std::forward<Args>(args)...); }
+
+
+
+	// Shared Pointer
 
 	class RefCounted;
 
@@ -27,7 +38,7 @@ namespace slc {
 		};
 	}
 
-	class RefCounted : public virtual Internal::RefCountedBase 
+	class RefCounted : public virtual Internal::RefCountedBase
 	{
 		template<RefCountable T>
 		friend class Ref;
@@ -179,6 +190,8 @@ namespace slc {
 		mutable T* mData;
 	};
 
+
+	// Weak Pointer
 
 	template<RefCountable T>
 	class WeakRef

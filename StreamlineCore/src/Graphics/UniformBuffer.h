@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Common/Ref.h>
+#include <Common/Memory.h>
 
 namespace slc {
 

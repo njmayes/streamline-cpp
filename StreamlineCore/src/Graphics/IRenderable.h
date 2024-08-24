@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Common/Ref.h"
-#include "Types/Math.h"
+#include <Common/Base.h>
+#include <Types/Math.h>
 
 namespace slc {
 

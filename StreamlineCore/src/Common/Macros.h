@@ -2,6 +2,8 @@
 
 #include "Platform.h"
 
+#include <cassert>
+
 #define SLC_EXPAND_MACRO(x) x
 
 #ifdef SLC_DEBUG
