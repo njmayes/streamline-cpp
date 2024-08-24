@@ -22,6 +22,7 @@ project "TestApp"
         "%{IncludeDir.StreamlineCore}",
         "%{IncludeDir.glm}",
         "%{IncludeDir.imgui}",
+        "%{IncludeDir.json}",
         "%{IncludeDir.magic_enum}",
     }
 

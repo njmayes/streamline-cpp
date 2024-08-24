@@ -34,6 +34,7 @@ IncludeDir["glad"] 	            = "%{wks.location}/StreamlineCore/dependencies/g
 IncludeDir["glm"] 				= "%{wks.location}/StreamlineCore/dependencies/glm"
 IncludeDir["imgui"] 	        = "%{wks.location}/StreamlineCore/dependencies/imgui"
 IncludeDir["ImGuizmo"] 			= "%{wks.location}/StreamlineCore/dependencies/ImGuizmo"
+IncludeDir["json"] 			= "%{wks.location}/StreamlineCore/dependencies/json"
 IncludeDir["magic_enum"] 		= "%{wks.location}/StreamlineCore/dependencies/magic_enum"
 IncludeDir["pfd"] 				= "%{wks.location}/StreamlineCore/dependencies/portable-file-dialogs"
 IncludeDir["stb_image"] 		= "%{wks.location}/StreamlineCore/dependencies/stb_image"
