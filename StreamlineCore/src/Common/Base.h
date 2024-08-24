@@ -3,22 +3,14 @@
 #include "Macros.h"
 #include "Reflection.h"
 #include "Environment.h"
+#include "Memory.h"
 
-#include <memory>
 #include <filesystem>
 #include <format>
-
-#include <cassert>
 
 namespace slc {
 
     using Byte = uint8_t;
-
-    template<typename T>
-    using Impl = std::unique_ptr<T>;
-
-    template<typename T, typename... Args>
-    inline static constexpr Impl<T> MakeImpl(Args&&... args) { return std::make_unique<T>(std::forward<Args>(args)...); }
 
     template<typename TResult, typename... TArgs>
     using Func = std::function<TResult(TArgs...)>;
