@@ -31,7 +31,7 @@
 
 
 // Helper macros to handle the enumeration
-#define SLC_GET_ARG_COUNT(...)  SLC_GET_ARG_COUNT_IMPL(__VA_ARGS__, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1)
+#define SLC_GET_ARG_COUNT(...)  SLC_EXPAND_MACRO(SLC_GET_ARG_COUNT_IMPL(__VA_ARGS__, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1))
 #define SLC_GET_ARG_COUNT_IMPL(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, count, ...) count
 
 #define SLC_FOR_EACH_1(what, x) what(x)
