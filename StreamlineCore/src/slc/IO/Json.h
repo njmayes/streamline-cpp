@@ -32,7 +32,14 @@ namespace slc {
 			}
 			else
 			{
-				data[string] = value;
+				if constexpr (IsEnum<T>)
+				{
+					data[string] = Enum::ToString(value);
+				}
+				else
+				{
+					data[string] = value;
+				}
 			}
 		}
 
@@ -46,7 +53,14 @@ namespace slc {
 			}
 			else
 			{
-				value = data[stringify].template get<typeof(value)>();
+				if constexpr (IsEnum<T>)
+				{
+					value = Enum::FromString<T>(data[stringify].template get<std::string_view>());
+				}
+				else
+				{
+					value = data[stringify].template get<typeof(value)>();
+				}
 			}
 		}
 	}
