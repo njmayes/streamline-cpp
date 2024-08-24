@@ -69,7 +69,7 @@ namespace slc {
 	{
 	public:
 		template<Serialisable T>
-		static void Serialise(const T& value, const fs::path& filepath)
+		static void Serialise(const T& value, std::string_view filepath)
 		{
 			std::ofstream f(filepath);
 			nlohmann::json j = value.ToJson();
@@ -77,7 +77,7 @@ namespace slc {
 		}
 
 		template<Serialisable T>
-		static T Deserialise(const fs::path& filepath)
+		static T Deserialise( std::string_view filepath)
 		{
 			std::ifstream f(filepath);
 			nlohmann::json data = nlohmann::json::parse(f);
