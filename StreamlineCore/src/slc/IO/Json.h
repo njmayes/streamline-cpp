@@ -7,7 +7,7 @@
 namespace slc {
 
 	template<typename T>
-	concept CanSerialise = IsStandard<T> and requires (T && t)
+	concept CanSerialise = IsStandard<T> and requires (T&& t)
 	{
 		{ t.ToJson() } -> std::same_as<nlohmann::json>;
 	};
@@ -20,6 +20,36 @@ namespace slc {
 
 	template<typename T>
 	concept Serialisable = CanSerialise<T> and CanDeserialise<T>;
+
+	namespace Serialisation
+	{
+		template<typename T>
+		void SerialiseImpl(nlohmann::json& data, const T& value, std::string_view stringify)
+		{
+			if constexpr (CanSerialise<std::remove_cvref_t<decltype(value)>>)
+			{
+				data[string] = value.ToJson();
+			}
+			else
+			{
+				data[string] = value;
+			}
+		}
+
+		template<typename T>
+		void DeserialiseImpl(const nlohmann::json& data, T& value, std::string_view stringify)
+		{
+			using Type = typeof(x);	
+			if constexpr (::slc::CanDeserialise<Type>)
+			{
+				value = Type::FromJson(data[stringify]);
+			}
+			else
+			{
+				value = data[stringify].template get<typeof(value)>();
+			}
+		}
+	}
 
 	class JSON
 	{
@@ -44,8 +74,8 @@ namespace slc {
 }
 
 
-#define SLC_JSON_SERIALISE_MEMBER(x) data[#x] = this->x;
-#define SLC_JSON_DESERIALISE_MEMBER(x) value.x = data[#x].template get<typeof(value.x)>();
+#define SLC_JSON_SERIALISE_MEMBER(x) ::slc::Serialisation::SerialiseImpl(data, x, #x);
+#define SLC_JSON_DESERIALISE_MEMBER(x) ::slc::Serialisation::DeserialiseImpl(data, value.x, #x);
 
 #define SLC_JSON_SERIALISE(CLASS, ...)							\
 	nlohmann::json ToJson()	const								\
@@ -58,5 +88,5 @@ namespace slc {
 	{															\
 		CLASS value{};											\
 		SLC_FOR_EACH(SLC_JSON_DESERIALISE_MEMBER, __VA_ARGS__)	\
-		return std::move(value);								\
+		return value;											\
 	}

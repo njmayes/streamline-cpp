@@ -238,6 +238,14 @@ namespace slc {
 
 using namespace slc;
 
+
+struct SerialisationTest
+{
+	int a, b;
+
+	SLC_JSON_SERIALISE(SerialisationTest, a, b);
+};
+
 Application* CreateApplication(int argc, char** argv)
 {
 	Impl<ApplicationSpecification> spec = MakeImpl<ApplicationSpecification>();
