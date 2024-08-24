@@ -1,6 +1,6 @@
 #include "streamline.h"
 
-#include "Common/Reflection.h"
+#include "slc/Common/Reflection.h"
 
 #include <iostream>
 
