@@ -30,6 +30,7 @@ project "StreamlineCore"
         "%{IncludeDir.glm}",
         "%{IncludeDir.imgui}",
         "%{IncludeDir.ImGuizmo}",
+        "%{IncludeDir.json}",
         "%{IncludeDir.magic_enum}",
         "%{IncludeDir.pfd}",
         "%{IncludeDir.stb_image}",

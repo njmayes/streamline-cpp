@@ -7,6 +7,7 @@
 
 #include <filesystem>
 #include <format>
+#include <fstream>
 
 namespace slc {
 
