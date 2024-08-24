@@ -7,63 +7,20 @@
 namespace slc {
 
 	template<typename T>
-	concept CanSerialise = IsStandard<T> and requires (T&& t)
+	concept CanSerialise = requires (const T& t)
 	{
-		{ t.ToJson() } -> std::same_as<nlohmann::json>;
+		{ to_json(std::declval<nlohmann::json&>(), t) };
 	};
 
 	template<typename T>
-	concept CanDeserialise = IsStandard<T> and requires
+	concept CanDeserialise = requires (T& t)
 	{
-		{ T::FromJson(std::declval<nlohmann::json>()) } -> std::same_as<T>;
+		{ from_json(std::declval<const nlohmann::json&>(), t) };
 	};
 
 	template<typename T>
 	concept Serialisable = CanSerialise<T> and CanDeserialise<T>;
 
-	namespace Serialisation
-	{
-		template<typename T>
-		void SerialiseImpl(nlohmann::json& data, const T& value, std::string_view stringify)
-		{
-			if constexpr (CanSerialise<std::remove_cvref_t<decltype(value)>>)
-			{
-				data[stringify] = value.ToJson();
-			}
-			else
-			{
-				if constexpr (IsEnum<T>)
-				{
-					data[stringify] = Enum::ToString(value);
-				}
-				else
-				{
-					data[stringify] = value;
-				}
-			}
-		}
-
-		template<typename T>
-		void DeserialiseImpl(const nlohmann::json& data, T& value, std::string_view stringify)
-		{
-			using Type = typeof(value);
-			if constexpr (::slc::CanDeserialise<Type>)
-			{
-				value = Type::FromJson(data[stringify]);
-			}
-			else
-			{
-				if constexpr (IsEnum<T>)
-				{
-					value = Enum::FromString<T>(data[stringify].template get<std::string_view>());
-				}
-				else
-				{
-					value = data[stringify].template get<typeof(value)>();
-				}
-			}
-		}
-	}
 
 	class JSON
 	{
@@ -72,35 +29,43 @@ namespace slc {
 		static void Serialise(const T& value, std::string_view filepath)
 		{
 			std::ofstream f(filepath.data());
-			nlohmann::json j = value.ToJson();
-			f << std::setw(4) << j << std::endl;
+			f << std::setw(4) << nlohmann::json::parse(value) << std::endl;
 		}
 
 		template<Serialisable T>
-		static T Deserialise( std::string_view filepath)
+		static T Deserialise(std::string_view filepath)
 		{
 			std::ifstream f(filepath.data());
 			nlohmann::json data = nlohmann::json::parse(f);
-			return T::FromJson(data);
+			return data.template get<T>();
 		}
 	};
 
 }
 
-
-#define SLC_JSON_SERIALISE_MEMBER(x) ::slc::Serialisation::SerialiseImpl(data, x, #x);
-#define SLC_JSON_DESERIALISE_MEMBER(x) ::slc::Serialisation::DeserialiseImpl(data, value.x, #x);
-
-#define SLC_JSON_SERIALISE(CLASS, ...)							\
-	nlohmann::json ToJson()	const								\
-	{															\
-		nlohmann::json data{};									\
-		SLC_FOR_EACH(SLC_JSON_SERIALISE_MEMBER, __VA_ARGS__)	\
-		return data;											\
-	}															\
-	static CLASS FromJson(const nlohmann::json& data)			\
-	{															\
-		CLASS value{};											\
-		SLC_FOR_EACH(SLC_JSON_DESERIALISE_MEMBER, __VA_ARGS__)	\
-		return value;											\
-	}
+#define SLC_JSON_SERIALISE(CLASS, ...) NLOHMANN_DEFINE_TYPE_INTRUSIVE(CLASS, __VA_ARGS__)
+#define SLC_JSON_SERIALISE_ENUM(ENUM_TYPE)														\
+    template<typename BasicJsonType>                                                            \
+    inline void to_json(BasicJsonType& j, const ENUM_TYPE& e)                                   \
+    {                                                                                           \
+        static_assert(std::is_enum<ENUM_TYPE>::value, #ENUM_TYPE " must be an enum!");          \
+        static const auto m = magic_enum::enum_entries<ENUM_TYPE>();							\
+        auto it = std::find_if(std::begin(m), std::end(m),                                      \
+                               [e](const std::pair<ENUM_TYPE, BasicJsonType>& ej_pair) -> bool  \
+        {                                                                                       \
+            return ej_pair.first == e;                                                          \
+        });                                                                                     \
+        j = ((it != std::end(m)) ? it : std::begin(m))->second;                                 \
+    }                                                                                           \
+    template<typename BasicJsonType>                                                            \
+    inline void from_json(const BasicJsonType& j, ENUM_TYPE& e)                                 \
+    {                                                                                           \
+        static_assert(std::is_enum<ENUM_TYPE>::value, #ENUM_TYPE " must be an enum!");          \
+        static const auto m = magic_enum::enum_entries<ENUM_TYPE>();							\
+        auto it = std::find_if(std::begin(m), std::end(m),                                      \
+                               [&j](const std::pair<ENUM_TYPE, BasicJsonType>& ej_pair) -> bool \
+        {                                                                                       \
+            return ej_pair.second == j;                                                         \
+        });                                                                                     \
+        e = ((it != std::end(m)) ? it : std::begin(m))->first;                                  \
+    }
