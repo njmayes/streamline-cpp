@@ -28,17 +28,17 @@ namespace slc {
 		{
 			if constexpr (CanSerialise<std::remove_cvref_t<decltype(value)>>)
 			{
-				data[string] = value.ToJson();
+				data[stringify] = value.ToJson();
 			}
 			else
 			{
 				if constexpr (IsEnum<T>)
 				{
-					data[string] = Enum::ToString(value);
+					data[stringify] = Enum::ToString(value);
 				}
 				else
 				{
-					data[string] = value;
+					data[stringify] = value;
 				}
 			}
 		}
@@ -46,7 +46,7 @@ namespace slc {
 		template<typename T>
 		void DeserialiseImpl(const nlohmann::json& data, T& value, std::string_view stringify)
 		{
-			using Type = typeof(x);	
+			using Type = typeof(value);
 			if constexpr (::slc::CanDeserialise<Type>)
 			{
 				value = Type::FromJson(data[stringify]);
@@ -71,7 +71,7 @@ namespace slc {
 		template<Serialisable T>
 		static void Serialise(const T& value, std::string_view filepath)
 		{
-			std::ofstream f(filepath);
+			std::ofstream f(filepath.data());
 			nlohmann::json j = value.ToJson();
 			f << std::setw(4) << j << std::endl;
 		}
@@ -79,7 +79,7 @@ namespace slc {
 		template<Serialisable T>
 		static T Deserialise( std::string_view filepath)
 		{
-			std::ifstream f(filepath);
+			std::ifstream f(filepath.data());
 			nlohmann::json data = nlohmann::json::parse(f);
 			return T::FromJson(data);
 		}
