@@ -12,6 +12,10 @@
 	#define ASSERT(...) [[assume(x)]]
 #endif
 
+#define SLC_STRINGIFY( L )  #L 
+#define SLC_MAKE_STRING( x ) SLC_STRINGIFY(x)
+#define SLC_TODO(x) __pragma(message(__FILE__ "(" SLC_MAKE_STRING(__LINE__) ") : TODO - " x))
+
 #define SASSERT(x, ...) static_assert(x)
 
 #define SCONSTEXPR static constexpr
