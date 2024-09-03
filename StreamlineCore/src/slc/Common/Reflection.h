@@ -127,7 +127,10 @@ namespace slc {
     concept Castable = requires (From from) { static_cast<To>(from); };
 
     template<typename T>
-    concept Numeric = std::integral<T>;
+    concept Integral = std::integral<T>;
+
+    template<typename T>
+    concept Numeric = std::is_arithmetic_v<T>;
 
     template<typename T>
     concept AddAssignable = requires (T&& t)
