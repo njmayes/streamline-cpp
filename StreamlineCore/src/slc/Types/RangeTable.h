@@ -23,19 +23,40 @@ namespace slc {
             : mTable(MakePairs(data, std::make_index_sequence<N>()))
         {}
 
-        constexpr std::optional<T> Lookup(KeyType value) const noexcept
+        constexpr std::optional<T> TryLookup(KeyType value) const noexcept
         {
             auto it = mTable.upper_bound(value);
             if (it != mTable.begin())
             {
                 --it;
-                if (value >= it->second.low and value <= it->second.high)
+                if (value >= it->second.low and value < it->second.high)
                 {
                     return it->second.value;
                 }
             }
 
             return std::nullopt;
+        }
+
+        constexpr const T& Lookup(KeyType value) const noexcept
+        {
+            auto it = mTable.upper_bound(value);
+            ASSERT(it != mTable.begin(), "Value not in any range");
+
+            --it;
+            ASSERT(value >= it->second.low and value < it->second.high, "Value not in any range");
+
+            return it->second.value;
+        }
+
+        constexpr bool Contains(KeyType value) const noexcept
+        {
+            auto it = mTable.upper_bound(value);
+            if (it == mTable.begin())
+                return false;
+
+            it--;
+            return value >= it->second.low and value < it->second.high;
         }
 
     private:
@@ -56,7 +77,7 @@ namespace slc {
     };
 
     template<typename T, std::size_t N, Numeric KeyType = int>
-    static constexpr RangeTable<T, N, KeyType> MakeRangeTable(const TableValue<T, KeyType>(&items)[N])
+    static consteval RangeTable<T, N, KeyType> MakeRangeTable(const TableValue<T, KeyType>(&items)[N])
     {
         return RangeTable<T, N, KeyType>(items);
     }
