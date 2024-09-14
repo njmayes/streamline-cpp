@@ -26,7 +26,7 @@
 
 namespace slc {
 
-    namespace Reflection {
+    namespace detail {
 
 #if defined SLC_FUNC_SIGNATURE_PREFIX
         template<typename Type>
@@ -59,8 +59,8 @@ namespace slc {
     struct TypeTraits
     {
 #if defined SLC_FUNC_SIGNATURE_PREFIX
-        static constexpr auto LongName = Reflection::GetLongName<T>();
-        static constexpr auto Name = Reflection::GetName<T>();
+        static constexpr auto LongName = detail::GetLongName<T>();
+        static constexpr auto Name = detail::GetName<T>();
 #endif
         static constexpr bool IsObject = std::is_class_v<T>;
         static constexpr bool IsPointer = std::is_pointer_v<T>;
@@ -113,6 +113,41 @@ namespace slc {
             return magic_enum::enum_count<T>();
         }
     }
+
+
+    namespace TypeUtils {
+
+        template<size_t I, typename T, typename TupleType>
+        static consteval size_t IndexFunction()
+        {
+            static_assert(I < std::tuple_size_v<TupleType>, "The element is not in the tuple");
+
+            using IndexType = typename std::tuple_element<I, TupleType>::type;
+
+            if constexpr (std::is_same_v<T, IndexType>)
+                return I;
+            else
+                return IndexFunction<I + 1, T, TupleType>();
+        }
+    }
+
+    template<typename... T>
+    struct TypeList
+    {
+        static constexpr size_t Size = sizeof...(T);
+
+        using TupleType = std::tuple<T...>;
+        using VariantType = std::variant<T...>;
+
+        template<typename R>
+        static constexpr bool Contains = std::disjunction<std::is_same<R, T>...>::value;
+
+        template<typename R>
+        static constexpr size_t Index = TypeUtils::IndexFunction<0, R, TupleType>();
+
+        template<size_t I>
+        using Type = std::tuple_element<I, TupleType>::type;
+    };
 
     template<typename T, typename Base>
     concept DerivedFromOnly = std::derived_from<T, Base> and not std::same_as<T, Base>;
@@ -185,8 +220,10 @@ namespace slc {
         template <size_t i>
         struct Arg
         {
-            using Type = typename std::tuple_element<i, std::tuple<Args...>>::type;
+            using Type = std::tuple_element<i, std::tuple<Args...>>::type;
         };
+
+        using Arguments = TypeList<Args...>;
     };
 
     // Function pointer specialisation
@@ -194,6 +231,7 @@ namespace slc {
     struct FunctionTraits<R(*)(Args...)>
     {
         using ReturnType = R;
+
         static constexpr size_t ArgC = sizeof...(Args);
 
         template <size_t i>
@@ -201,6 +239,8 @@ namespace slc {
         {
             using Type = typename std::tuple_element<i, std::tuple<Args...>>::type;
         };
+
+        using Arguments = TypeList<Args...>;
     };
 
     // Member function pointer specialisation
@@ -216,41 +256,8 @@ namespace slc {
         {
             using Type = typename std::tuple_element<i, std::tuple<Args...>>::type;
         };
-    };
 
-
-    namespace TypeUtils {
-
-        template<size_t I, typename T, typename TupleType>
-        static consteval size_t IndexFunction()
-        {
-            static_assert(I < std::tuple_size_v<TupleType>, "The element is not in the tuple");
-
-            using IndexType = typename std::tuple_element<I, TupleType>::type;
-
-            if constexpr (std::is_same_v<T, IndexType>)
-                return I;
-            else
-                return IndexFunction<I + 1, T, TupleType>();
-        }
-    }
-
-    template<typename... T>
-    struct TypeList
-    {
-        static constexpr size_t Size = sizeof...(T);
-
-        using TupleType = std::tuple<T...>;
-        using VariantType = std::variant<T...>;
-
-        template<typename R>
-        static constexpr bool Contains = std::disjunction<std::is_same<R, T>...>::value;
-
-        template<typename R>
-        static constexpr size_t Index = TypeUtils::IndexFunction<0, R, TupleType>();
-
-        template<size_t I>
-        using Type = std::tuple_element<I, TupleType>::type;
+        using Arguments = TypeList<Args...>;
     };
 
 }
