@@ -147,6 +147,9 @@ namespace slc {
 
         template<size_t I>
         using Type = std::tuple_element<I, TupleType>::type;
+
+        template<size_t I>
+        using Traits = TypeTraits<typename std::tuple_element<I, TupleType>::type>;
     };
 
     template<typename T, typename Base>
@@ -260,4 +263,15 @@ namespace slc {
         using Arguments = TypeList<Args...>;
     };
 
+
+    template<typename T>
+    struct PropertyTraits;
+
+    // Member object pointer specialisation
+    template <typename P, typename O>
+    struct PropertyTraits<P O::*>
+    {
+        using ObjectType = O;
+        using PropType = P;
+    };
 }
