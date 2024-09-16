@@ -1,5 +1,6 @@
 #include "Type.h"
 #include "Property.h"
+#include "Method.h"
 
 namespace slc {
 
@@ -16,6 +17,22 @@ namespace slc {
 	{
 		return mInfo->properties | 
 			std::views::transform([](const auto& property) { return Property(property); }) |
+			std::ranges::to<std::vector>();
+	}
+
+	Method Type::GetMethod(std::string_view name) const
+	{
+		auto it = std::ranges::find_if(mInfo->methods, [name](const auto& method) { return method.name == name; });
+		if (it == mInfo->methods.end())
+			return {};
+
+		return Method(*it);
+	}
+
+	std::vector<Method> Type::GetMethods() const
+	{
+		return mInfo->methods |
+			std::views::transform([](const auto& method) { return Method(method); }) |
 			std::ranges::to<std::vector>();
 	}
 }

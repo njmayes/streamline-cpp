@@ -40,6 +40,18 @@ namespace slc {
 			return &sReflectionState.data[Key];
 		}
 
+		template<CanReflect T>
+		static const TypeInfo* GetInfo()
+		{
+			using BaseType = std::remove_cvref_t<std::remove_pointer_t<T>>;
+			using Traits = TypeTraits<BaseType>;
+
+			if (not sReflectionState.data.contains(Traits::LongName))
+				Register<BaseType>();
+
+			return &sReflectionState.data[Traits::LongName];
+		}
+
 		template<CanReflect T, typename... Args> requires std::is_constructible_v<T, Args...>
 		static void RegisterConstructor()
 		{
@@ -113,17 +125,6 @@ namespace slc {
 
 			return &sReflectionState.data[Traits::LongName];
 		}
-		template<CanReflect T>
-		static const TypeInfo* GetInfo()
-		{
-			using BaseType = std::remove_cvref_t<std::remove_pointer_t<T>>;
-			using Traits = TypeTraits<BaseType>;
-
-			if (not sReflectionState.data.contains(Traits::LongName))
-				Register<BaseType>();
-
-			return &sReflectionState.data[Traits::LongName];
-		}
 
 		template<CanReflect T>
 		static void Register()
@@ -171,13 +172,7 @@ namespace slc {
 
 			prop.prop_type = GetInfo<PropType>();
 
-			prop.accessor = [accessor](Instance ctx) {
-				return Instance(
-					GetInfo<PropType>(),
-					&(static_cast<T*>(ctx.data)->*accessor)
-				);
-			};
-			prop.const_accessor = [accessor](ConstInstance ctx) {
+			prop.accessor = [accessor](ConstInstance ctx) {
 				return ConstInstance(
 					GetInfo<PropType>(),
 					&(static_cast<const T*>(ctx.data)->*accessor)
@@ -200,6 +195,8 @@ namespace slc {
 			using ArgTypes = MemberTraits::Arguments;
 			using ReturnType = typename MemberTraits::ReturnType;
 
+			SCONSTEXPR bool IsReturnVoid = std::same_as<ReturnType, void>;
+
 			auto get_arg_types = [] <std::size_t... Is> (std::index_sequence<Is...>) -> std::vector<const TypeInfo*> {
 				return { { GetInfo< MemberTraits::template Arg<Is>::Type>()... } };
 			};
@@ -209,28 +206,29 @@ namespace slc {
 			MethodInfo method;
 			method.name = name;
 			method.parent_type = typeInfo;
-			method.return_type = GetInfo<ReturnType>();
 			method.arguments = std::move(arg_types);
+			if constexpr (not IsReturnVoid)
+				method.return_type = GetInfo<ReturnType>();
 
-			auto gen_tuple_val = []<std::size_t I>(Instance object) {
+			auto gen_tuple_val = []<std::size_t I>(const Instance& object) {
 				using ArgType = MemberTraits::template Arg<I>::Type;
-				return static_cast<ArgType*>(object.data);
+				return *static_cast<ArgType*>(object.data);
 			};
 
-			auto gen_tuple = [gen_tuple_val] <std::size_t... Is> (const std::vector<Instance>&args, std::index_sequence<Is...>)-> ArgTypes::TupleType {
+			auto gen_tuple = [gen_tuple_val] <std::size_t... Is> (const std::vector<Instance>& args, std::index_sequence<Is...>)-> ArgTypes::TupleType {
 				return std::make_tuple(gen_tuple_val.template operator()<Is>(args[Is])...);
 			};
 
-			method.invoker = [=](Instance ctx, const std::vector<Instance>& args) -> InvokeResult {
+			method.invoker = [=](Instance ctx, const std::vector<Instance>& args) -> Instance {
 				auto tuple_params = gen_tuple(args, std::make_index_sequence<MemberTraits::ArgC>());
 
-				if constexpr (std::same_as<ReturnType, void>)
+				if constexpr (IsReturnVoid)
 				{
 					auto func = [&]<typename... Args>(Args&&... argv) {
 						(static_cast<T*>(ctx.data)->*accessor)(std::forward<Args>(argv)...);
 					};
 					std::apply(func, tuple_params);
-					return std::nullopt;
+					return {};
 				}
 				else
 				{
@@ -241,7 +239,7 @@ namespace slc {
 					return Instance(
 						GetInfo<ReturnType>(),
 						new ReturnType(std::apply(func, tuple_params)),
-						[](void* data) { delete static_cast<T*>(data); }
+						[](void* data) { delete static_cast<ReturnType*>(data); }
 					);
 				}
 			};
@@ -263,9 +261,6 @@ namespace slc {
 		};
 
 		inline static Impl sReflectionState;
-
-		template<typename T>
-		friend struct Reflectable;
 	};
 
 	template<typename T>
@@ -286,8 +281,44 @@ namespace slc {
 		);
 	}
 
+	template<typename T> requires (CanReflect<T> and not std::derived_from<T, Reflectable<T>>)
+	inline Instance MakeBuiltInInstance(T* value)
+	{
+		return Instance(
+			Reflection::GetInfo<T>(),
+			value
+		);
+	}
+
+	template<typename T> requires (CanReflect<T> and not std::derived_from<T, Reflectable<T>>)
+	inline ConstInstance MakeBuiltInInstance(const T* value)
+	{
+		return Instance(
+			Reflection::GetInfo<T>(),
+			value
+		);
+	}
+
 	template<CanReflect T>
-	inline T* Instance::As()
+	inline Instance MakeInstance(T& value)
+	{
+		if constexpr (std::derived_from<T, Reflectable<T>>)
+			return value.GetInstance();
+		else
+			return MakeBuiltInInstance<T>(&value);
+	}
+
+	template<CanReflect T>
+	inline ConstInstance MakeInstance(const T& value)
+	{
+		if constexpr (std::derived_from<T, Reflectable<T>>)
+			return value.GetConstInstance();
+		else
+			return MakeBuiltInInstance<T>(&value);
+	}
+
+	template<CanReflect T>
+	inline T* Instance::As() const
 	{
 		SCONSTEXPR bool IsBuiltInType = std::is_arithmetic_v<T>;
 
@@ -302,7 +333,7 @@ namespace slc {
 	}
 
 	template<CanReflect T>
-	inline const T* ConstInstance::As()
+	inline const T* ConstInstance::As() const
 	{
 		SCONSTEXPR bool IsBuiltInType = std::is_arithmetic_v<T>;
 
