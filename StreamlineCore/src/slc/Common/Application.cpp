@@ -3,8 +3,6 @@
 #include "slc/Graphics/Renderer.h"
 #include "slc/ImGui/Widgets.h"
 
-#include "slc/Reflection/Reflection.h"
-
 namespace slc {
 
 	Application::Application(Impl<ApplicationSpecification> spec)
