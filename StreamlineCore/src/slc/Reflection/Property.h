@@ -25,16 +25,17 @@ namespace slc {
 			ASSERT(Traits::LongName == mProperty->prop_type->name);
 			ASSERT(ObjTraits::LongName == mProperty->parent_type->name);
 
-			auto instance = GetValue(MakeInstance(obj));
+			auto instance = GetValue(obj);
 			ASSERT(instance.type == mProperty->prop_type);
 
 			auto ptr = static_cast<const T*>(instance.data);
 			return static_cast<const T&>(*ptr);
 		}
 
-		ConstInstance GetValue(ConstInstance obj) const
+		template<CanReflect Obj>
+		ConstInstance GetValue(const Obj& obj) const
 		{
-			return mProperty->accessor(std::move(obj));
+			return mProperty->accessor(MakeInstance(obj));
 		}
 
 		template<CanReflect T, CanReflect Obj>
@@ -43,12 +44,13 @@ namespace slc {
 			using Traits = TypeTraits<T>;
 			ASSERT(Traits::LongName == mProperty->prop_type->name);
 
-			SetValue(MakeInstance(obj), MakeInstance(value));
+			SetValue(obj, MakeInstance(value));
 		}
 
-		void SetValue(Instance obj, ConstInstance value)
+		template<CanReflect Obj>
+		void SetValue(Obj& obj, ConstInstance value)
 		{
-			return mProperty->setter(std::move(obj), std::move(value));
+			return mProperty->setter(MakeInstance(obj), std::move(value));
 		}
 
 	private:

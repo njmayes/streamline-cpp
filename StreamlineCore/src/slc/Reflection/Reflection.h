@@ -347,14 +347,32 @@ namespace slc {
 		return static_cast<const T*>(data);
 	}
 
-#define SLC_REFLECT_MEMBER(CLASS, member)											\
-{																					\
-	using MemberType = decltype(&CLASS::member);									\
-	::slc::Reflection::RegisterMember<CLASS, MemberType>(#member, &CLASS::member);	\
+#define SLC_REFLECT_MEMBER(CLASS, member) \
+	::slc::Reflection::RegisterMember<CLASS>(#member, &CLASS::member);
+
+#define SLC_REFLECT_MEMBER_IMPL(member)	\
+    ::slc::Reflection::RegisterMember<ClassType>(#member, &ClassType::member); 
+
+#define SLC_REFLECT_CLASS(CLASS, ...)					\
+    using ClassType = CLASS;							\
+    SLC_FOR_EACH(SLC_REFLECT_MEMBER_IMPL, __VA_ARGS__)
+
+#define SLC_DEFER_REFLECT(CLASS, ...)						\
+	::slc::Reflection::QueueReflection([]() {				\
+        using ClassType = CLASS;							\
+        SLC_FOR_EACH(SLC_REFLECT_MEMBER_IMPL, __VA_ARGS__)  \
+	});                                                     \
 }
 
-#define SLC_DEFER_REFLECT(CLASS, ...)			\
-	::slc::Reflection::QueueAddType([]() {		\
-		SLC_REFLECT_MEMBER(CLASS, __VA_ARGS__)	\
-	})
+
+int main()
+{
+	struct Test : slc::Reflectable<Test>
+	{
+		int a, b;
+		int f(int c) { return a + c; }
+		void g(int c) { a = c; }
+	};
+
+	SLC_REFLECT_CLASS(Test, a, b, f, g)
 }

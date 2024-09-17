@@ -51,6 +51,10 @@ project "StreamlineCore"
         {
             "opengl32.lib",
         }
+		buildoptions 
+		{
+			"/Zc:preprocessor"
+		}
 		
 	filter "system:linux"
         kind "SharedLib"

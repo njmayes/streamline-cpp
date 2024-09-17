@@ -238,6 +238,11 @@ namespace slc {
 		constexpr const_iterator end() const noexcept { return mData + N; }
 		constexpr const_iterator cend() const noexcept { return end(); }
 
+		// Creates copy of static map with additional element.
+		constexpr StaticMap<Element, N + 1> emplace(const KeyType& key, const MappedType& value) const
+		{
+			return emplace(key, value, std::make_index_sequence<N>());
+		}
 
 		constexpr const_iterator find(const KeyType& key) const noexcept
 		{
@@ -260,6 +265,14 @@ namespace slc {
 
 		constexpr const_iterator lower_bound(const KeyType& key) const noexcept { return Internal::Bound<Internal::Less>(begin(), end(), CompareType{ key }); }
 		constexpr const_iterator upper_bound(const KeyType& key) const noexcept { return Internal::Bound<Internal::GreaterEqual>(begin(), end(), CompareType{ key }); }
+
+	private:
+		template<std::size_t... I>
+		constexpr StaticMap<Element, N + 1> emplace(const KeyType& key, const MappedType& value, std::index_sequence<I...>) const
+		{
+			std::array<ValueType, N + 1> data = { (*mData[I])..., { key, value } };
+			return StaticMap<Element, N + 1>(data);
+		}
 
 	private:
 		Element mData[N];

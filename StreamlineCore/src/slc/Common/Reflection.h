@@ -131,16 +131,16 @@ namespace slc {
         }
     }
 
-    template<typename... T>
+    template<typename... Ts>
     struct TypeList
     {
-        static constexpr size_t Size = sizeof...(T);
+        static constexpr size_t Size = sizeof...(Ts);
 
-        using TupleType = std::tuple<T...>;
-        using VariantType = std::variant<T...>;
+        using TupleType = std::tuple<Ts...>;
+        using VariantType = std::variant<Ts...>;
 
         template<typename R>
-        static constexpr bool Contains = std::disjunction<std::is_same<R, T>...>::value;
+        static constexpr bool Contains = std::disjunction<std::is_same<R, Ts>...>::value;
 
         template<typename R>
         static constexpr size_t Index = TypeUtils::IndexFunction<0, R, TupleType>();
