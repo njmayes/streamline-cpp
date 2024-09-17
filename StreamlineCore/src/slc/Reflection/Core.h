@@ -1,6 +1,7 @@
 #pragma once
 
 #include "slc/Common/Base.h"
+#include "slc/Types/Any.h"
 
 #include <random>
 
@@ -76,7 +77,6 @@ namespace slc {
 	struct MethodInfo;
 
 	struct Instance;
-	struct ConstInstance;
 
 	struct ReflectableObject
 	{
@@ -93,8 +93,7 @@ namespace slc {
 		>
 		friend constexpr void adl_RegisterBases(void*) {}
 
-		Instance GetInstance();
-		ConstInstance GetConstInstance() const;
+		Instance GetInstance() const;
 	};
 
 	template<typename T>
@@ -103,129 +102,31 @@ namespace slc {
 		or std::is_pointer_v<T>
 		or std::is_reference_v<T>;
 
-	namespace detail {
-
-		class InstanceSeeder
-		{
-			static std::uint64_t Generate() { return sUniformDistribution(sEngine); }
-
-			inline static std::random_device sRandomDevice;
-			inline static std::mt19937_64 sEngine{ sRandomDevice() };
-			inline static std::uniform_int_distribution<std::uint64_t>(sUniformDistribution);
-
-			friend struct Instance;
-			friend struct ConstInstance;
-		};
-	}
-
-	struct InstanceBase
+	struct Instance
 	{
-		std::uint64_t id = 0;
 		const TypeInfo* type = nullptr;
-
-		bool IsVoid() const { return not id ; }
-	};
-
-	struct Instance : InstanceBase
-	{
-		void* data = nullptr;
-
-		using Deleter = std::function<void(void*)>;
-		Deleter deleter = {};
+		Any data;
 
 		Instance() = default;
-		Instance(const TypeInfo* t, void* d, Deleter del = {})
-			: InstanceBase{ detail::InstanceSeeder::Generate(), t }, data(d), deleter(del) {}
+		template<typename T>
+		Instance(const TypeInfo* t, T&& d)
+			: type(t)
+			, data(d)
+			{}
 
-		~Instance()
-		{
-			if (deleter)
-				deleter(data);
-		}
-
-		Instance(const Instance&) = delete;
-		Instance& operator=(const Instance&) = delete;
-
-		Instance(Instance&& other) noexcept
-		{
-			id = std::exchange(other.id, 0);
-			type = std::exchange(other.type, nullptr);
-			data = std::exchange(other.data, nullptr);
-			deleter = std::exchange(other.deleter, {});
-		}
-		Instance& operator=(Instance&& other) noexcept
-		{
-			id = std::exchange(other.id, 0);
-			type = std::exchange(other.type, nullptr);
-			data = std::exchange(other.data, nullptr);
-			deleter = std::exchange(other.deleter, {});
-
-			return *this;
-		}
-
-		template<CanReflect T>
-		T* As() const;
+		bool Valid() const { return type and data.HasValue(); }
+		bool IsVoid() const { return not Valid(); }
 	};
 
-	struct ConstInstance : InstanceBase
-	{
-		const void* data;
-
-		using Deleter = std::function<void(const void*)>;
-		Deleter deleter;
-
-		ConstInstance() = default;
-		ConstInstance(const TypeInfo* t, const void* d, Deleter del = {})
-			: InstanceBase{ detail::InstanceSeeder::Generate(), t }, data(d), deleter(del) {}
-
-		~ConstInstance()
-		{
-			if (deleter)
-				deleter(data);
-		}
-
-		ConstInstance(const ConstInstance&) = delete;
-		ConstInstance& operator=(const ConstInstance&) = delete;
-
-		ConstInstance(ConstInstance&& other) noexcept
-		{
-			type = other.type;
-			data = std::exchange(other.data, nullptr);
-			deleter = std::move(other.deleter);
-		}
-		ConstInstance& operator=(ConstInstance&& other) noexcept
-		{
-			type = other.type;
-			data = std::exchange(other.data, nullptr);
-			deleter = std::move(other.deleter);
-
-			return *this;
-		}
-
-		template<CanReflect T>
-		const T* As() const;
-	};
-
-	template<typename T> requires (CanReflect<T> and not std::derived_from<T, Reflectable<T>>)
-	Instance MakeBuiltInInstance(T* value);
-
-	template<typename T> requires (CanReflect<T> and not std::derived_from<T, Reflectable<T>>)
-	ConstInstance MakeBuiltInInstance(const T* value);
-
 	template<CanReflect T>
-	Instance MakeInstance(T& value);
+	Instance MakeInstance(T&& value);
 
-	template<CanReflect T>
-	ConstInstance MakeInstance(const T& value);
+	using GetFunction = std::function<Instance(Instance)>;
+	using SetFunction = std::function<void(Instance, Instance)>;
 
-	using InvokeResult = std::optional<Instance>;
-
-	using GetFunction = std::function<ConstInstance(ConstInstance)>;
-	using SetFunction = std::function<void(Instance, ConstInstance)>;
-
-	using Constructor = std::function<Instance(const std::vector<Instance>&)>;
+	using Constructor = std::function<Instance(std::vector<Instance>)>;
 	using Destructor = std::function<void(Instance)>;
-	using Invoker = std::function<Instance(Instance, std::vector<Instance> const&)>;
+	using Invoker = std::function<Instance(Instance, std::vector<Instance>)>;
 
 	struct PropertyInfo
 	{

@@ -63,6 +63,7 @@ namespace slc {
         static constexpr auto Name = detail::GetName<T>();
 #endif
         static constexpr bool IsObject = std::is_class_v<T>;
+        static constexpr bool IsReference = std::is_reference_v<T>;
         static constexpr bool IsPointer = std::is_pointer_v<T>;
         static constexpr bool IsEnum = std::is_enum_v<T>;
         static constexpr bool IsArray = std::is_array_v<T>;
