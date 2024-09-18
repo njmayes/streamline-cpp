@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Core.h"
+#include "Reflection.h"
 
 namespace slc {
 
@@ -40,20 +40,13 @@ namespace slc {
 				return MakeInstance(value);
 			};
 
-			std::vector<Instance> instanced_args{};
-			instanced_args.reserve(sizeof...(Args));
-
-			([&]()
-			{
-				instanced_args.emplace_back(make_instance_arg(std::forward<Args>(args)));
-			}(), ...);
-
-			auto result = mMethod->invoker(MakeInstance(obj), instanced_args);
+			std::vector<Instance> instanced_args = { make_instance_arg(std::forward<Args>(args))... };
+			auto result = mMethod->invoker(MakeInstance(obj), std::move(instanced_args));
 
 			if (result.IsVoid())
 				return std::nullopt;
 
-			return std::move(*(result.As<T>()));
+			return std::move(result.data.Get<T>());
 		}
 
 	private:

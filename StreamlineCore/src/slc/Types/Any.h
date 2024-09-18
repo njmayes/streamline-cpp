@@ -13,7 +13,6 @@ namespace slc {
         Any(T&& val)
         {
             using Traits = TypeTraits<T>;
-            mReferenceType = Traits::IsReference;
             if constexpr (Traits::IsReference)
             {
                 mValue = std::ref(val);
@@ -29,9 +28,10 @@ namespace slc {
         template<typename T>
         T& Get()
         {
-            if (mReferenceType)
+            using Traits = TypeTraits<T>;
+            if constexpr (Traits::IsReference)
             {
-                return std::any_cast<std::reference_wrapper<T>>(mValue).get();
+                return std::any_cast<std::reference_wrapper<std::remove_reference_t<T>>>(mValue).get();
             }
             else
             {
@@ -41,6 +41,5 @@ namespace slc {
 
     private:
         std::any mValue;
-        bool mReferenceType;
     };
 }

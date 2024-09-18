@@ -4,6 +4,13 @@
 
 namespace slc {
 
+	std::vector<Type> Type::GetBaseClasses() const
+	{
+		return mInfo->base_types |
+			std::views::transform([](const auto& type) { return Type(type); }) |
+			std::ranges::to<std::vector>();
+	}
+
 	Property Type::GetProperty(std::string_view name) const
 	{
 		auto it = std::ranges::find_if(mInfo->properties, [name](const auto& prop) { return prop.name == name; });

@@ -219,14 +219,6 @@ namespace slc {
     struct FunctionTraits<std::function<R(Args...)>>
     {
         using ReturnType = R;
-        static constexpr size_t ArgC = sizeof...(Args);
-
-        template <size_t i>
-        struct Arg
-        {
-            using Type = std::tuple_element<i, std::tuple<Args...>>::type;
-        };
-
         using Arguments = TypeList<Args...>;
     };
 
@@ -235,32 +227,50 @@ namespace slc {
     struct FunctionTraits<R(*)(Args...)>
     {
         using ReturnType = R;
-
-        static constexpr size_t ArgC = sizeof...(Args);
-
-        template <size_t i>
-        struct Arg
-        {
-            using Type = typename std::tuple_element<i, std::tuple<Args...>>::type;
-        };
-
         using Arguments = TypeList<Args...>;
     };
 
-    // Member function pointer specialisation
+    // Member function pointer specialisations
     template <typename R, typename O, typename... Args >
     struct FunctionTraits<R(O::*)(Args...)>
     {
         using ObjectType = O;
         using ReturnType = R;
-        static constexpr size_t ArgC = sizeof...(Args);
-
-        template <size_t i>
-        struct Arg
-        {
-            using Type = typename std::tuple_element<i, std::tuple<Args...>>::type;
-        };
-
+        using Arguments = TypeList<Args...>;
+    };
+    template <typename R, typename O, typename... Args >
+    struct FunctionTraits<R(O::*)(Args...)&>
+    {
+        using ObjectType = O;
+        using ReturnType = R;
+        using Arguments = TypeList<Args...>;
+    };
+    template <typename R, typename O, typename... Args >
+    struct FunctionTraits<R(O::*)(Args...)&&>
+    {
+        using ObjectType = O;
+        using ReturnType = R;
+        using Arguments = TypeList<Args...>;
+    };
+    template <typename R, typename O, typename... Args >
+    struct FunctionTraits<R(O::*)(Args...) const>
+    {
+        using ObjectType = const O;
+        using ReturnType = R;
+        using Arguments = TypeList<Args...>;
+    };
+    template <typename R, typename O, typename... Args >
+    struct FunctionTraits<R(O::*)(Args...) const&>
+    {
+        using ObjectType = const O;
+        using ReturnType = R;
+        using Arguments = TypeList<Args...>;
+    };
+    template <typename R, typename O, typename... Args >
+    struct FunctionTraits<R(O::*)(Args...) const&&>
+    {
+        using ObjectType = const O;
+        using ReturnType = R;
         using Arguments = TypeList<Args...>;
     };
 

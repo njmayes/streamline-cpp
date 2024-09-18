@@ -22,6 +22,10 @@
 
 #include "slc/IO/Json.h"
 
+#include "slc/Reflection/Type.h"
+#include "slc/Reflection/Property.h"
+#include "slc/Reflection/Method.h"
+
 #include "slc/Types/Option.h"
 #include "slc/Types/Result.h"
 #include "slc/Types/UUID.h"

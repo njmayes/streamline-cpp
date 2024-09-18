@@ -3,8 +3,6 @@
 #include "slc/Common/Base.h"
 #include "slc/Types/Any.h"
 
-#include <random>
-
 namespace slc {
 
 	namespace detail {
@@ -78,13 +76,8 @@ namespace slc {
 
 	struct Instance;
 
-	struct ReflectableObject
-	{
-		virtual ~ReflectableObject() {}
-	};
-
 	template <typename T>
-	struct Reflectable : ReflectableObject
+	struct Reflectable
 	{
 		template <
 			typename D,
@@ -92,8 +85,6 @@ namespace slc {
 			typename detail::BaseInserter<D, T>::nonExistent = nullptr
 		>
 		friend constexpr void adl_RegisterBases(void*) {}
-
-		Instance GetInstance() const;
 	};
 
 	template<typename T>
@@ -108,14 +99,21 @@ namespace slc {
 		Any data;
 
 		Instance() = default;
+
 		template<typename T>
 		Instance(const TypeInfo* t, T&& d)
 			: type(t)
-			, data(d)
+			, data(std::forward<T>(d))
 			{}
 
 		bool Valid() const { return type and data.HasValue(); }
 		bool IsVoid() const { return not Valid(); }
+
+		template<typename T>
+		T Extract() 
+		{
+			return std::move(data.Get<T>());
+		}
 	};
 
 	template<CanReflect T>
@@ -126,7 +124,8 @@ namespace slc {
 
 	using Constructor = std::function<Instance(std::vector<Instance>)>;
 	using Destructor = std::function<void(Instance)>;
-	using Invoker = std::function<Instance(Instance, std::vector<Instance>)>;
+	using FunctionInvoker = std::function<Instance(std::vector<Instance>)>;
+	using MethodInvoker = std::function<Instance(Instance, std::vector<Instance>)>;
 
 	struct PropertyInfo
 	{
@@ -137,26 +136,19 @@ namespace slc {
 		SetFunction setter;
 	};
 
-	struct FunctionInfo
-	{
-		std::string_view name;
-		const TypeInfo* return_type;
-		std::vector<const TypeInfo*> arguments;
-		Invoker invoker;
-	};
-
 	struct MethodInfo
 	{
 		std::string_view name;
 		const TypeInfo* parent_type;
 		const TypeInfo* return_type;
 		std::vector<const TypeInfo*> arguments;
-		Invoker invoker;
+		MethodInvoker invoker;
 	};
 
 	struct ConstructorInfo
 	{
 		const TypeInfo* parent_type;
+		std::vector<const TypeInfo*> arguments;
 		Constructor invoker;
 	};
 
@@ -174,5 +166,13 @@ namespace slc {
 		std::optional<DestructorInfo> destructor;
 		std::vector<MethodInfo> methods;
 		std::vector<PropertyInfo> properties;
+	};
+
+	struct FunctionInfo
+	{
+		std::string_view name;
+		const TypeInfo* return_type;
+		std::vector<const TypeInfo*> arguments;
+		FunctionInvoker invoker;
 	};
 }

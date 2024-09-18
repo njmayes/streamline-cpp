@@ -1,43 +1,24 @@
 #pragma once
 
-#include "Type.h"
-#include "Property.h"
-#include "Method.h"
+#include "Core.h"
 
 namespace slc {
-
-	using AddTypeJob = std::function<void()>;
 
 	class Reflection
 	{
 	public:
+		using AddTypeJob = std::function<void()>;
 		static void QueueReflection(AddTypeJob&& job)
 		{
 			sReflectionState.init_job_queue.push_back(std::move(job));
 		}
 
-		static void ProcessQueue() 
+		static void ProcessQueue()
 		{
 			for (const auto& add_type : sReflectionState.init_job_queue)
 			{
 				add_type();
 			}
-		}
-
-		template<CanReflect T>
-		static Type Get()
-		{
-			using BaseType = std::remove_cvref_t<std::remove_pointer_t<T>>;
-			using Traits = TypeTraits<BaseType>;
-
-			SCONSTEXPR bool IsBuiltInType = std::is_arithmetic_v<BaseType>;
-			SCONSTEXPR std::string_view Key = IsBuiltInType ? BuiltInType : Traits::LongName;
-
-			using Traits = TypeTraits<BaseType>;
-			if (not sReflectionState.data.contains(Traits::LongName))
-				Register<BaseType>();
-
-			return &sReflectionState.data[Key];
 		}
 
 		template<CanReflect T>
@@ -61,13 +42,14 @@ namespace slc {
 
 			ConstructorInfo ctr;
 			ctr.parent_type = typeInfo;
+			ctr.arguments = { GetInfo<Args>()... };
 
 			auto gen_tuple_val = []<std::size_t I>(Instance& object) {
 				using ArgType = typename Params::template Type<I>;
 				return object.data.Get<ArgType>();
 			};
 
-			auto gen_tuple = [gen_tuple_val] <std::size_t... Is> (std::vector<Instance> args, std::index_sequence<Is...>)-> Params::TupleType {
+			auto gen_tuple = [gen_tuple_val] <std::size_t... Is> (std::vector<Instance>& args, std::index_sequence<Is...>)-> Params::TupleType {
 				return std::make_tuple(gen_tuple_val.template operator()<Is>(args[Is])...);
 			};
 
@@ -97,7 +79,7 @@ namespace slc {
 			dtr.invoker = [](Instance object) {
 				if (object.type->name != TypeTraits<T>::LongName)
 					return;
-				object.data.Get<T>().~T();
+				object.data.Get<T&&>().~T();
 			};
 
 			typeInfo->destructor.emplace(std::move(dtr));
@@ -135,25 +117,31 @@ namespace slc {
 
 				TypeInfo new_type;
 				new_type.name = Traits::LongName;
-				RegisterBaseClasses(new_type, BaseClassList<T>{});
+				RegisterBaseClasses<T>(new_type, BaseClassList<T>{});
 
 				sReflectionState.data.emplace(Traits::LongName, std::move(new_type));
 
 				if constexpr (std::is_default_constructible_v<T>)
 					RegisterConstructor<T>();
+				//if constexpr (std::is_copy_constructible_v<T>)
+				//	RegisterConstructor<T, const T&>();
+				//if constexpr (std::is_move_constructible_v<T>)
+				//	RegisterConstructor<T, T&&>();
+
 				if constexpr (std::is_destructible_v<T>)
 					RegisterDestructor<T>();
 			}
 		}
 
-		template<typename... Ts>
-		static void RegisterBaseClasses(TypeInfo& type, TypeList<Ts...>)
+		template<typename T, typename... Ts>
+		static void RegisterBaseClasses(TypeInfo& type, TypeList<Ts...> ts)
 		{
 			([&]()
 			{
-				if constexpr (CanReflect<Ts>)
+				using BaseType = typename Ts::type;
+				if constexpr (not std::same_as<T, BaseType> and CanReflect<BaseType>)
 				{
-					type.base_types.push_back(GetInfo<Ts>());
+					type.base_types.push_back(GetInfo<BaseType>());
 				}
 			}(), ...);
 		}
@@ -174,12 +162,12 @@ namespace slc {
 			prop.accessor = [accessor](Instance ctx) {
 				return Instance(
 					GetInfo<PropType>(),
-					ctx.data.Get<const T>().*accessor
+					ctx.data.Get<const T&&>().*accessor
 				);
 			};
 
 			prop.setter = [accessor](Instance ctx, Instance value) {
-				ctx.data.Get<T>().*accessor = value.data.Get<PropType>();
+				ctx.data.Get<T&&>().*accessor = value.data.Get<PropType&&>();
 			};
 
 			typeInfo->properties.push_back(std::move(prop));
@@ -197,10 +185,10 @@ namespace slc {
 			SCONSTEXPR bool IsReturnVoid = std::same_as<ReturnType, void>;
 
 			auto get_arg_types = [] <std::size_t... Is> (std::index_sequence<Is...>) -> std::vector<const TypeInfo*> {
-				return { { GetInfo< MemberTraits::template Arg<Is>::Type>()... } };
+				return { GetInfo< ArgTypes::template Type<Is>>()... };
 			};
 
-			auto arg_types = get_arg_types(std::make_index_sequence<MemberTraits::ArgC>());
+			auto arg_types = get_arg_types(std::make_index_sequence<ArgTypes::Size>());
 
 			MethodInfo method;
 			method.name = name;
@@ -210,16 +198,16 @@ namespace slc {
 				method.return_type = GetInfo<ReturnType>();
 
 			auto gen_tuple_val = []<std::size_t I>(Instance& object) {
-				using ArgType = MemberTraits::template Arg<I>::Type;
-				return object.data.Get<ArgType>();
+				using ArgType = ArgTypes::template Type<I>;
+				return object.data.Get<ArgType&&>();
 			};
 
-			auto gen_tuple = [gen_tuple_val] <std::size_t... Is> (std::vector<Instance>& args, std::index_sequence<Is...>)-> ArgTypes::TupleType {
+			auto gen_tuple = [gen_tuple_val] <std::size_t... Is> (std::vector<Instance>&args, std::index_sequence<Is...>)-> ArgTypes::TupleType {
 				return std::make_tuple(gen_tuple_val.template operator()<Is>(args[Is])...);
 			};
 
 			method.invoker = [=](Instance ctx, std::vector<Instance> args) -> Instance {
-				auto tuple_params = gen_tuple(args, std::make_index_sequence<MemberTraits::ArgC>());
+				auto tuple_params = gen_tuple(args, std::make_index_sequence<ArgTypes::Size>());
 
 				if constexpr (IsReturnVoid)
 				{
@@ -232,8 +220,8 @@ namespace slc {
 				}
 				else
 				{
-					auto func = [&]<typename... Args>(Args&&... argv) {
-						auto& ctx_ref = ctx.data.Get<T>();
+					auto func = [&]<typename... Args>(Args&&... argv) -> ReturnType {
+						auto& ctx_ref = ctx.data.Get<T&&>();
 						return (ctx_ref.*accessor)(std::forward<Args>(argv)...);
 					};
 
@@ -242,7 +230,7 @@ namespace slc {
 						std::apply(func, tuple_params)
 					);
 				}
-			};
+				};
 
 			typeInfo->methods.push_back(std::move(method));
 		}
@@ -253,7 +241,7 @@ namespace slc {
 
 		struct Impl
 		{
-			ReflectionData data = { { BuiltInType, {} } };
+			ReflectionData data;
 			std::vector<std::function<void()>> init_job_queue;
 
 			Impl() : data{ { BuiltInType, {} } }
@@ -263,25 +251,15 @@ namespace slc {
 		inline static Impl sReflectionState;
 	};
 
-
-	template<typename T>
-	inline Instance Reflectable<T>::GetInstance() const
-	{
-		return Instance(
-			Reflection::GetInfo<T>(),
-			*this
-		);
-	}
-
-
 	template<CanReflect T>
 	inline Instance MakeInstance(T&& value)
 	{
-		if constexpr (std::derived_from<T, Reflectable<T>>)
-			return std::forward<T>(value).GetInstance();
-		else
-			return Instance(Reflection::GetInfo<T>(), std::forward<T>(value));
+		return Instance(
+			Reflection::GetInfo<T>(), 
+			std::forward<T>(value)
+		);
 	}
+}
 
 #define SLC_REFLECT_MEMBER(CLASS, member) \
 	::slc::Reflection::RegisterMember<CLASS>(#member, &CLASS::member);
