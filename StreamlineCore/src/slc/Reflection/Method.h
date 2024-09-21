@@ -30,11 +30,14 @@ namespace slc {
 			using ReturnTraits = TypeTraits<T>;
 			using ObjTraits = TypeTraits<Obj>;
 
-			if constexpr (std::derived_from<T, Reflectable<T>>)
-				ASSERT(ReturnTraits::LongName == mMethod->return_type->name);
+			if (ReturnTraits::LongName != mMethod->return_type->name)
+				throw BadReflectionCastException(ReturnTraits::LongName, mMethod->return_type->name);
 
-			ASSERT(ObjTraits::LongName == mMethod->parent_type->name);
-			ASSERT(sizeof...(Args) == mMethod->arguments.size());
+			if (ObjTraits::LongName != mMethod->parent_type->name)
+				throw BadReflectionCastException(ObjTraits::LongName, mMethod->parent_type->name);
+
+			if (sizeof...(Args) != mMethod->arguments.size())
+				throw std::logic_error("Number of arguments provided does not match the number of arguments of the method.");
 
 			auto make_instance_arg = [&]<typename T>(T&& value) -> Instance {
 				return MakeInstance(std::forward<T>(value));

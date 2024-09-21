@@ -23,14 +23,13 @@ namespace slc {
 			using Traits = TypeTraits<T>;
 			using ObjTraits = TypeTraits<Obj>;
 
-			if constexpr (std::derived_from<T, Reflectable<T>>)
-				ASSERT(Traits::LongName == mProperty->prop_type->name);
+			if (Traits::LongName != mProperty->prop_type->name)
+				throw BadReflectionCastException(Traits::LongName, mProperty->prop_type->name);
 
-			ASSERT(ObjTraits::LongName == mProperty->parent_type->name);
+			if (ObjTraits::LongName != mProperty->parent_type->name)
+				throw BadReflectionCastException(ObjTraits::LongName, mProperty->parent_type->name);
 
 			auto instance = GetValue(obj);
-			ASSERT(instance.type == mProperty->prop_type);
-
 			return instance.data.Get<const T&>();
 		}
 
@@ -44,7 +43,9 @@ namespace slc {
 		void SetValue(Obj& obj, const T& value)
 		{
 			using Traits = TypeTraits<T>;
-			ASSERT(Traits::LongName == mProperty->prop_type->name);
+
+			if (Traits::LongName != mProperty->prop_type->name)
+				throw BadReflectionCastException(Traits::LongName, mProperty->prop_type->name);
 
 			SetValue(obj, MakeInstance(value));
 		}

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core.h"
+#include "Exception.h"
 
 namespace slc {
 
@@ -24,11 +25,10 @@ namespace slc {
 		template<CanReflect T>
 		static const TypeInfo* GetInfo()
 		{
-			using BaseType = std::remove_cvref_t<std::remove_pointer_t<T>>;
-			using Traits = TypeTraits<BaseType>;
+			using Traits = TypeTraits<T>;
 
 			if (not sReflectionState.data.contains(Traits::LongName))
-				Register<BaseType>();
+				Register<T>();
 
 			return &sReflectionState.data[Traits::LongName];
 		}
@@ -98,11 +98,10 @@ namespace slc {
 		template<CanReflect T>
 		static TypeInfo* GetInfoForAddition()
 		{
-			using BaseType = std::remove_cvref_t<std::remove_pointer_t<T>>;
-			using Traits = TypeTraits<BaseType>;
+			using Traits = TypeTraits<T>;
 
 			if (not sReflectionState.data.contains(Traits::LongName))
-				Register<BaseType>();
+				Register<T>();
 
 			return &sReflectionState.data[Traits::LongName];
 		}
@@ -110,8 +109,8 @@ namespace slc {
 		template<CanReflect T>
 		static void Register()
 		{
-			SCONSTEXPR bool IsBuiltInType = std::is_arithmetic_v<T>;
-			if constexpr (not IsBuiltInType)
+			SCONSTEXPR bool IsReflectableType = std::derived_from<T, Reflectable<T>>;
+			if constexpr (IsReflectableType)
 			{
 				using Traits = TypeTraits<T>;
 
@@ -130,6 +129,14 @@ namespace slc {
 
 				if constexpr (std::is_destructible_v<T>)
 					RegisterDestructor<T>();
+			}
+			else
+			{
+				using Traits = TypeTraits<T>;
+
+				TypeInfo new_type;
+				new_type.name = Traits::LongName;
+				sReflectionState.data.emplace(Traits::LongName, std::move(new_type));
 			}
 		}
 
@@ -236,16 +243,12 @@ namespace slc {
 		}
 
 	private:
-		SCONSTEXPR std::string_view BuiltInType = "__BuiltIn__";
 		using ReflectionData = std::unordered_map<std::string_view, TypeInfo>;
 
 		struct Impl
 		{
 			ReflectionData data;
 			std::vector<std::function<void()>> init_job_queue;
-
-			Impl() : data{ { BuiltInType, {} } }
-			{}
 		};
 
 		inline static Impl sReflectionState;
