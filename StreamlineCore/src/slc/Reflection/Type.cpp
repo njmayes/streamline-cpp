@@ -42,4 +42,9 @@ namespace slc {
 			std::views::transform([](const auto& method) { return Method(method); }) |
 			std::ranges::to<std::vector>();
 	}
+
+	bool Type::IsSubclassOf(const Type& other)
+	{
+		return std::ranges::any_of(GetBaseClasses(), [other](auto const& type) { return type == other; });
+	}
 }

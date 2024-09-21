@@ -67,6 +67,95 @@ namespace slc {
 	template <typename T>
 	using BaseClassList = detail::BaseList<T>::type;
 
+	struct RuntimeTypeTraits
+	{
+		bool is_void;
+		bool is_null_pointer;
+		bool is_integral;
+		bool is_floating_point;
+		bool is_array;
+		bool is_pointer;
+		bool is_lvalue_reference;
+		bool is_rvalue_reference;
+		bool is_member_object_pointer;
+		bool is_member_function_pointer;
+		bool is_enum;
+		bool is_union;
+		bool is_class;
+		bool is_function;
+		bool is_reference;
+		bool is_arithmetic;
+		bool is_fundamental;
+		bool is_object;
+		bool is_scalar;
+		bool is_compound;
+		bool is_member_pointer;
+		bool is_const;
+		bool is_volatile;
+		bool is_trivial;
+		bool is_trivially_copyable;
+		bool is_standard_layout;
+		bool is_empty;
+		bool is_polymorphic;
+		bool is_abstract;
+		bool is_final;
+		bool is_aggregate;
+		bool is_signed;
+		bool is_unsigned;
+		bool is_bounded_array;
+		bool is_unbounded_array;
+		bool is_scoped_enum;
+
+		bool is_default_constructible;
+		bool is_copy_constructible;
+		bool is_move_constructible;
+
+		template<typename T>
+		void Init()
+		{
+			is_void = std::is_void_v<T>;
+			is_null_pointer = std::is_null_pointer_v<T>;
+			is_integral = std::is_integral_v<T>;
+			is_floating_point = std::is_floating_point_v<T>;
+			is_array = std::is_array_v<T>;
+			is_pointer = std::is_pointer_v<T>;
+			is_lvalue_reference = std::is_lvalue_reference_v<T>;
+			is_rvalue_reference = std::is_rvalue_reference_v<T>;
+			is_member_object_pointer = std::is_member_object_pointer_v<T>;
+			is_member_function_pointer = std::is_member_function_pointer_v<T>;
+			is_enum = std::is_enum_v<T>;
+			is_union = std::is_union_v<T>;
+			is_class = std::is_class_v<T>;
+			is_function = std::is_function_v<T>;
+			is_reference = std::is_reference_v<T>;
+			is_arithmetic = std::is_arithmetic_v<T>;
+			is_fundamental = std::is_fundamental_v<T>;
+			is_object = std::is_object_v<T>;
+			is_scalar = std::is_scalar_v<T>;
+			is_compound = std::is_compound_v<T>;
+			is_member_pointer = std::is_member_pointer_v<T>;
+			is_const = std::is_const_v<std::remove_reference_t<T>>;
+			is_volatile = std::is_volatile_v<T>;
+			is_trivial = std::is_trivial_v<T>;
+			is_trivially_copyable = std::is_trivially_copyable_v<T>;
+			is_standard_layout = std::is_standard_layout_v<T>;
+			is_empty = std::is_empty_v<T>;
+			is_polymorphic = std::is_polymorphic_v<T>;
+			is_abstract = std::is_abstract_v<T>;
+			is_final = std::is_final_v<T>;
+			is_aggregate = std::is_aggregate_v<T>;
+			is_signed = std::is_signed_v<T>;
+			is_unsigned = std::is_unsigned_v<T>;
+			is_bounded_array = std::is_bounded_array_v<T>;
+			is_unbounded_array = std::is_unbounded_array_v<T>;
+			is_scoped_enum = std::is_scoped_enum_v<T>;
+
+			is_default_constructible = std::is_default_constructible_v<T>;
+			is_copy_constructible = std::is_copy_constructible_v<T>;
+			is_move_constructible = std::is_move_constructible_v<T>;
+		}
+	};
+
 	struct TypeInfo;
 	struct FunctionInfo;
 	struct ConstructorInfo;
@@ -108,12 +197,6 @@ namespace slc {
 
 		bool Valid() const { return type and data.HasValue(); }
 		bool IsVoid() const { return not Valid(); }
-
-		template<typename T>
-		T Extract() 
-		{
-			return std::move(data.Get<T&>());
-		}
 	};
 
 	template<CanReflect T>
@@ -161,6 +244,10 @@ namespace slc {
 	struct TypeInfo
 	{
 		std::string_view name;
+		std::string_view base_name;
+
+		RuntimeTypeTraits rttt;
+
 		std::vector<const TypeInfo*> base_types;
 		std::vector<ConstructorInfo> constructors;
 		std::optional<DestructorInfo> destructor;

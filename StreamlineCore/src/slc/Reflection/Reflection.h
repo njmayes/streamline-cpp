@@ -11,12 +11,12 @@ namespace slc {
 		using AddTypeJob = std::function<void()>;
 		static void QueueReflection(AddTypeJob&& job)
 		{
-			sReflectionState.init_job_queue.push_back(std::move(job));
+			sReflectionState.init_jobs.push_back(std::move(job));
 		}
 
 		static void ProcessQueue()
 		{
-			for (const auto& add_type : sReflectionState.init_job_queue)
+			for (const auto& add_type : sReflectionState.init_jobs)
 			{
 				add_type();
 			}
@@ -27,10 +27,18 @@ namespace slc {
 		{
 			using Traits = TypeTraits<T>;
 
-			if (not sReflectionState.data.contains(Traits::LongName))
+			if (not sReflectionState.data.contains(Traits::Name))
 				Register<T>();
 
-			return &sReflectionState.data[Traits::LongName];
+			return &sReflectionState.data[Traits::Name];
+		}
+
+		static const TypeInfo* GetInfo(std::string_view type_name)
+		{
+			if (not sReflectionState.data.contains(type_name))
+				return nullptr;
+
+			return &sReflectionState.data[type_name];
 		}
 
 		template<CanReflect T, typename... Args> requires std::is_constructible_v<T, Args...>
@@ -62,7 +70,7 @@ namespace slc {
 
 				return Instance(
 					GetInfo<T>(),
-					std::apply(ctr_func, tuple_params)
+					std::apply(ctr_func, std::move(tuple_params))
 				);
 			};
 
@@ -77,7 +85,7 @@ namespace slc {
 			DestructorInfo dtr;
 			dtr.parent_type = typeInfo;
 			dtr.invoker = [](Instance object) {
-				if (object.type->name != TypeTraits<T>::LongName)
+				if (object.type->name != TypeTraits<T>::Name)
 					return;
 				object.data.Get<T&>().~T();
 			};
@@ -100,10 +108,10 @@ namespace slc {
 		{
 			using Traits = TypeTraits<T>;
 
-			if (not sReflectionState.data.contains(Traits::LongName))
+			if (not sReflectionState.data.contains(Traits::Name))
 				Register<T>();
 
-			return &sReflectionState.data[Traits::LongName];
+			return &sReflectionState.data[Traits::Name];
 		}
 
 		template<CanReflect T>
@@ -115,17 +123,19 @@ namespace slc {
 				using Traits = TypeTraits<T>;
 
 				TypeInfo new_type;
-				new_type.name = Traits::LongName;
+				new_type.name = Traits::Name;
+				new_type.base_name = Traits::BaseName;
+				new_type.rttt.Init<T>();
 				RegisterBaseClasses<T>(new_type, BaseClassList<T>{});
 
-				sReflectionState.data.emplace(Traits::LongName, std::move(new_type));
+				sReflectionState.data.emplace(Traits::Name, std::move(new_type));
 
 				if constexpr (std::is_default_constructible_v<T>)
 					RegisterConstructor<T>();
-				//if constexpr (std::is_copy_constructible_v<T>)
-				//	RegisterConstructor<T, const T&>();
-				//if constexpr (std::is_move_constructible_v<T>)
-				//	RegisterConstructor<T, T&&>();
+				if constexpr (std::is_copy_constructible_v<T>)
+					RegisterConstructor<T, const T&>();
+				if constexpr (std::is_move_constructible_v<T>)
+					RegisterConstructor<T, T&&>();
 
 				if constexpr (std::is_destructible_v<T>)
 					RegisterDestructor<T>();
@@ -135,8 +145,10 @@ namespace slc {
 				using Traits = TypeTraits<T>;
 
 				TypeInfo new_type;
-				new_type.name = Traits::LongName;
-				sReflectionState.data.emplace(Traits::LongName, std::move(new_type));
+				new_type.name = Traits::Name;
+				new_type.base_name = Traits::BaseName;
+				new_type.rttt.Init<T>();
+				sReflectionState.data.emplace(Traits::Name, std::move(new_type));
 			}
 		}
 
@@ -244,11 +256,12 @@ namespace slc {
 
 	private:
 		using ReflectionData = std::unordered_map<std::string_view, TypeInfo>;
+		using AddJobQueue = std::vector<AddTypeJob>;
 
 		struct Impl
 		{
 			ReflectionData data;
-			std::vector<std::function<void()>> init_job_queue;
+			AddJobQueue init_jobs;
 		};
 
 		inline static Impl sReflectionState;
@@ -258,7 +271,7 @@ namespace slc {
 	inline Instance MakeInstance(T&& value)
 	{
 		return Instance(
-			Reflection::GetInfo<T>(), 
+			Reflection::GetInfo<T>(),
 			std::forward<T>(value)
 		);
 	}
@@ -270,9 +283,10 @@ namespace slc {
 #define SLC_REFLECT_MEMBER_IMPL(member)	\
     ::slc::Reflection::RegisterMember<ClassType>(#member, &ClassType::member); 
 
-#define SLC_REFLECT_CLASS(CLASS, ...)					\
+#define SLC_REFLECT_CLASS(CLASS, ...) {					\
     using ClassType = CLASS;							\
-    SLC_FOR_EACH(SLC_REFLECT_MEMBER_IMPL, __VA_ARGS__)
+    SLC_FOR_EACH(SLC_REFLECT_MEMBER_IMPL, __VA_ARGS__)  \
+}
 
 #define SLC_DEFER_REFLECT(CLASS, ...)						\
 	::slc::Reflection::QueueReflection([]() {				\

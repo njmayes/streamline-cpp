@@ -24,17 +24,20 @@ namespace slc {
 			return mMethod->invoker(std::move(obj), args);
 		}
 
-		template<CanReflect T, CanReflect Obj, CanReflect... Args>
-		std::optional<T> Invoke(Obj& obj, Args&&... args) const
+		template<typename T, CanReflect Obj, CanReflect... Args>
+		T Invoke(Obj&& obj, Args&&... args) const
 		{
 			using ReturnTraits = TypeTraits<T>;
-			using ObjTraits = TypeTraits<Obj>;
+			using ObjTraits = TypeTraits<std::remove_cvref_t<Obj>>;
 
-			if (ReturnTraits::LongName != mMethod->return_type->name)
-				throw BadReflectionCastException(ReturnTraits::LongName, mMethod->return_type->name);
+			if constexpr (not std::is_void_v<T>)
+			{
+				if (ReturnTraits::Name != mMethod->return_type->name)
+					throw BadReflectionCastException(ReturnTraits::Name, mMethod->return_type->name);
+			}
 
-			if (ObjTraits::LongName != mMethod->parent_type->name)
-				throw BadReflectionCastException(ObjTraits::LongName, mMethod->parent_type->name);
+			if (ObjTraits::Name != mMethod->parent_type->name)
+				throw BadReflectionCastException(ObjTraits::Name, mMethod->parent_type->name); 
 
 			if (sizeof...(Args) != mMethod->arguments.size())
 				throw std::logic_error("Number of arguments provided does not match the number of arguments of the method.");
@@ -44,12 +47,12 @@ namespace slc {
 			};
 
 			std::vector<Instance> instanced_args = { make_instance_arg(std::forward<Args>(args))... };
-			auto result = mMethod->invoker(MakeInstance(obj), std::move(instanced_args));
+			auto result = mMethod->invoker(MakeInstance(std::forward<Obj>(obj)), std::move(instanced_args));
 
-			if (result.IsVoid())
-				return std::nullopt;
-
-			return std::move(result.data.Get<T>());
+			if constexpr (std::is_void_v<T>)
+				return;
+			else
+				return result.data.Get<T>();
 		}
 
 	private:

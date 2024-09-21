@@ -23,11 +23,11 @@ namespace slc {
 			using Traits = TypeTraits<T>;
 			using ObjTraits = TypeTraits<Obj>;
 
-			if (Traits::LongName != mProperty->prop_type->name)
-				throw BadReflectionCastException(Traits::LongName, mProperty->prop_type->name);
+			if (Traits::Name != mProperty->prop_type->name)
+				throw BadReflectionCastException(Traits::Name, mProperty->prop_type->name);
 
-			if (ObjTraits::LongName != mProperty->parent_type->name)
-				throw BadReflectionCastException(ObjTraits::LongName, mProperty->parent_type->name);
+			if (ObjTraits::Name != mProperty->parent_type->name)
+				throw BadReflectionCastException(ObjTraits::Name, mProperty->parent_type->name);
 
 			auto instance = GetValue(obj);
 			return instance.data.Get<const T&>();
@@ -44,8 +44,8 @@ namespace slc {
 		{
 			using Traits = TypeTraits<T>;
 
-			if (Traits::LongName != mProperty->prop_type->name)
-				throw BadReflectionCastException(Traits::LongName, mProperty->prop_type->name);
+			if (Traits::Name != mProperty->prop_type->name)
+				throw BadReflectionCastException(Traits::Name, mProperty->prop_type->name);
 
 			SetValue(obj, MakeInstance(value));
 		}

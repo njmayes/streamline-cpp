@@ -49,7 +49,7 @@ namespace slc {
 		inline static InternalAllocatorElement BuildEventAllocator()
 		{
 			using Type = EventList::All::Type<I>;
-			return std::make_pair(TypeTraits<Type>::LongName, MakeImpl<PoolAllocator<EventModel<Type>>>(DefaultModelChunkSize));
+			return std::make_pair(TypeTraits<Type>::Name, MakeImpl<PoolAllocator<EventModel<Type>>>(DefaultModelChunkSize));
 		}
 
 		template<size_t... Is> 
@@ -92,10 +92,10 @@ namespace slc {
 		{
 			using EventType = TypeTraits<T>;
 
-			if (!mModelAllocators.contains(EventType::LongName))
+			if (!mModelAllocators.contains(EventType::Name))
 				Register<T>();
 
-			auto& model = mModelAllocators.at(EventType::LongName);
+			auto& model = mModelAllocators.at(EventType::Name);
 
 			// If there is no more space in pool allocator, just use default allocator.
 			// Pointer will be saved to be cleared up on flush at which point the pool 
@@ -137,7 +137,7 @@ namespace slc {
 		void Register()
 		{
 			using EventType = TypeTraits<T>;
-			mModelAllocators.try_emplace(EventType::LongName, MakeImpl<PoolAllocator<EventModel<T>>>(DefaultModelChunkSize));
+			mModelAllocators.try_emplace(EventType::Name, MakeImpl<PoolAllocator<EventModel<T>>>(DefaultModelChunkSize));
 		}
 
 		void CleanupDefaultNewPointers()

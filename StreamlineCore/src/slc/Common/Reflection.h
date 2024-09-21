@@ -59,11 +59,13 @@ namespace slc {
     struct TypeTraits
     {
 #if defined SLC_FUNC_SIGNATURE_PREFIX
-        static constexpr auto LongName = detail::GetLongName<T>();
-        static constexpr auto Name = detail::GetName<T>();
+        static constexpr auto Name = detail::GetLongName<T>();
+        static constexpr auto BaseName = detail::GetLongName<std::remove_cvref_t<T>>();
 #endif
         static constexpr bool IsObject = std::is_class_v<T>;
         static constexpr bool IsReference = std::is_reference_v<T>;
+        static constexpr bool IsLValueReference = std::is_lvalue_reference_v<T>;
+        static constexpr bool IsRValueReference = std::is_rvalue_reference_v<T>;
         static constexpr bool IsPointer = std::is_pointer_v<T>;
         static constexpr bool IsEnum = std::is_enum_v<T>;
         static constexpr bool IsArray = std::is_array_v<T>;
