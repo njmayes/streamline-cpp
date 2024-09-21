@@ -31,7 +31,7 @@ namespace slc {
 			auto instance = GetValue(obj);
 			ASSERT(instance.type == mProperty->prop_type);
 
-			return instance.data.Get<const T&&>();
+			return instance.data.Get<const T&>();
 		}
 
 		template<CanReflect Obj>

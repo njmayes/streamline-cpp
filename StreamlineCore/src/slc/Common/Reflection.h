@@ -67,7 +67,7 @@ namespace slc {
         static constexpr bool IsPointer = std::is_pointer_v<T>;
         static constexpr bool IsEnum = std::is_enum_v<T>;
         static constexpr bool IsArray = std::is_array_v<T>;
-        static constexpr bool IsConst = std::is_const_v<T>;
+        static constexpr bool IsConst = std::is_const_v<std::remove_reference_t<T>>;
         static constexpr bool IsStandard = std::is_standard_layout_v<T>;
 
         template<typename R>

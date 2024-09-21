@@ -53,7 +53,7 @@ namespace slc {
 				return std::make_tuple(gen_tuple_val.template operator()<Is>(args[Is])...);
 			};
 
-			ctr.invoker = [gen_tuple](std::vector<Instance> args) {
+			ctr.invoker = [gen_tuple](std::vector<Instance> args = {}) {
 				auto tuple_params = gen_tuple(args, std::make_index_sequence<Params::Size>());
 
 				auto ctr_func = [](Args&&... args) {
@@ -79,7 +79,7 @@ namespace slc {
 			dtr.invoker = [](Instance object) {
 				if (object.type->name != TypeTraits<T>::LongName)
 					return;
-				object.data.Get<T&&>().~T();
+				object.data.Get<T&>().~T();
 			};
 
 			typeInfo->destructor.emplace(std::move(dtr));
@@ -162,12 +162,12 @@ namespace slc {
 			prop.accessor = [accessor](Instance ctx) {
 				return Instance(
 					GetInfo<PropType>(),
-					ctx.data.Get<const T&&>().*accessor
+					ctx.data.Get<const T&>().*accessor
 				);
 			};
 
 			prop.setter = [accessor](Instance ctx, Instance value) {
-				ctx.data.Get<T&&>().*accessor = value.data.Get<PropType&&>();
+				ctx.data.Get<T&>().*accessor = value.data.Get<PropType>();
 			};
 
 			typeInfo->properties.push_back(std::move(prop));
@@ -199,20 +199,20 @@ namespace slc {
 
 			auto gen_tuple_val = []<std::size_t I>(Instance& object) {
 				using ArgType = ArgTypes::template Type<I>;
-				return object.data.Get<ArgType&&>();
+				return object.data.Get<ArgType>();
 			};
 
-			auto gen_tuple = [gen_tuple_val] <std::size_t... Is> (std::vector<Instance>&args, std::index_sequence<Is...>)-> ArgTypes::TupleType {
+			auto gen_tuple = [gen_tuple_val] <std::size_t... Is> (std::vector<Instance>& args, std::index_sequence<Is...>) {
 				return std::make_tuple(gen_tuple_val.template operator()<Is>(args[Is])...);
 			};
 
-			method.invoker = [=](Instance ctx, std::vector<Instance> args) -> Instance {
+			method.invoker = [=](Instance ctx, std::vector<Instance> args = {}) -> Instance {
 				auto tuple_params = gen_tuple(args, std::make_index_sequence<ArgTypes::Size>());
 
 				if constexpr (IsReturnVoid)
 				{
 					auto func = [&]<typename... Args>(Args&&... argv) {
-						auto& ctx_ref = ctx.data.Get<T>();
+						auto& ctx_ref = ctx.data.Get<T&>();
 						(ctx_ref.*accessor)(std::forward<Args>(argv)...);
 					};
 					std::apply(func, tuple_params);
@@ -221,13 +221,13 @@ namespace slc {
 				else
 				{
 					auto func = [&]<typename... Args>(Args&&... argv) -> ReturnType {
-						auto& ctx_ref = ctx.data.Get<T&&>();
+						auto& ctx_ref = ctx.data.Get<T&>();
 						return (ctx_ref.*accessor)(std::forward<Args>(argv)...);
 					};
 
 					return Instance(
 						GetInfo<ReturnType>(),
-						std::apply(func, tuple_params)
+						std::apply(func, std::move(tuple_params))
 					);
 				}
 				};

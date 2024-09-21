@@ -112,7 +112,7 @@ namespace slc {
 		template<typename T>
 		T Extract() 
 		{
-			return std::move(data.Get<T>());
+			return std::move(data.Get<T&>());
 		}
 	};
 

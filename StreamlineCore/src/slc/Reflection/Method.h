@@ -19,7 +19,7 @@ namespace slc {
 		Type GetReturnType() const;
 		std::vector<Type> GetArgumentTypes() const;
 
-		Instance Invoke(Instance obj, const std::vector<Instance>& args = {}) const
+		Instance Invoke(Instance obj, std::vector<Instance>& args) const
 		{
 			return mMethod->invoker(std::move(obj), args);
 		}
@@ -37,7 +37,7 @@ namespace slc {
 			ASSERT(sizeof...(Args) == mMethod->arguments.size());
 
 			auto make_instance_arg = [&]<typename T>(T&& value) -> Instance {
-				return MakeInstance(value);
+				return MakeInstance(std::forward<T>(value));
 			};
 
 			std::vector<Instance> instanced_args = { make_instance_arg(std::forward<Args>(args))... };
