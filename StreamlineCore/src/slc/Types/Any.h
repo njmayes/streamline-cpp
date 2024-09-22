@@ -28,51 +28,62 @@ namespace slc {
         template<typename T>
         T Get()
         {
-            SLC_TODO("Simplify this");
-
             using Traits = TypeTraits<T>;
 
-            if constexpr (Traits::IsReference)
+            using BaseType = std::remove_cvref_t<T>;
+            using BaseTypeKeepConst = std::remove_reference_t<T>;
+            using RefType = std::add_lvalue_reference_t<BaseTypeKeepConst>;
+
+            if constexpr (Traits::IsLValueReference)
             {
-                if constexpr (Traits::IsRValueReference)
+                using RefWrapperType = std::reference_wrapper<BaseTypeKeepConst>;
+                if constexpr (Traits::IsConst)
                 {
-                    using RefType = std::remove_cvref_t<T>&;
-                    return std::move(std::any_cast<RefType>(mValue));
-                }
-                else
-                {
-                    using BaseType = std::remove_reference_t<T>;
-                    using RefWrapperType = std::reference_wrapper<BaseType>;
-                    if constexpr (Traits::IsConst)
+                    // const& types may be constructible from value type, so const& std::reference_wrapper cast may not always work.
+                    if (auto const_ref = std::any_cast<RefWrapperType>(&mValue))
                     {
-                        // const& types may be constructible from value type, so const& std::reference_wrapper cast may not always work.
-                        if (auto const_ref = std::any_cast<RefWrapperType>(&mValue))
-                        {
-                            return const_ref->get();
-                        }
-                        else
-                        {
-                            using RefType = std::remove_cvref_t<T>&;
-                            return std::any_cast<RefType>(mValue);
-                        }
+                        return const_ref->get();
                     }
                     else
                     {
-                        return std::any_cast<RefWrapperType>(mValue).get();
+                        return std::any_cast<RefType>(mValue);
                     }
-                }
-            }
-            else
-            {
-                if (auto reference = std::any_cast<T>(&mValue))
-                {
-                    return std::move(*reference);
                 }
                 else
                 {
-                    using BaseType = std::remove_reference_t<T>;
-                    using RefWrapperType = std::reference_wrapper<BaseType>;
-                    return std::any_cast<RefWrapperType>(&mValue)->get();
+                    return std::any_cast<RefWrapperType>(mValue).get();
+                }
+            }
+            else if constexpr (Traits::IsRValueReference)
+            {
+                using RefType = std::remove_cvref_t<T>&;
+                return std::move(std::any_cast<RefType>(mValue));
+            }
+            else
+            {
+                // Value types can be constructed from any value category (provided it is copy/move constructible) so require more thorough checks
+                using RefWrapperType = std::reference_wrapper<BaseType>;
+                using ConstRefWrapperType = std::reference_wrapper<const BaseType>;
+
+                if (auto value = std::any_cast<T>(&mValue))
+                {
+                    // Try by value/move first
+                    return std::move(*value);
+                }
+                else if (auto const_reference_wrapper = std::any_cast<ConstRefWrapperType>(&mValue))
+                {
+                    // Then try by const&
+                    return const_reference_wrapper->get();
+                }
+                else if (auto reference_wrapper = std::any_cast<RefWrapperType>(&mValue))
+                {
+                    // Then try by &
+                    return reference_wrapper->get();
+                }
+                else
+                {
+                    // Could not convert, throw exception
+                    throw std::bad_any_cast();
                 }
             }
         }

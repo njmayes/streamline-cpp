@@ -49,6 +49,8 @@ namespace slc {
 		Method GetMethod(std::string_view name) const;
 		std::vector<Method> GetMethods() const;
 
+		template<CanReflect T>
+		bool IsSubclassOf() { return IsSubclassOf(Reflection::GetInfo<T>()); }
 		bool IsSubclassOf(const Type& other);
 
 		auto operator<=>(const Type&) const = default;
