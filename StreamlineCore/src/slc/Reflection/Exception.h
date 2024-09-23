@@ -23,4 +23,30 @@ namespace slc {
     private:
         std::string msg;
     };
+
+
+    template<typename... Args>
+    class UnreflectedTargetException : public std::exception
+    {
+    public:
+        UnreflectedTargetException(std::string_view type)
+        {
+            std::stringstream ss;
+            (ss << ... << (std::format("{}, ", TypeTraits<Args>::Name)));
+
+            auto args = ss.str();
+            if constexpr (sizeof...(Args) > 0)
+                args = args.substr(0, args.size() - 2); // Remove extra comma and space
+
+            msg = std::format("Attempted to target type {} for reflection when required data has not been reflected. [Args: {}]", type, args);
+        }
+
+        const char* what() const override
+        {
+            return msg.c_str();
+        }
+
+    private:
+        std::string msg;
+    };
 }

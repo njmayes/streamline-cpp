@@ -16,12 +16,14 @@ namespace slc {
 		std::string_view GetName() const { return mInfo->name; }
 
 		template<CanReflect T, typename... Args> requires std::constructible_from<T, Args...>
-		T Instantiate(Args&&... args)
+		T Instantiate(Args&&... args) const
 		{
-			ASSERT(mInfo->name == TypeTraits<T>::Name, "Requested type does not match this type!");
+			if (mInfo->name != TypeTraits<T>::Name)
+				throw BadReflectionCastException(TypeTraits<T>::Name, mInfo->name);
 
 			auto ctr = FindConstructor<Args&&...>();
-			ASSERT(ctr, "Could not find constructor with these args! Make sure you have reflected the constructor");
+			if (not ctr)
+				throw UnreflectedTargetException<Args...>(mInfo->name);
 
 			std::vector<Instance> instanced_args;
 			instanced_args.reserve(sizeof...(Args));
@@ -36,7 +38,7 @@ namespace slc {
 		}
 
 		template<typename T, CanReflect Obj, typename... Args>
-		T InvokeMember(std::string_view name, Obj&& obj, Args&&... args)
+		T InvokeMember(std::string_view name, Obj&& obj, Args&&... args) const
 		{
 			return GetMethod(name).Invoke<T>(std::forward<Obj>(obj), std::forward<Args>(args)...);
 		}
@@ -50,15 +52,15 @@ namespace slc {
 		std::vector<Method> GetMethods() const;
 
 		template<CanReflect T>
-		bool IsSubclassOf() { return IsSubclassOf(Reflection::GetInfo<T>()); }
-		bool IsSubclassOf(const Type& other);
+		bool IsSubclassOf() const { return IsSubclassOf(Reflection::GetInfo<T>()); }
+		bool IsSubclassOf(const Type& other) const;
 
 		auto operator<=>(const Type&) const = default;
 		operator bool() const { return mInfo; }
 
 	private:
 		template<typename... Args>
-		const ConstructorInfo* FindConstructor()
+		const ConstructorInfo* FindConstructor() const
 		{
 			using ArgTypes = TypeList<Args...>;
 

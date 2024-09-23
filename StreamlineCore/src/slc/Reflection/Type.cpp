@@ -43,7 +43,7 @@ namespace slc {
 			std::ranges::to<std::vector>();
 	}
 
-	bool Type::IsSubclassOf(const Type& other)
+	bool Type::IsSubclassOf(const Type& other) const
 	{
 		return std::ranges::any_of(GetBaseClasses(), [other](auto const& type) { return type == other; });
 	}

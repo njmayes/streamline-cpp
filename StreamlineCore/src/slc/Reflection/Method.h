@@ -40,7 +40,7 @@ namespace slc {
 				throw BadReflectionCastException(ObjTraits::Name, mMethod->parent_type->name); 
 
 			if (sizeof...(Args) != mMethod->arguments.size())
-				throw std::logic_error("Number of arguments provided does not match the number of arguments of the method.");
+				throw std::invalid_argument("Number of arguments provided does not match the number of arguments of the method.");
 
 			auto make_instance_arg = [&]<typename T>(T&& value) -> Instance {
 				return MakeInstance(std::forward<T>(value));
