@@ -58,6 +58,18 @@ namespace slc {
 		auto operator<=>(const Type&) const = default;
 		operator bool() const { return mInfo; }
 
+	public:
+		template<CanReflect T>
+		static Type Get()
+		{
+			return Type(Reflection::GetInfo<T>());
+		}
+
+		static Type Get(std::string_view type_name)
+		{
+			return Type(Reflection::GetInfo(type_name));
+		}
+
 	private:
 		template<typename... Args>
 		const ConstructorInfo* FindConstructor() const
@@ -125,15 +137,4 @@ namespace slc {
 			}
 		}
 	};
-
-	template<CanReflect T>
-	inline Type Reflect()
-	{
-		return Type(Reflection::GetInfo<T>());
-	}
-
-	inline Type Reflect(std::string_view type_name)
-	{
-		return Type(Reflection::GetInfo(type_name));
-	}
 }

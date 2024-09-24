@@ -61,7 +61,7 @@ namespace slc {
 		};
 
 		template <typename T>
-		struct BaseList : BaseListLow < T, std::make_index_sequence < (RegisterBases<T>{}, NumBases<T, void>::value) >> {};
+		struct BaseList : BaseListLow<T, std::make_index_sequence<(RegisterBases<T>{}, NumBases<T, void>::value)>> {};
 	}
 
 	template <typename T>
@@ -165,6 +165,11 @@ namespace slc {
 
 	struct Instance;
 
+	struct CtrBase {};
+
+	template<typename T, typename... Args>
+	struct Ctr : CtrBase {};
+
 	template <typename T>
 	struct Reflectable
 	{
@@ -174,6 +179,15 @@ namespace slc {
 			typename detail::BaseInserter<D, T>::nonExistent = nullptr
 		>
 		friend constexpr void adl_RegisterBases(void*) {}
+
+		static void BuildReflectionData() {}
+
+	protected:
+		template<typename... Args>
+		using Ctr = Ctr<T, Args...>;
+
+		template<typename R> struct ArgumentType;
+		template<typename R, typename U> struct ArgumentType<R(U)> { using type = U; };
 	};
 
 	template<typename T>
@@ -205,8 +219,8 @@ namespace slc {
 	using GetFunction = std::function<Instance(Instance)>;
 	using SetFunction = std::function<void(Instance, Instance)>;
 
-	using Constructor = std::function<Instance(std::vector<Instance>)>;
-	using Destructor = std::function<void(Instance)>;
+	using ConstructorInvoker = std::function<Instance(std::vector<Instance>)>;
+	using DestructorInvoker = std::function<void(Instance)>;
 	using FunctionInvoker = std::function<Instance(std::vector<Instance>)>;
 	using MethodInvoker = std::function<Instance(Instance, std::vector<Instance>)>;
 
@@ -232,13 +246,13 @@ namespace slc {
 	{
 		const TypeInfo* parent_type;
 		std::vector<const TypeInfo*> arguments;
-		Constructor invoker;
+		ConstructorInvoker invoker;
 	};
 
 	struct DestructorInfo
 	{
 		const TypeInfo* parent_type;
-		Destructor invoker;
+		DestructorInvoker invoker;
 	};
 
 	struct TypeInfo

@@ -5,9 +5,6 @@
 
 namespace slc {
 
-	template<typename T>
-	static void BuildReflectionData() {}
-
 	class Reflection
 	{
 	public:
@@ -45,7 +42,7 @@ namespace slc {
 		}
 
 		template<CanReflect T, typename... Args> requires std::is_constructible_v<T, Args...>
-		static void RegisterConstructor()
+		static void RegisterConstructor(Ctr<T, Args...> = {})
 		{
 			auto typeInfo = GetInfoForAddition<T>();
 
@@ -143,7 +140,7 @@ namespace slc {
 				if constexpr (std::is_destructible_v<T>)
 					RegisterDestructor<T>();
 
-				BuildReflectionData<T>();
+				T::BuildReflectionData();
 			}
 			else
 			{
@@ -282,16 +279,28 @@ namespace slc {
 	}
 }
 
-#define SLC_REFLECT_MEMBER(CLASS, member) \
-	::slc::Reflection::RegisterMember<CLASS>(#member, &CLASS::member);
-
-#define SLC_REFLECT_MEMBER_IMPL(member)	\
-    ::slc::Reflection::RegisterMember<ClassType>(#member, &ClassType::member); 
+#define SLC_REFLECT_MEMBER_IMPL(member)															\
+    {																							\
+		auto invoker = []<typename T>{															\
+			if constexpr (std::derived_from<T, ::slc::CtrBase>)						            \
+				::slc::Reflection::RegisterConstructor<ClassType>(T{});							\
+			else																				\
+				::slc::Reflection::RegisterMember<ClassType>(#member, &ClassType::member);		\
+		};																						\
+        using MemberType = decltype(ClassType::template member);								\
+        invoker.template operator()<MemberType>();											    \
+    }
 
 #define SLC_REFLECT_CLASS(CLASS, ...)						\
-    template<>												\
-    void ::slc::BuildReflectionData<CLASS>()				\
+    using Reflectable<CLASS>::Ctr;                          \
+    using Reflectable<CLASS>::ArgumentType;                 \
+    static void BuildReflectionData()		                \
 	{														\
 		using ClassType = CLASS;							\
 		SLC_FOR_EACH(SLC_REFLECT_MEMBER_IMPL, __VA_ARGS__)  \
 	}
+
+
+#define SLC_REMOVE_PAREN(...) ArgumentType<void(__VA_ARGS__)>::type
+
+#define SLC_CTR(...) SLC_REMOVE_PAREN(Ctr<__VA_ARGS__>){}
