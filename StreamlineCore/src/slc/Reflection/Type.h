@@ -7,6 +7,32 @@
 
 namespace slc {
 
+	/// <summary>
+	/// The main interface for runtime reflection. Retrieve the reflection data for a type T using Type::Get&lt;T&gt;() or Type::Get("class T")
+	/// 
+	/// There are two components to using a class T for reflection. 
+	/// 
+	/// The first is to inherit from Reflectable&lt;T&gt;, which provides the minimum data in order to register a type in the reflection database, 
+	/// such as base classes, type traits, as well as default, copy, and move constructors and the destructor where applicable.
+	/// 
+	/// In order to reflect further object data, such as class members (data and functions) and additional constructors, use the SLC_REFLECT_CLASS
+	/// macro in the class scope, listing constructors using the SLC_CTR macro, and members using their unqualified name. 
+	/// </summary>
+	/// 
+	/// <example>
+	/// struct Foo
+	/// {
+	///		Foo(double, int) {}
+	/// 
+	///		int bar;
+	///		void baz() {}
+	/// 
+	///		SLC_REFLECT_CLASS(T, 
+	///			SLC_CTR(double, int), 
+	///			bar, baz
+	///		)
+	/// };
+	/// </example>
 	class Type
 	{
 	public:

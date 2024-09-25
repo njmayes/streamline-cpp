@@ -8,37 +8,23 @@ namespace slc {
 	class Reflection
 	{
 	public:
-		using AddTypeJob = std::function<void()>;
-		static void QueueReflection(AddTypeJob&& job)
-		{
-			sReflectionState.init_jobs.push_back(std::move(job));
-		}
-
-		static void ProcessQueue()
-		{
-			for (const auto& add_type : sReflectionState.init_jobs)
-			{
-				add_type();
-			}
-		}
-
 		template<CanReflect T>
 		static const TypeInfo* GetInfo()
 		{
 			using Traits = TypeTraits<T>;
 
-			if (not sReflectionState.data.contains(Traits::Name))
+			if (not sReflectionData.contains(Traits::Name))
 				Register<T>();
 
-			return &sReflectionState.data[Traits::Name];
+			return &sReflectionData[Traits::Name];
 		}
 
 		static const TypeInfo* GetInfo(std::string_view type_name)
 		{
-			if (not sReflectionState.data.contains(type_name))
+			if (not sReflectionData.contains(type_name))
 				return nullptr;
 
-			return &sReflectionState.data[type_name];
+			return &sReflectionData[type_name];
 		}
 
 		template<CanReflect T, typename... Args> requires std::is_constructible_v<T, Args...>
@@ -108,10 +94,10 @@ namespace slc {
 		{
 			using Traits = TypeTraits<T>;
 
-			if (not sReflectionState.data.contains(Traits::Name))
+			if (not sReflectionData.contains(Traits::Name))
 				Register<T>();
 
-			return &sReflectionState.data[Traits::Name];
+			return &sReflectionData[Traits::Name];
 		}
 
 		template<CanReflect T>
@@ -128,7 +114,7 @@ namespace slc {
 				new_type.rttt.Init<T>();
 				RegisterBaseClasses<T>(new_type, BaseClassList<T>{});
 
-				sReflectionState.data.emplace(Traits::Name, std::move(new_type));
+				sReflectionData.emplace(Traits::Name, std::move(new_type));
 
 				if constexpr (std::is_default_constructible_v<T>)
 					RegisterConstructor(Ctr<T>{});
@@ -150,7 +136,7 @@ namespace slc {
 				new_type.name = Traits::Name;
 				new_type.base_name = Traits::BaseName;
 				new_type.rttt.Init<T>();
-				sReflectionState.data.emplace(Traits::Name, std::move(new_type));
+				sReflectionData.emplace(Traits::Name, std::move(new_type));
 			}
 		}
 
@@ -258,15 +244,7 @@ namespace slc {
 
 	private:
 		using ReflectionData = std::unordered_map<std::string_view, TypeInfo>;
-		using AddJobQueue = std::vector<AddTypeJob>;
-
-		struct Impl
-		{
-			ReflectionData data;
-			AddJobQueue init_jobs;
-		};
-
-		inline static Impl sReflectionState;
+		inline static ReflectionData sReflectionData;
 	};
 
 	template<CanReflect T>

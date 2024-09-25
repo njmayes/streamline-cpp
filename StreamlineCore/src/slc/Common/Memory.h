@@ -169,7 +169,7 @@ namespace slc {
 			RefTracker::AddToReferenceTracker(static_cast<void*>(mData));
 		}
 
-		void DecRef() const
+		void DecRef()
 		{
 			if (!mData)
 				return;
@@ -187,7 +187,7 @@ namespace slc {
 		template<RefCountable Other>
 		friend class Ref;
 
-		mutable T* mData;
+		T* mData;
 	};
 
 

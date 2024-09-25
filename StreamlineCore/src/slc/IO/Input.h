@@ -1,21 +1,16 @@
 #pragma once
 
-#include "slc/IO/KeyCodes.h"
-#include "slc/IO/MouseCodes.h"
+#include "KeyCodes.h"
+#include "MouseCodes.h"
 
 #include "slc/Types/Math.h"
 
-namespace slc {
+namespace slc::Input {
 
-	class Input
-	{
-	public:
-		static bool IsKeyPressed(KeyCode keycode);
-		static bool IsMouseButtonPressed(MouseCode button);
+	bool IsKeyPressed(KeyCode keycode);
+	bool IsMouseButtonPressed(MouseCode button);
 
-		static Vector2 GetMousePosition();
-		static float GetMouseX();
-		static float GetMouseY();
-	};
-
+	Vector2 GetMousePosition();
+	float GetMouseX();
+	float GetMouseY();
 }

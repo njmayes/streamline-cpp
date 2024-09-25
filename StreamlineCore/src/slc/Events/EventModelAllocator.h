@@ -46,24 +46,24 @@ namespace slc {
 		using InternalAllocatorArray = std::array<InternalAllocatorElement, EventList::All::Size>;
 
 		template<size_t I> requires (I < EventList::All::Size)
-		inline static InternalAllocatorElement BuildEventAllocator()
+		static InternalAllocatorElement BuildEventAllocator()
 		{
 			using Type = EventList::All::Type<I>;
 			return std::make_pair(TypeTraits<Type>::Name, MakeImpl<PoolAllocator<EventModel<Type>>>(DefaultModelChunkSize));
 		}
 
 		template<size_t... Is> 
-		inline static InternalAllocatorArray BuildAllEventAllocators(std::index_sequence<Is...>)
+		static InternalAllocatorArray BuildAllEventAllocators(std::index_sequence<Is...>)
 		{
 			return { { BuildEventAllocator<Is>()... } };
 		}
 
-		inline static Array<InternalAllocatorElement, EventList::All::Size> BuildInternalEventAllocators()
+		static Array<InternalAllocatorElement, EventList::All::Size> BuildInternalEventAllocators()
 		{
 			return BuildAllEventAllocators(std::make_index_sequence<EventList::All::Size>());
 		}
 
-		inline static Dictionary<TypeName, ModelAllocator> ConstructAllocatorDictionary() { return BuildInternalEventAllocators().ToDictionary<TypeName, ModelAllocator>(); }
+		static Dictionary<TypeName, ModelAllocator> ConstructAllocatorDictionary() { return BuildInternalEventAllocators().ToDictionary<TypeName, ModelAllocator>(); }
 
 	public:
 		EventModelAllocator()
