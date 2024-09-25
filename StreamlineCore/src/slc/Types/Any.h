@@ -56,7 +56,6 @@ namespace slc {
             }
             else if constexpr (Traits::IsRValueReference)
             {
-                using RefType = std::remove_cvref_t<T>&;
                 return std::move(std::any_cast<RefType>(mValue));
             }
             else

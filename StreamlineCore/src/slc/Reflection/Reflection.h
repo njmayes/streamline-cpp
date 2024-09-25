@@ -42,7 +42,7 @@ namespace slc {
 		}
 
 		template<CanReflect T, typename... Args> requires std::is_constructible_v<T, Args...>
-		static void RegisterConstructor(Ctr<T, Args...> = {})
+		static void RegisterConstructor(Ctr<T, Args...>)
 		{
 			auto typeInfo = GetInfoForAddition<T>();
 
@@ -52,17 +52,17 @@ namespace slc {
 			ctr.parent_type = typeInfo;
 			ctr.arguments = { GetInfo<Args>()... };
 
-			auto gen_tuple_val = []<std::size_t I>(Instance& object) {
+			auto gen_tuple_val = []<std::size_t I>(Instance object) {
 				using ArgType = typename Params::template Type<I>;
 				return object.data.Get<ArgType>();
 			};
 
-			auto gen_tuple = [gen_tuple_val] <std::size_t... Is> (std::vector<Instance>& args, std::index_sequence<Is...>)-> Params::TupleType {
-				return std::make_tuple(gen_tuple_val.template operator()<Is>(args[Is])...);
+			auto gen_tuple = [gen_tuple_val] <std::size_t... Is> (std::vector<Instance> args, std::index_sequence<Is...>)-> Params::TupleType {
+				return std::make_tuple(gen_tuple_val.template operator()<Is>(std::move(args[Is]))...);
 			};
 
-			ctr.invoker = [gen_tuple](std::vector<Instance> args = {}) {
-				auto tuple_params = gen_tuple(args, std::make_index_sequence<Params::Size>());
+			ctr.invoker = [gen_tuple](std::vector<Instance> instanced_args = {}) {
+				auto tuple_params = gen_tuple(std::move(instanced_args), std::make_index_sequence<Params::Size>());
 
 				auto ctr_func = [](Args&&... args) {
 					return T(std::forward<Args>(args)...);
@@ -131,11 +131,11 @@ namespace slc {
 				sReflectionState.data.emplace(Traits::Name, std::move(new_type));
 
 				if constexpr (std::is_default_constructible_v<T>)
-					RegisterConstructor<T>();
+					RegisterConstructor(Ctr<T>{});
 				if constexpr (std::is_copy_constructible_v<T>)
-					RegisterConstructor<T, const T&>();
+					RegisterConstructor(Ctr<T, const T&>{});
 				if constexpr (std::is_move_constructible_v<T>)
-					RegisterConstructor<T, T&&>();
+					RegisterConstructor(Ctr<T, T&&>{});
 
 				if constexpr (std::is_destructible_v<T>)
 					RegisterDestructor<T>();
