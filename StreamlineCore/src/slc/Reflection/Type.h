@@ -20,14 +20,14 @@ namespace slc {
 	/// </summary>
 	/// 
 	/// <example>
-	/// struct Foo
+	/// struct Foo : Reflectable&lt;Foo&gt;
 	/// {
 	///		Foo(double, int) {}
 	/// 
 	///		int bar;
 	///		void baz() {}
 	/// 
-	///		SLC_REFLECT_CLASS(T, 
+	///		SLC_REFLECT_CLASS(Foo, 
 	///			SLC_CTR(double, int), 
 	///			bar, baz
 	///		)
@@ -93,7 +93,17 @@ namespace slc {
 
 		static Type Get(std::string_view type_name)
 		{
-			return Type(Reflection::GetInfo(type_name));
+			SLC_TODO("Remove class/struct from traits name so formatting of name is not needed");
+			if (auto type = Reflection::GetInfo(type_name))
+				return type;
+
+			if (auto type = Reflection::GetInfo(std::format("class {}", type_name)))
+				return type;
+
+			if (auto type = Reflection::GetInfo(std::format("struct {}", type_name)))
+				return type;
+
+			return nullptr;
 		}
 
 	private:
@@ -138,13 +148,13 @@ namespace slc {
 			{
 				if constexpr (Traits::IsConst)
 				{
-					//const& parameter can be used for const& argument as well as for value arguments of types with copy constructor
+					//const& parameter can be used for const& argument as well as for lvalue arguments of types with copy constructor
 					return (target->rttt.is_const and target->rttt.is_lvalue_reference) or
 						(not target->rttt.is_reference and target->rttt.is_copy_constructible);
 				}
 				else
 				{
-					//& parameter can be used for & argument as well as for value arguments of types with copy constructor
+					//& parameter can be used for & argument as well as for lvalue arguments of types with copy constructor
 					return (target->rttt.is_lvalue_reference) or
 						(not target->rttt.is_reference and target->rttt.is_copy_constructible);
 				}
@@ -152,7 +162,7 @@ namespace slc {
 			}
 			else if constexpr (Traits::IsRValueReference)
 			{
-				//&& parameter can be used for && argument or value arguments with move constructor
+				//&& parameter can be used for && argument or lvalue arguments with move constructor
 				return (target->rttt.is_rvalue_reference) or
 					(not target->rttt.is_reference and target->rttt.is_move_constructible);
 			}

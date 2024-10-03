@@ -165,10 +165,13 @@ namespace slc {
 
 	struct Instance;
 
-	struct CtrBase {};
+	namespace detail {
 
-	template<typename T, typename... Args>
-	struct Ctr : CtrBase {};
+		struct CtrBase {};
+
+		template<typename T, typename... Args>
+		struct Ctr : CtrBase {};
+	}
 
 	template <typename T>
 	struct Reflectable
@@ -184,7 +187,7 @@ namespace slc {
 
 	protected:
 		template<typename... Args>
-		using Ctr = Ctr<T, Args...>;
+		using Ctr = detail::Ctr<T, Args...>;
 
 		template<typename R> struct ArgumentType;
 		template<typename R, typename U> struct ArgumentType<R(U)> { using type = U; };
@@ -193,6 +196,7 @@ namespace slc {
 	template<typename T>
 	concept CanReflect = std::derived_from<T, Reflectable<T>>
 		or std::is_arithmetic_v<T>
+		or std::is_enum_v<T>
 		or std::is_pointer_v<T>
 		or std::is_reference_v<T>;
 

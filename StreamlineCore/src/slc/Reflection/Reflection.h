@@ -28,7 +28,7 @@ namespace slc {
 		}
 
 		template<CanReflect T, typename... Args> requires std::is_constructible_v<T, Args...>
-		static void RegisterConstructor(Ctr<T, Args...>)
+		static void RegisterConstructor(detail::Ctr<T, Args...>)
 		{
 			auto typeInfo = GetInfoForAddition<T>();
 
@@ -117,11 +117,11 @@ namespace slc {
 				sReflectionData.emplace(Traits::Name, std::move(new_type));
 
 				if constexpr (std::is_default_constructible_v<T>)
-					RegisterConstructor(Ctr<T>{});
+					RegisterConstructor(detail::Ctr<T>{});
 				if constexpr (std::is_copy_constructible_v<T>)
-					RegisterConstructor(Ctr<T, const T&>{});
+					RegisterConstructor(detail::Ctr<T, const T&>{});
 				if constexpr (std::is_move_constructible_v<T>)
-					RegisterConstructor(Ctr<T, T&&>{});
+					RegisterConstructor(detail::Ctr<T, T&&>{});
 
 				if constexpr (std::is_destructible_v<T>)
 					RegisterDestructor<T>();
@@ -260,7 +260,7 @@ namespace slc {
 #define SLC_REFLECT_MEMBER_IMPL(member)															\
     {																							\
 		auto invoker = []<typename T>{															\
-			if constexpr (std::derived_from<T, ::slc::CtrBase>)						            \
+			if constexpr (std::derived_from<T, ::slc::detail::CtrBase>)						    \
 				::slc::Reflection::RegisterConstructor<ClassType>(T{});							\
 			else																				\
 				::slc::Reflection::RegisterMember<ClassType>(#member, &ClassType::member);		\
