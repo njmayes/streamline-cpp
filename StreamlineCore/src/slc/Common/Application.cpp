@@ -36,7 +36,7 @@ namespace slc {
 		mImGuiController.reset();
 		mWindow.reset();
 
-		for (const auto& shutdownTask : mAppSystems.Reverse())
+		for (const auto& shutdownTask : mAppSystems | std::views::reverse)
 			shutdownTask();
 	}
 

@@ -12,7 +12,7 @@ namespace slc::UI {
 		if (!ImGui::BeginMenuBar())
 			return;
 
-		auto openMenus = mMenuItems.Where([](const auto& heading) { return ImGui::BeginMenu(heading.label.data()); });
+		auto openMenus = mMenuItems | std::views::filter([](const auto& heading) { return ImGui::BeginMenu(heading.label.data()); });
 
 		for (const MenuHeading& heading : openMenus)
 		{

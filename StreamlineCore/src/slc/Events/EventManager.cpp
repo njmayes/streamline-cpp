@@ -29,7 +29,7 @@ namespace slc {
 				sState.imGuiListener->OnEvent(e);
 
 			// Handle any generic listeners that accept this event type.
-			for (IEventListener* listener : sState.genericListeners.Where([&](IEventListener* listener) { return listener->Accept(e); }))
+			for (IEventListener* listener : sState.genericListeners | std::views::filter([&](IEventListener* listener) { return listener->Accept(e); }))
 				listener->OnEvent(e);
 		}
 

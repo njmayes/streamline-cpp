@@ -26,7 +26,7 @@
 
 namespace slc {
 
-    namespace Reflection {
+    namespace detail {
 
 #if defined SLC_FUNC_SIGNATURE_PREFIX
         template<typename Type>
@@ -59,14 +59,17 @@ namespace slc {
     struct TypeTraits
     {
 #if defined SLC_FUNC_SIGNATURE_PREFIX
-        static constexpr auto LongName = Reflection::GetLongName<T>();
-        static constexpr auto Name = Reflection::GetName<T>();
+        static constexpr auto Name = detail::GetLongName<T>();
+        static constexpr auto BaseName = detail::GetLongName<std::remove_cvref_t<T>>();
 #endif
         static constexpr bool IsObject = std::is_class_v<T>;
+        static constexpr bool IsReference = std::is_reference_v<T>;
+        static constexpr bool IsLValueReference = std::is_lvalue_reference_v<T>;
+        static constexpr bool IsRValueReference = std::is_rvalue_reference_v<T>;
         static constexpr bool IsPointer = std::is_pointer_v<T>;
         static constexpr bool IsEnum = std::is_enum_v<T>;
         static constexpr bool IsArray = std::is_array_v<T>;
-        static constexpr bool IsConst = std::is_const_v<T>;
+        static constexpr bool IsConst = std::is_const_v<std::remove_reference_t<T>>;
         static constexpr bool IsStandard = std::is_standard_layout_v<T>;
 
         template<typename R>
@@ -113,6 +116,44 @@ namespace slc {
             return magic_enum::enum_count<T>();
         }
     }
+
+
+    namespace detail {
+
+        template<size_t I, typename T, typename TupleType>
+        static consteval size_t IndexFunction()
+        {
+            static_assert(I < std::tuple_size_v<TupleType>, "The element is not in the tuple");
+
+            using IndexType = typename std::tuple_element<I, TupleType>::type;
+
+            if constexpr (std::is_same_v<T, IndexType>)
+                return I;
+            else
+                return IndexFunction<I + 1, T, TupleType>();
+        }
+    }
+
+    template<typename... Ts>
+    struct TypeList
+    {
+        static constexpr size_t Size = sizeof...(Ts);
+
+        using TupleType = std::tuple<Ts...>;
+        using VariantType = std::variant<Ts...>;
+
+        template<typename R>
+        static constexpr bool Contains = std::disjunction<std::is_same<R, Ts>...>::value;
+
+        template<typename R>
+        static constexpr size_t Index = detail::IndexFunction<0, R, TupleType>();
+
+        template<size_t I>
+        using Type = std::tuple_element<I, TupleType>::type;
+
+        template<size_t I>
+        using Traits = TypeTraits<typename std::tuple_element<I, TupleType>::type>;
+    };
 
     template<typename T, typename Base>
     concept DerivedFromOnly = std::derived_from<T, Base> and not std::same_as<T, Base>;
@@ -180,13 +221,7 @@ namespace slc {
     struct FunctionTraits<std::function<R(Args...)>>
     {
         using ReturnType = R;
-        static constexpr size_t ArgC = sizeof...(Args);
-
-        template <size_t i>
-        struct Arg
-        {
-            using Type = typename std::tuple_element<i, std::tuple<Args...>>::type;
-        };
+        using Arguments = TypeList<Args...>;
     };
 
     // Function pointer specialisation
@@ -194,63 +229,62 @@ namespace slc {
     struct FunctionTraits<R(*)(Args...)>
     {
         using ReturnType = R;
-        static constexpr size_t ArgC = sizeof...(Args);
-
-        template <size_t i>
-        struct Arg
-        {
-            using Type = typename std::tuple_element<i, std::tuple<Args...>>::type;
-        };
+        using Arguments = TypeList<Args...>;
     };
 
-    // Member function pointer specialisation
+    // Member function pointer specialisations
     template <typename R, typename O, typename... Args >
     struct FunctionTraits<R(O::*)(Args...)>
     {
         using ObjectType = O;
         using ReturnType = R;
-        static constexpr size_t ArgC = sizeof...(Args);
-
-        template <size_t i>
-        struct Arg
-        {
-            using Type = typename std::tuple_element<i, std::tuple<Args...>>::type;
-        };
+        using Arguments = TypeList<Args...>;
     };
-
-
-    namespace TypeUtils {
-
-        template<size_t I, typename T, typename TupleType>
-        static consteval size_t IndexFunction()
-        {
-            static_assert(I < std::tuple_size_v<TupleType>, "The element is not in the tuple");
-
-            using IndexType = typename std::tuple_element<I, TupleType>::type;
-
-            if constexpr (std::is_same_v<T, IndexType>)
-                return I;
-            else
-                return IndexFunction<I + 1, T, TupleType>();
-        }
-    }
-
-    template<typename... T>
-    struct TypeList
+    template <typename R, typename O, typename... Args >
+    struct FunctionTraits<R(O::*)(Args...)&>
     {
-        static constexpr size_t Size = sizeof...(T);
-
-        using TupleType = std::tuple<T...>;
-        using VariantType = std::variant<T...>;
-
-        template<typename R>
-        static constexpr bool Contains = std::disjunction<std::is_same<R, T>...>::value;
-
-        template<typename R>
-        static constexpr size_t Index = TypeUtils::IndexFunction<0, R, TupleType>();
-
-        template<size_t I>
-        using Type = std::tuple_element<I, TupleType>::type;
+        using ObjectType = O;
+        using ReturnType = R;
+        using Arguments = TypeList<Args...>;
+    };
+    template <typename R, typename O, typename... Args >
+    struct FunctionTraits<R(O::*)(Args...)&&>
+    {
+        using ObjectType = O;
+        using ReturnType = R;
+        using Arguments = TypeList<Args...>;
+    };
+    template <typename R, typename O, typename... Args >
+    struct FunctionTraits<R(O::*)(Args...) const>
+    {
+        using ObjectType = const O;
+        using ReturnType = R;
+        using Arguments = TypeList<Args...>;
+    };
+    template <typename R, typename O, typename... Args >
+    struct FunctionTraits<R(O::*)(Args...) const&>
+    {
+        using ObjectType = const O;
+        using ReturnType = R;
+        using Arguments = TypeList<Args...>;
+    };
+    template <typename R, typename O, typename... Args >
+    struct FunctionTraits<R(O::*)(Args...) const&&>
+    {
+        using ObjectType = const O;
+        using ReturnType = R;
+        using Arguments = TypeList<Args...>;
     };
 
+
+    template<typename T>
+    struct PropertyTraits;
+
+    // Member object pointer specialisation
+    template <typename P, typename O>
+    struct PropertyTraits<P O::*>
+    {
+        using ObjectType = O;
+        using PropType = P;
+    };
 }

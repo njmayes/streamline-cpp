@@ -7,8 +7,6 @@
 #include "MouseEvent.h"
 
 #include "slc/Allocators/PoolAllocator.h"
-#include "slc/Collections/Dictionary.h"
-#include "slc/Collections/Array.h"
 
 namespace slc {
 
@@ -44,30 +42,39 @@ namespace slc {
 
 		using InternalAllocatorElement = std::pair<TypeName, ModelAllocator>;
 		using InternalAllocatorArray = std::array<InternalAllocatorElement, EventList::All::Size>;
+		using InternalAllocatorMap = std::map<TypeName, ModelAllocator>;
 
 		template<size_t I> requires (I < EventList::All::Size)
-		inline static InternalAllocatorElement BuildEventAllocator()
+		static InternalAllocatorElement BuildEventAllocator()
 		{
 			using Type = EventList::All::Type<I>;
-			return std::make_pair(TypeTraits<Type>::LongName, MakeImpl<PoolAllocator<EventModel<Type>>>(DefaultModelChunkSize));
+			return std::make_pair(TypeTraits<Type>::Name, MakeImpl<PoolAllocator<EventModel<Type>>>(DefaultModelChunkSize));
 		}
 
 		template<size_t... Is> 
-		inline static InternalAllocatorArray BuildAllEventAllocators(std::index_sequence<Is...>)
+		static InternalAllocatorArray BuildAllEventAllocators(std::index_sequence<Is...>)
 		{
 			return { { BuildEventAllocator<Is>()... } };
 		}
 
-		inline static Array<InternalAllocatorElement, EventList::All::Size> BuildInternalEventAllocators()
+		inline static InternalAllocatorArray BuildInternalEventAllocators()
 		{
 			return BuildAllEventAllocators(std::make_index_sequence<EventList::All::Size>());
 		}
 
-		inline static Dictionary<TypeName, ModelAllocator> ConstructAllocatorDictionary() { return BuildInternalEventAllocators().ToDictionary<TypeName, ModelAllocator>(); }
+		inline static InternalAllocatorMap ConstructAllocatorMap() 
+		{
+			InternalAllocatorMap result;
+			for (auto&& [type, allocator] : BuildInternalEventAllocators())
+			{
+				result.emplace(type, std::move(allocator));
+			}
+			return result;
+		}
 
 	public:
 		EventModelAllocator()
-			: mModelAllocators(ConstructAllocatorDictionary())
+			: mModelAllocators(ConstructAllocatorMap())
 		{
 
 		}
@@ -85,17 +92,19 @@ namespace slc {
 		/// <summary>
 		/// Allocates and constructs a new event model for the event type T and returns a reference to it.
 		/// Memory will be allocated from a pool allocator unless there is no more space in it this frame,
-		/// in which case the memory will be allocated using default new operator.
+		/// in which case the memory will be allocated using default new operator. When Flush is called any
+		/// of these default allocated pointers will be deleted and the pool allocator will be enlarged for
+		/// the next frame.
 		/// </summary>
 		template<IsEvent T, typename... Args> requires std::constructible_from<T, Args...>
 		EventModel<T>& NewModel(Args&&... args)
 		{
 			using EventType = TypeTraits<T>;
 
-			if (!mModelAllocators.contains(EventType::LongName))
+			if (!mModelAllocators.contains(EventType::Name))
 				Register<T>();
 
-			auto& model = mModelAllocators.at(EventType::LongName);
+			auto& model = mModelAllocators.at(EventType::Name);
 
 			// If there is no more space in pool allocator, just use default allocator.
 			// Pointer will be saved to be cleared up on flush at which point the pool 
@@ -137,7 +146,7 @@ namespace slc {
 		void Register()
 		{
 			using EventType = TypeTraits<T>;
-			mModelAllocators.try_emplace(EventType::LongName, MakeImpl<PoolAllocator<EventModel<T>>>(DefaultModelChunkSize));
+			mModelAllocators.try_emplace(EventType::Name, MakeImpl<PoolAllocator<EventModel<T>>>(DefaultModelChunkSize));
 		}
 
 		void CleanupDefaultNewPointers()
@@ -158,7 +167,7 @@ namespace slc {
 		}
 
 	private:
-		Dictionary<TypeName, ModelAllocator> mModelAllocators;
+		InternalAllocatorMap mModelAllocators;
 		std::vector<EventConcept*> mOverflowPointers;
 	};
 }

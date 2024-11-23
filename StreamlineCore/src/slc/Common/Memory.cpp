@@ -2,7 +2,7 @@
 
 #include "Macros.h"
 
-namespace slc {
+namespace slc::detail {
 
 	bool RefTracker::IsTracked(void* data)
 	{

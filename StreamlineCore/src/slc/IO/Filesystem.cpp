@@ -4,29 +4,9 @@
 
 #include <portable-file-dialogs.h>
 
-namespace slc {
+namespace slc::FileUtils {
 
-	fs::path FileUtils::LabRoot()
-	{
-		int depthCount = 0;
-		fs::path rootDirectory = fs::current_path();
-
-		while (rootDirectory.stem() != "LabyrinthEngine")
-		{
-			if (depthCount > 8)
-			{
-				LOG("Could not locate labyrinth root directory!");
-				return fs::path();
-			}
-
-			rootDirectory = rootDirectory.parent_path();
-			depthCount++;
-		}
-
-		return rootDirectory;
-	}
-
-	Buffer FileUtils::Read(const fs::path& filepath)
+	Buffer ReadToBuffer(const fs::path& filepath)
 	{
 		std::ifstream stream(filepath, std::ios::binary | std::ios::ate);
 
@@ -55,7 +35,7 @@ namespace slc {
 		return buffer;
 	}
 
-	void FileUtils::Read(const fs::path& filepath, std::string& string)
+	std::string ReadToString(const fs::path& filepath)
 	{
 		std::ifstream stream(filepath, std::ios::binary | std::ios::ate);
 
@@ -63,7 +43,7 @@ namespace slc {
 		{
 			// Failed to open the file
 			LOG("Failed to open {}", filepath);
-			return;
+			return {};
 		}
 
 		std::streampos end = stream.tellg();
@@ -74,15 +54,18 @@ namespace slc {
 		{
 			// File is empty
 			LOG("File {} was empty!", filepath);
-			return;
+			return {};
 		}
 
-		string.resize(size);
-		stream.read(&string[0], size);
+		std::string result;
+		result.resize(size);
+		stream.read(&result[0], size);
 		stream.close();
+
+		return result;
 	}
 
-	void FileUtils::Write(const fs::path& filepath, Buffer buffer)
+	void Write(const fs::path& filepath, Buffer buffer)
 	{
 		std::ofstream stream(filepath, std::ios::binary);
 
@@ -99,7 +82,7 @@ namespace slc {
 		stream.write(buffer.As<char>(), buffer.Size());
 	}
 
-	void FileUtils::Write(const fs::path& filepath, std::string_view string)
+	void Write(const fs::path& filepath, std::string_view string)
 	{
 		std::ofstream stream(filepath, std::ios::binary);
 
@@ -116,7 +99,7 @@ namespace slc {
 		stream.write(string.data(), string.size());
 	}
 
-	void FileUtils::Create(const fs::path& filepath)
+	void Create(const fs::path& filepath)
 	{
 		std::ofstream stream(filepath, std::ios::binary);
 		if (!stream)
@@ -127,17 +110,17 @@ namespace slc {
 		}
 	}
 
-	void FileUtils::CreateDir(const fs::path& filepath)
+	void CreateDir(const fs::path& filepath)
 	{
 		fs::create_directories(filepath);
 	}
 
-	void FileUtils::CopyDir(const fs::path& src, const fs::path& dest)
+	void CopyDir(const fs::path& src, const fs::path& dest)
 	{
 		fs::copy(src, dest, fs::copy_options::recursive);
 	}
 
-	void FileUtils::Remove(const fs::path& filepath)
+	void Remove(const fs::path& filepath)
 	{
 		if (!fs::exists(filepath))
 		{
@@ -148,7 +131,7 @@ namespace slc {
 		fs::remove(filepath);
 	}
 
-	void FileUtils::RemoveDir(const fs::path& filepath)
+	void RemoveDir(const fs::path& filepath)
 	{
 		if (!fs::exists(filepath))
 		{
@@ -159,7 +142,7 @@ namespace slc {
 		fs::remove_all(filepath);
 	}
 
-	fs::path FileUtils::OpenFile(const std::vector<std::string>& filter)
+	fs::path OpenFile(const std::vector<std::string>& filter)
 	{
 		auto selection = pfd::open_file("Select a file", ".", filter).result();
 		if (!selection.empty())
@@ -168,12 +151,12 @@ namespace slc {
 		return fs::path();
 	}
 
-	fs::path FileUtils::OpenDir()
+	fs::path OpenDir()
 	{
 		return pfd::select_folder("Select a folder", ".").result();
 	}
 
-	fs::path FileUtils::SaveFile(const std::vector<std::string>& filter)
+	fs::path SaveFile(const std::vector<std::string>& filter)
 	{
 		return pfd::save_file("Save file as", ".", filter).result();
 	}

@@ -91,8 +91,7 @@ namespace slc {
 	{
 		Utils::CreateCacheDirectoryIfNeeded();
 
-		std::string source;
-		FileUtils::Read(filepath, source);
+		std::string source = FileUtils::ReadToString(filepath);
 		auto shaderSources = PreProcess(source);
 
 		{

@@ -48,7 +48,7 @@
     #define FUNC_RETURN_TYPE SLC_FUNC_SIG_STRING.substr(0, SLC_FUNC_SIG_STRING.find_first_of(' ') - 1)
 
     #define TRY_RET(value) \
-                    ifc (FUNC_RETURN_TYPE == TypeTraits<typeof(value)>::Name)\
+                    if constexpr (FUNC_RETURN_TYPE == TypeTraits<typeof(value)>::Name)\
                     {\
                         if (value.is_err())\
                             return value;\

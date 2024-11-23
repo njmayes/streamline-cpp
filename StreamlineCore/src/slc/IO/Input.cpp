@@ -4,23 +4,23 @@
 
 #include "slc/Common/Application.h"
 
-namespace slc {
+namespace slc::Input {
 
-	bool Input::IsKeyPressed(KeyCode keycode)
+	bool IsKeyPressed(KeyCode keycode)
 	{
 		auto* window = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
 		auto state = glfwGetKey(window, static_cast<int32_t>(keycode));
 		return state == GLFW_PRESS;
 	}
 
-	bool Input::IsMouseButtonPressed(MouseCode button)
+	bool IsMouseButtonPressed(MouseCode button)
 	{
 		auto* window = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
 		auto state = glfwGetMouseButton(window, static_cast<int32_t>(button));
 		return state == GLFW_PRESS;
 	}
 
-	Vector2 Input::GetMousePosition()
+	Vector2 GetMousePosition()
 	{
 		auto* window = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
 		double xpos, ypos;
@@ -28,12 +28,12 @@ namespace slc {
 		return { static_cast<float>(xpos), static_cast<float>(ypos) };
 	}
 
-	float Input::GetMouseX()
+	float GetMouseX()
 	{
 		return GetMousePosition().x;
 	}
 
-	float Input::GetMouseY()
+	float GetMouseY()
 	{
 		return GetMousePosition().y;
 	}

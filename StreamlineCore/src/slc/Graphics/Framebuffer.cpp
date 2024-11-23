@@ -4,7 +4,7 @@
 
 namespace slc {
 
-	namespace Utils {
+	namespace detail {
 
 		static GLenum TextureTarget(bool multisampled)
 		{
@@ -91,7 +91,7 @@ namespace slc {
 	{
 		for (auto spec : mSpecification.attachments.attachments)
 		{
-			if (!Utils::IsDepthFormat(spec.textureFormat))
+			if (!detail::IsDepthFormat(spec.textureFormat))
 				mColourAttachmentSpecs.emplace_back(spec);
 			else
 				mDepthAttachmentSpec = spec;
@@ -128,18 +128,18 @@ namespace slc {
 		if (mColourAttachmentSpecs.size())
 		{
 			mColourAttachments.resize(mColourAttachmentSpecs.size());
-			Utils::CreateTextures(multisample, mColourAttachments.data(), (int)mColourAttachments.size());
+			detail::CreateTextures(multisample, mColourAttachments.data(), (int)mColourAttachments.size());
 
 			for (size_t i = 0; i < mColourAttachments.size(); i++)
 			{
-				Utils::BindTexture(multisample, mColourAttachments[i]);
+				detail::BindTexture(multisample, mColourAttachments[i]);
 				switch (mColourAttachmentSpecs[i].textureFormat)
 				{
 				case FramebufferTextureFormat::RGBA8:
-					Utils::AttachColorTexture(mColourAttachments[i], mSpecification.samples, GL_RGBA8, GL_RGBA, mSpecification.width, mSpecification.height, (int)i);
+					detail::AttachColorTexture(mColourAttachments[i], mSpecification.samples, GL_RGBA8, GL_RGBA, mSpecification.width, mSpecification.height, (int)i);
 					break;
 				case FramebufferTextureFormat::RED_INTEGER:
-					Utils::AttachColorTexture(mColourAttachments[i], mSpecification.samples, GL_R32I, GL_RED_INTEGER, mSpecification.width, mSpecification.height, (int)i);
+					detail::AttachColorTexture(mColourAttachments[i], mSpecification.samples, GL_R32I, GL_RED_INTEGER, mSpecification.width, mSpecification.height, (int)i);
 					break;
 				}
 			}
@@ -147,12 +147,12 @@ namespace slc {
 
 		if (mDepthAttachmentSpec.textureFormat != FramebufferTextureFormat::None)
 		{
-			Utils::CreateTextures(multisample, &mDepthAttachment, 1);
-			Utils::BindTexture(multisample, mDepthAttachment);
+			detail::CreateTextures(multisample, &mDepthAttachment, 1);
+			detail::BindTexture(multisample, mDepthAttachment);
 			switch (mDepthAttachmentSpec.textureFormat)
 			{
 			case FramebufferTextureFormat::DEPTH24STENCIL8:
-				Utils::AttachDepthTexture(mDepthAttachment, mSpecification.samples, GL_DEPTH24_STENCIL8, GL_DEPTH_STENCIL_ATTACHMENT, mSpecification.width, mSpecification.height);
+				detail::AttachDepthTexture(mDepthAttachment, mSpecification.samples, GL_DEPTH24_STENCIL8, GL_DEPTH_STENCIL_ATTACHMENT, mSpecification.width, mSpecification.height);
 				break;
 			}
 		}
@@ -209,7 +209,7 @@ namespace slc {
 
 		auto& spec = mColourAttachmentSpecs[attachmentIndex];
 		glClearTexImage(mColourAttachments[attachmentIndex], 0,
-			Utils::LabyrinthFBTextureFormatToGL(spec.textureFormat), GL_INT, &value);
+			detail::LabyrinthFBTextureFormatToGL(spec.textureFormat), GL_INT, &value);
 	}
 
 	void Framebuffer::BindColourAttachment(uint32_t index) const
@@ -217,6 +217,6 @@ namespace slc {
 		ASSERT(index < mColourAttachments.size(), "Binding attachment out of range!");
 
 		bool multisample = mSpecification.samples > 1;
-		Utils::BindTexture(multisample, mColourAttachments[index]);
+		detail::BindTexture(multisample, mColourAttachments[index]);
 	}
 }

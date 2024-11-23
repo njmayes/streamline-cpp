@@ -4,31 +4,25 @@
 
 namespace fs = std::filesystem;
 
-namespace slc {
+namespace slc::FileUtils {
 
-	class FileUtils
-	{
-	public:
-		static fs::path LabRoot();
+	Buffer ReadToBuffer(const fs::path& filepath);
+	std::string ReadToString(const fs::path& filepath);
 
-		static Buffer Read(const fs::path& filepath);
-		static void Read(const fs::path& filepath, std::string& string);
+	void Write(const fs::path& filepath, Buffer buffer);
+	void Write(const fs::path& filepath, std::string_view string);
 
-		static void Write(const fs::path& filepath, Buffer buffer);
-		static void Write(const fs::path& filepath, std::string_view string);
+	void Create(const fs::path& filepath);
+	void CreateDir(const fs::path& filepath);
 
-		static void Create(const fs::path& filepath);
-		static void CreateDir(const fs::path& filepath);
+	void CopyDir(const fs::path& src, const fs::path& dest);
 
-		static void CopyDir(const fs::path& src, const fs::path& dest);
+	void Remove(const fs::path& filepath);
+	void RemoveDir(const fs::path& filepath);
 
-		static void Remove(const fs::path& filepath);
-		static void RemoveDir(const fs::path& filepath);
-
-		// These return empty strings if cancelled
-		static fs::path OpenFile(const std::vector<std::string>& filter);
-		static fs::path OpenDir();
-		static fs::path SaveFile(const std::vector<std::string>& filter);
-	};
+	// These return empty strings if cancelled
+	fs::path OpenFile(const std::vector<std::string>& filter);
+	fs::path OpenDir();
+	fs::path SaveFile(const std::vector<std::string>& filter);
 
 }

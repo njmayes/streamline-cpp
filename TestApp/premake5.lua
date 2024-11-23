@@ -34,6 +34,10 @@ project "TestApp"
     filter "system:windows"
         staticruntime "off"
         systemversion "latest"
+		buildoptions 
+		{
+			"/Zc:preprocessor"
+		}
 		
 	filter "system:linux"
         staticruntime "off"

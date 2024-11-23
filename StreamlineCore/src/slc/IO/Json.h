@@ -4,7 +4,7 @@
 
 #include "json.hpp"
 
-namespace slc {
+namespace slc::JSON {
 
 	template<typename T>
 	concept CanSerialise = requires (const T& t)
@@ -21,26 +21,20 @@ namespace slc {
 	template<typename T>
 	concept Serialisable = CanSerialise<T> and CanDeserialise<T>;
 
-
-	class JSON
+	template<Serialisable T>
+	inline void Serialise(const T& value, std::string_view filepath)
 	{
-	public:
-		template<Serialisable T>
-		static void Serialise(const T& value, std::string_view filepath)
-		{
-			std::ofstream f(filepath.data());
-			f << std::setw(4) << nlohmann::json::parse(value) << std::endl;
-		}
+		std::ofstream f(filepath.data());
+		f << std::setw(4) << nlohmann::json::parse(value) << std::endl;
+	}
 
-		template<Serialisable T>
-		static T Deserialise(std::string_view filepath)
-		{
-			std::ifstream f(filepath.data());
-			nlohmann::json data = nlohmann::json::parse(f);
-			return data.template get<T>();
-		}
-	};
-
+	template<Serialisable T>
+	inline T Deserialise(std::string_view filepath)
+	{
+		std::ifstream f(filepath.data());
+		nlohmann::json data = nlohmann::json::parse(f);
+		return data.template get<T>();
+	}
 }
 
 #define SLC_JSON_SERIALISE(CLASS, ...) NLOHMANN_DEFINE_TYPE_INTRUSIVE(CLASS, __VA_ARGS__)
