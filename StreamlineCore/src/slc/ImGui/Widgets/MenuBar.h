@@ -1,7 +1,6 @@
 #pragma once
 
 #include "slc/Common/Base.h"
-#include "slc/Collections/Vector.h"
 
 namespace slc::UI {
 
@@ -28,7 +27,7 @@ namespace slc::UI {
 	struct MenuHeading
 	{
 		std::string_view label;
-		Vector<MenuItem> menu;
+		std::vector<MenuItem> menu;
 
 		MenuHeading(std::string_view text)
 			: label(text) {}
@@ -46,6 +45,6 @@ namespace slc::UI {
 		void AddSeparator();
 
 	private:
-		Vector<MenuHeading> mMenuItems;
+		std::vector<MenuHeading> mMenuItems;
 	};
 }

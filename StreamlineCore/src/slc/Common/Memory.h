@@ -44,22 +44,25 @@ namespace slc {
 		friend class Ref;
 	};
 
-	class RefTracker
-	{
-	public:
-		static bool IsTracked(void* data);
+	namespace detail {
 
-	private:
-		static void AddToReferenceTracker(void* data);
-		static void RemoveFromReferenceTracker(void* data);
+		class RefTracker
+		{
+		public:
+			static bool IsTracked(void* data);
 
-	private:
-		using RefSet = std::unordered_set<void*>;
-		inline static RefSet sRefSet;
+		private:
+			static void AddToReferenceTracker(void* data);
+			static void RemoveFromReferenceTracker(void* data);
 
-		template<RefCountable T>
-		friend class Ref;
-	};
+		private:
+			using RefSet = std::unordered_set<void*>;
+			inline static RefSet sRefSet;
+
+			template<RefCountable T>
+			friend class Ref;
+		};
+	}
 
 	template<RefCountable T>
 	class Ref
@@ -166,7 +169,7 @@ namespace slc {
 				return;
 
 			mData->IncRefCount();
-			RefTracker::AddToReferenceTracker(static_cast<void*>(mData));
+			detail::RefTracker::AddToReferenceTracker(static_cast<void*>(mData));
 		}
 
 		void DecRef()
@@ -178,7 +181,7 @@ namespace slc {
 			if (mData->GetRefCount() == 0)
 			{
 				delete mData;
-				RefTracker::RemoveFromReferenceTracker(static_cast<void*>(mData));
+				detail::RefTracker::RemoveFromReferenceTracker(static_cast<void*>(mData));
 				mData = nullptr;
 			}
 		}
@@ -215,7 +218,7 @@ namespace slc {
 		T& operator*() { return *mData; }
 		const T& operator*() const { return *mData; }
 
-		bool Valid() const { return mData ? RefTracker::IsTracked(mData) : false; }
+		bool Valid() const { return mData ? detail::RefTracker::IsTracked(mData) : false; }
 		operator bool() const { return Valid(); }
 
 		Ref<T> Lock() const

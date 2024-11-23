@@ -6,8 +6,6 @@
 #include "Widgets/MenuBar.h"
 #include "Widgets/PopUp.h"
 
-#include "slc/Collections/Span.h"
-
 namespace slc {
 
 	template<typename T> requires VecSized<ImVec2, T>
@@ -319,13 +317,13 @@ namespace slc {
 		}
 
 		template<typename T> requires std::copy_constructible<T>
-		static void Combobox(std::string_view label, std::string_view preview, T& value, Span<const ComboEntry<T>> table)
+		static void Combobox(std::string_view label, std::string_view preview, T& value, std::span<const ComboEntry<T>> table)
 		{
 			if (!BeginCombo(label, preview))
 				return;
 
-			// Convert span of entries to view of base classes
-			auto baseTable = table.Select<const IComboEntry*>([](const ComboEntry<T>& entry) { return dynamic_cast<const IComboEntry*>(&entry); });
+			// Convert std::span of entries to view of base classes
+			auto baseTable = table | std::views::transform([](const ComboEntry<T>& entry) { return dynamic_cast<const IComboEntry*>(&entry); });
 
 			const IComboEntry* comboEntry = nullptr;
 			for (const IComboEntry* entry : baseTable)
@@ -343,13 +341,13 @@ namespace slc {
 		}
 
 		template<typename T, typename Func> requires IsAction<Func, std::string_view, const T&>
-		static void Combobox(std::string_view label, std::string_view preview, T value, Span<const ComboEntry<T>> table, Func&& onSelection)
+		static void Combobox(std::string_view label, std::string_view preview, T value, std::span<const ComboEntry<T>> table, Func&& onSelection)
 		{
 			if (!BeginCombo(label, preview))
 				return;
 
-			// Convert span of entries to view of base classes
-			auto baseTable = table.Select<const IComboEntry*>([](const ComboEntry<T>& entry) { return dynamic_cast<const IComboEntry*>(&entry); });
+			// Convert std::span of entries to view of base classes
+			auto baseTable = table | std::views::transform([](const ComboEntry<T>& entry) { return dynamic_cast<const IComboEntry*>(&entry); });
 
 			const IComboEntry* comboEntry = nullptr;
 			for (const IComboEntry* entry : baseTable)

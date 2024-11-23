@@ -7,8 +7,6 @@
 #include "MouseEvent.h"
 
 #include "slc/Allocators/PoolAllocator.h"
-#include "slc/Collections/Dictionary.h"
-#include "slc/Collections/Array.h"
 
 namespace slc {
 
@@ -44,6 +42,7 @@ namespace slc {
 
 		using InternalAllocatorElement = std::pair<TypeName, ModelAllocator>;
 		using InternalAllocatorArray = std::array<InternalAllocatorElement, EventList::All::Size>;
+		using InternalAllocatorMap = std::map<TypeName, ModelAllocator>;
 
 		template<size_t I> requires (I < EventList::All::Size)
 		static InternalAllocatorElement BuildEventAllocator()
@@ -58,16 +57,24 @@ namespace slc {
 			return { { BuildEventAllocator<Is>()... } };
 		}
 
-		static Array<InternalAllocatorElement, EventList::All::Size> BuildInternalEventAllocators()
+		inline static InternalAllocatorArray BuildInternalEventAllocators()
 		{
 			return BuildAllEventAllocators(std::make_index_sequence<EventList::All::Size>());
 		}
 
-		static Dictionary<TypeName, ModelAllocator> ConstructAllocatorDictionary() { return BuildInternalEventAllocators().ToDictionary<TypeName, ModelAllocator>(); }
+		inline static InternalAllocatorMap ConstructAllocatorMap() 
+		{
+			InternalAllocatorMap result;
+			for (auto&& [type, allocator] : BuildInternalEventAllocators())
+			{
+				result.emplace(type, std::move(allocator));
+			}
+			return result;
+		}
 
 	public:
 		EventModelAllocator()
-			: mModelAllocators(ConstructAllocatorDictionary())
+			: mModelAllocators(ConstructAllocatorMap())
 		{
 
 		}
@@ -85,7 +92,9 @@ namespace slc {
 		/// <summary>
 		/// Allocates and constructs a new event model for the event type T and returns a reference to it.
 		/// Memory will be allocated from a pool allocator unless there is no more space in it this frame,
-		/// in which case the memory will be allocated using default new operator.
+		/// in which case the memory will be allocated using default new operator. When Flush is called any
+		/// of these default allocated pointers will be deleted and the pool allocator will be enlarged for
+		/// the next frame.
 		/// </summary>
 		template<IsEvent T, typename... Args> requires std::constructible_from<T, Args...>
 		EventModel<T>& NewModel(Args&&... args)
@@ -158,7 +167,7 @@ namespace slc {
 		}
 
 	private:
-		Dictionary<TypeName, ModelAllocator> mModelAllocators;
+		InternalAllocatorMap mModelAllocators;
 		std::vector<EventConcept*> mOverflowPointers;
 	};
 }
