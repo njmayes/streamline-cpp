@@ -4,6 +4,9 @@
 
 namespace slc {
     
+    /// <summary>
+    /// Wrapper for std::any that supports reference types
+    /// </summary>
     class Any
     {
     public:
