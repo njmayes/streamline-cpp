@@ -22,7 +22,7 @@ namespace slc {
 	template<typename T>
 	concept RefCountable = std::derived_from<T, RefCounted>;
 
-	namespace Internal {
+	namespace detail {
 
 		class RefCountedBase
 		{
@@ -38,7 +38,7 @@ namespace slc {
 		};
 	}
 
-	class RefCounted : public virtual Internal::RefCountedBase
+	class RefCounted : public virtual detail::RefCountedBase
 	{
 		template<RefCountable T>
 		friend class Ref;

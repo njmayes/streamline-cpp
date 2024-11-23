@@ -16,7 +16,7 @@ namespace slc {
     {
     public:
         using ElementType = TableValue<T, KeyType>;
-        using MapValueType = Internal::MapElement<KeyType, ElementType>;
+        using MapValueType = detail::MapElement<KeyType, ElementType>;
 
         template<std::size_t... I>
         constexpr RangeTable(const ElementType(&data)[N]) noexcept

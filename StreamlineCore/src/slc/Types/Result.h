@@ -231,7 +231,7 @@ namespace slc {
 		StorageType mValue;
 	};
 
-	namespace ResultInternals {
+	namespace detail {
 
 		template<typename T, typename R, IsEnum E, typename NextFunc, typename... Func> requires IsFunc<NextFunc, Result<T, E>, R&&>
 		SCONSTEXPR Result<T, E> DoOperation(Result<R, E> first, NextFunc&& next)
@@ -255,7 +255,7 @@ namespace slc {
 	template<typename T, typename R, IsEnum E, typename... Func>
 	SCONSTEXPR Result<T, E> Do(Result<R, E> first, Func&&... ops)
 	{
-		return ResultInternals::DoOperation<T, R, E>(first, std::forward<Func>(ops)...);
+		return detail::DoOperation<T, R, E>(first, std::forward<Func>(ops)...);
 	}
 
 

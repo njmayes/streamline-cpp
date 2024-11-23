@@ -118,7 +118,7 @@ namespace slc {
     }
 
 
-    namespace TypeUtils {
+    namespace detail {
 
         template<size_t I, typename T, typename TupleType>
         static consteval size_t IndexFunction()
@@ -146,7 +146,7 @@ namespace slc {
         static constexpr bool Contains = std::disjunction<std::is_same<R, Ts>...>::value;
 
         template<typename R>
-        static constexpr size_t Index = TypeUtils::IndexFunction<0, R, TupleType>();
+        static constexpr size_t Index = detail::IndexFunction<0, R, TupleType>();
 
         template<size_t I>
         using Type = std::tuple_element<I, TupleType>::type;

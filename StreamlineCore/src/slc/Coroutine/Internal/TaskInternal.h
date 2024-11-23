@@ -10,7 +10,7 @@ namespace slc {
 	class Task;
 }
 
-namespace slc::Internal {
+namespace slc::detail {
 
 	struct TaskPromiseAwaiter
 	{

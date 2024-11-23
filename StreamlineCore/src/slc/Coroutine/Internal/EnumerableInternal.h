@@ -14,7 +14,7 @@ namespace slc {
 	class Enumerator;
 }
 
-namespace slc::Internal {
+namespace slc::detail {
 	
 	template<typename T>
 	class EnumeratorPromise

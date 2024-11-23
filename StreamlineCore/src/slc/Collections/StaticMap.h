@@ -4,7 +4,7 @@
 
 namespace slc {
 
-	namespace Internal {
+	namespace detail {
 
 		template<typename Element, typename Key>
 		concept HasKey = requires (const Element & e)
@@ -200,7 +200,7 @@ namespace slc {
 		using difference_type = std::ptrdiff_t;
 		using const_reference = const ValueType&;
 		using const_pointer = const ValueType*;
-		using const_iterator = Internal::StaticMapIterator<Element>;
+		using const_iterator = detail::StaticMapIterator<Element>;
 
 		template <typename T>
 		constexpr StaticMap(std::array<T, N> data) noexcept : StaticMap(data, std::make_index_sequence<N>()) {
@@ -247,7 +247,7 @@ namespace slc {
 		constexpr const_iterator find(const KeyType& key) const noexcept
 		{
 			const CompareType compareKey{ key };
-			auto it = Internal::Bound<std::less>(begin(), end(), compareKey);
+			auto it = detail::Bound<std::less>(begin(), end(), compareKey);
 
 			if (it != end() and std::greater_equal()(*it, compareKey))
 			{
@@ -263,8 +263,8 @@ namespace slc {
 			return find(key) != end();
 		}
 
-		constexpr const_iterator lower_bound(const KeyType& key) const noexcept { return Internal::Bound<Internal::Less>(begin(), end(), CompareType{ key }); }
-		constexpr const_iterator upper_bound(const KeyType& key) const noexcept { return Internal::Bound<Internal::GreaterEqual>(begin(), end(), CompareType{ key }); }
+		constexpr const_iterator lower_bound(const KeyType& key) const noexcept { return detail::Bound<detail::Less>(begin(), end(), CompareType{ key }); }
+		constexpr const_iterator upper_bound(const KeyType& key) const noexcept { return detail::Bound<detail::GreaterEqual>(begin(), end(), CompareType{ key }); }
 
 	private:
 		template<std::size_t... I>
