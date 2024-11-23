@@ -2,9 +2,6 @@
 
 #include "EventModelAllocator.h"
 
-#include "slc/Collections/Deque.h"
-#include "slc/Collections/Vector.h"
-
 namespace slc {
 
 	class IEventListener;
@@ -46,15 +43,15 @@ namespace slc {
 	private:
 		struct EventManagerState
 		{
-			Vector<Event> eventQueue;
+			std::vector<Event> eventQueue;
 			EventModelAllocator modelAllocator;
 
 			IEventListener* appListener = nullptr;
 			IEventListener* imGuiListener = nullptr;
-			Vector<IEventListener*> genericListeners;
+			std::vector<IEventListener*> genericListeners;
 
-			Vector<IEventListener*> newListeners;
-			Vector<IEventListener*> oldListeners;
+			std::vector<IEventListener*> newListeners;
+			std::vector<IEventListener*> oldListeners;
 		};
 
 		inline static EventManagerState sState;

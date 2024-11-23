@@ -1,6 +1,6 @@
 #pragma once
 
-#include "slc/Collections/Array.h"
+#include <array>
 
 namespace slc {
 
@@ -38,6 +38,6 @@ namespace slc {
 		constexpr size_t Size() const { return TSize; }
 
 	protected:
-		Array<Byte, TSize> mData;
+		std::array<Byte, TSize> mData;
 	};
 }

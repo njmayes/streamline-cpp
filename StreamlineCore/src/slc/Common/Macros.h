@@ -34,22 +34,18 @@
 
 
 
-// Helper macros to handle the enumeration
-#define SLC_GET_ARG_COUNT(...)  SLC_EXPAND_MACRO(SLC_GET_ARG_COUNT_IMPL(__VA_ARGS__, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1))
-#define SLC_GET_ARG_COUNT_IMPL(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, count, ...) count
+#define SLC_PARENS ()
 
-#define SLC_FOR_EACH_1(what, x) what(x)
-#define SLC_FOR_EACH_2(what, x, ...) what(x); SLC_FOR_EACH_1(what, __VA_ARGS__)
-#define SLC_FOR_EACH_3(what, x, ...) what(x); SLC_FOR_EACH_2(what, __VA_ARGS__)
-#define SLC_FOR_EACH_4(what, x, ...) what(x); SLC_FOR_EACH_3(what, __VA_ARGS__)
-#define SLC_FOR_EACH_5(what, x, ...) what(x); SLC_FOR_EACH_4(what, __VA_ARGS__)
-#define SLC_FOR_EACH_6(what, x, ...) what(x); SLC_FOR_EACH_5(what, __VA_ARGS__)
-#define SLC_FOR_EACH_7(what, x, ...) what(x); SLC_FOR_EACH_6(what, __VA_ARGS__)
-#define SLC_FOR_EACH_8(what, x, ...) what(x); SLC_FOR_EACH_7(what, __VA_ARGS__)
-#define SLC_FOR_EACH_9(what, x, ...) what(x); SLC_FOR_EACH_8(what, __VA_ARGS__)
-#define SLC_FOR_EACH_10(what, x, ...) what(x); SLC_FOR_EACH_9(what, __VA_ARGS__)
+// Rescan macro tokens 256 times
+#define SLC_EXPAND(arg)  SLC_EXPAND1(SLC_EXPAND1(SLC_EXPAND1(SLC_EXPAND1(arg))))
+#define SLC_EXPAND1(arg) SLC_EXPAND2(SLC_EXPAND2(SLC_EXPAND2(SLC_EXPAND2(arg))))
+#define SLC_EXPAND2(arg) SLC_EXPAND3(SLC_EXPAND3(SLC_EXPAND3(SLC_EXPAND3(arg))))
+#define SLC_EXPAND3(arg) SLC_EXPAND4(SLC_EXPAND4(SLC_EXPAND4(SLC_EXPAND4(arg))))
+#define SLC_EXPAND4(arg) SLC_EXPAND_MACRO(arg)
 
-// Select the right macro based on the number of arguments
-#define SLC_FOR_EACH_NARG_IMPL(count) SLC_FOR_EACH_##count
-#define SLC_FOR_EACH_NARG(count) SLC_FOR_EACH_NARG_IMPL(count)
-#define SLC_FOR_EACH(what, ...) SLC_FOR_EACH_NARG(SLC_GET_ARG_COUNT(__VA_ARGS__))(what, __VA_ARGS__)
+#define SLC_FOR_EACH(macro, ...)                                    \
+  __VA_OPT__(SLC_EXPAND(SLC_FOR_EACH_HELPER(macro, __VA_ARGS__)))
+#define SLC_FOR_EACH_HELPER(macro, a1, ...)                         \
+  macro(a1)                                                     \
+  __VA_OPT__(SLC_FOR_EACH_AGAIN SLC_PARENS (macro, __VA_ARGS__))
+#define SLC_FOR_EACH_AGAIN() SLC_FOR_EACH_HELPER

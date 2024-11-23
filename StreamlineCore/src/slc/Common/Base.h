@@ -8,6 +8,9 @@
 #include <filesystem>
 #include <format>
 #include <fstream>
+#include <ranges>
+#include <map>
+#include <unordered_map>
 
 namespace slc {
 

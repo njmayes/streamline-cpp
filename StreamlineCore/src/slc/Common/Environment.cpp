@@ -2,9 +2,9 @@
 
 #include "Base.h"
 
-namespace slc {
+namespace slc::Environment {
 
-	void Environment::SetVar(std::string_view envName, std::string_view envVal)
+	void SetVar(std::string_view envName, std::string_view envVal)
 	{
 #ifdef SLC_PLATFORM_WINDOWS
 		int error = _putenv_s(envName.data(), envVal.data());
@@ -17,5 +17,5 @@ namespace slc {
 			LOG("Could not set the environment variable!");
 	}
 
-    std::string_view Environment::GetVar(std::string_view envName) { return std::getenv(envName.data()); }
+    std::string_view GetVar(std::string_view envName) { return std::getenv(envName.data()); }
 }

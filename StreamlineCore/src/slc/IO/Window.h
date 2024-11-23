@@ -31,8 +31,6 @@ namespace slc {
 	class Window
 	{
 	public:
-		using EventCallbackFunc = std::function<void(Event&)>;
-
 		Window(const WindowProperties& props);
 		virtual ~Window();
 

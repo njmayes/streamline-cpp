@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include <Common/Base.h>
+#include <slc/Common/Base.h>
 
 namespace slc {
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Internal/TaskInternal.h"
+#include "Internal/Task.h"
 
 namespace slc {
 
@@ -9,13 +9,13 @@ namespace slc {
 	{
 	public:
 		// Coroutine interface
-		using promise_type = Internal::TaskPromise<TReturn>;
+		using promise_type = detail::TaskPromise<TReturn>;
 
 	public:
 		using CoroutineHandle = std::coroutine_handle<promise_type>;
 
-		using CopyAwaitable = Internal::CopyTaskAwaitable<TReturn>;
-		using MoveAwaitable = Internal::MoveTaskAwaitable<TReturn>;
+		using CopyAwaitable = detail::CopyTaskAwaitable<TReturn>;
+		using MoveAwaitable = detail::MoveTaskAwaitable<TReturn>;
 
 	public:
 		Task() noexcept : mHandle(nullptr) {}
@@ -53,12 +53,12 @@ namespace slc {
 	};
 
 	template<typename TReturn>
-	auto Internal::TaskPromise<TReturn>::get_return_object() noexcept -> Task<TReturn>
+	auto detail::TaskPromise<TReturn>::get_return_object() noexcept -> Task<TReturn>
 	{
 		return Task<TReturn> { Task<TReturn>::CoroutineHandle::from_promise(*this) };
 	}
 
-	auto Internal::TaskPromise<void>::get_return_object() noexcept -> Task<>
+	auto detail::TaskPromise<void>::get_return_object() noexcept -> Task<>
 	{
 		return Task<> { Task<>::CoroutineHandle::from_promise(*this) };
 	}
