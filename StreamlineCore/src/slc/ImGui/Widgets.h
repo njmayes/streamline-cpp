@@ -322,7 +322,7 @@ namespace slc {
 			if (!BeginCombo(label, preview))
 				return;
 
-			// Convert std::span of entries to view of base classes
+			// Convert span of entries to view of base classes
 			auto baseTable = table | std::views::transform([](const ComboEntry<T>& entry) { return dynamic_cast<const IComboEntry*>(&entry); });
 
 			const IComboEntry* comboEntry = nullptr;
@@ -346,7 +346,7 @@ namespace slc {
 			if (!BeginCombo(label, preview))
 				return;
 
-			// Convert std::span of entries to view of base classes
+			// Convert span of entries to view of base classes
 			auto baseTable = table | std::views::transform([](const ComboEntry<T>& entry) { return dynamic_cast<const IComboEntry*>(&entry); });
 
 			const IComboEntry* comboEntry = nullptr;
