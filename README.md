@@ -10,7 +10,7 @@ The core application framework uses a mixture of code from my WIP game engine [L
 as well as my C++20 Dear ImGui wrapper [imgui-cpp](https://github.com/amayesingnathan/imgui-cpp).
 
 This core framework combined with various other common bits of code and ideas, such as Rust-style Result types complete with a form of basic
-pattern matching and Do notation, or C# style enumerable types, provides a selection of tools to save time rewriting application boilerplate code 
+pattern matching and Do notation, or a runtime reflection system, provides a selection of tools to save time rewriting application boilerplate code 
 and reusing code ideas in different places.
   
 ### Dependencies
