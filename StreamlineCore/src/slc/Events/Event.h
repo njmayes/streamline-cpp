@@ -90,9 +90,7 @@ namespace slc {
 		{
 		}
 
-		~Event()
-		{
-		}
+		~Event() = default;
 
 		/// <summary>
 		/// Pass a predicate invocable object that takes an event type reference

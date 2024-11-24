@@ -93,7 +93,7 @@ namespace slc {
         }
 
         template<IsEnum T>
-        inline static constexpr T FromString(std::string_view enumStr)
+        inline static constexpr std::optional<T> FromString(std::string_view enumStr)
         {
             SASSERT(MAGIC_ENUM_SUPPORTED, "Compiler does not support magic enums! Define your own conversions!");
 
@@ -101,7 +101,7 @@ namespace slc {
             if (enumVal.has_value())
                 return enumVal.value();
 
-            return T();
+            return std::nullopt;
         }
 
         template<IsEnum T>
