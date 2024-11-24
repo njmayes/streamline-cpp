@@ -6,17 +6,33 @@
 
 namespace slc {
 
-    /// <summary>
-    /// A simple arena allocator for objects of type T.
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
     template<typename T>
     class PoolAllocator : public IAllocator
     {
     public:
-        PoolAllocator(size_t size)
-            : mMaxSize(size), mMemBlock(static_cast<T*>(::operator new(mMaxSize * sizeof(T)))), mHead(mMemBlock)
+        union Block
         {
+            Block* next;
+            T value;
+        };
+
+        SASSERT(sizeof(T) >= sizeof(Block*), "Free list block size must be smaller than object size.");
+        SCONSTEXPR auto BLOCK_SIZE = sizeof(Block);
+
+        PoolAllocator(size_t count)
+            : mMaxSize(count)
+        {
+            void* memory = ::operator new(mMaxSize * BLOCK_SIZE);
+            mMemBlock = static_cast<Block*>(memory);
+            mHead = static_cast<Block*>(memory);
+
+            for (auto i = 1; i < mMaxSize; i++)
+            {
+                Block* prev_block = &mMemBlock[i - 1];
+                Block* curr_block = &mMemBlock[i];
+
+                prev_block->next = curr_block;
+            }
         }
 
         ~PoolAllocator() override
@@ -25,11 +41,11 @@ namespace slc {
         }
 
         PoolAllocator(const PoolAllocator&) = delete;
-        PoolAllocator(PoolAllocator&& other)
+        PoolAllocator(PoolAllocator&& other) noexcept
             : mMaxSize(other.mMaxSize), mMemBlock(std::exchange(other.mMemBlock, nullptr)), mHead(mMemBlock) {}
 
         auto operator=(const PoolAllocator&) = delete;
-        auto operator=(PoolAllocator&& other)
+        auto operator=(PoolAllocator&& other) noexcept
         {
             if (mMemBlock != other.mMemBlock)
             {
@@ -41,28 +57,25 @@ namespace slc {
             mHead = other.mHead;
         }
 
-        size_t Size() const override { return mMaxSize; }
-
-        void Free(void* = nullptr) override
-        {
-            while (mHead != mMemBlock)
-            {
-                (--mHead)->~T();
-            }
-        }
-
+        std::size_t MaxSize() const override { return mMaxSize; }
         void ForceReallocate() override { Reallocate(); }
 
     protected:
-        void* Alloc(size_t size) override
+        void* AllocImpl(size_t size) override
         {
-            if (size != sizeof(T))
+            if (sizeof(T) != size)
                 return nullptr;
 
-            if (mHead == (mMemBlock + mMaxSize))
-                Reallocate();
+            Block* new_value = mHead;
+            mHead = mHead->next;
+            return &new_value->value;
+        }
 
-            return mHead++;
+        void FreeImpl(void* ptr) override
+        {
+            Block* block = static_cast<Block*>(ptr);
+            block->next = mHead;
+            mHead = block;
         }
 
     private:
@@ -72,18 +85,29 @@ namespace slc {
             ptrdiff_t offset = mHead - mMemBlock;
             size_t tmpSize = mMaxSize;
 
-            mMaxSize *= 2;
-            mMemBlock = static_cast<T*>(::operator new(mMaxSize * sizeof(T)));
+            mMaxSize *= SCALE_FACTOR;
+
+            void* memory = ::operator new(mMaxSize * BLOCK_SIZE);
+            mMemBlock = static_cast<Block*>(memory);
             mHead = mMemBlock + offset;
-            
-            memcpy(mMemBlock, tmp, tmpSize);
+
+            std::memcpy(mMemBlock, tmp, tmpSize);
             ::operator delete(tmp);
+
+
+            for (auto i = offset + 1; i < mMaxSize; i++)
+            {
+                Block* prev_block = &mMemBlock[i - 1];
+                Block* curr_block = &mMemBlock[i];
+
+                prev_block->next = curr_block;
+            }
         }
 
     private:
-        size_t mMaxSize = 0;
+        std::size_t mMaxSize = 0;
 
-        T* mMemBlock = nullptr;
-        T* mHead = nullptr;
+        Block* mMemBlock = nullptr;
+        Block* mHead = nullptr;
     };
 }

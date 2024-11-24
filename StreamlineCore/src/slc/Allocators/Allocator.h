@@ -1,30 +1,42 @@
 #pragma once
 
+#include "slc/Common/Base.h"
+
 namespace slc {
 
 	/// <summary>
 	/// Base allocator interface.
-	/// Inherited classes must provide overrides to retrieve and free fixed size blocks of memory, as well as a total size override.
+	/// Inherited classes must provide overrides to retrieve and free fixed size blocks of memory, as well as a max size override.
 	/// </summary>
 	class IAllocator
 	{
 	public:
-		virtual ~IAllocator() {}
+		SCONSTEXPR std::size_t SCALE_FACTOR = 2;
+
+		virtual ~IAllocator() = default;
 
 		template<typename T,typename... Args>
 		T* Alloc(Args&&... args)
 		{
-			T* ptr = static_cast<T*>(Alloc(sizeof(T)));
+			T* ptr = static_cast<T*>(AllocImpl(sizeof(T)));
 			new (ptr) T(std::forward<Args>(args)...);
 			return ptr;
 		}
 
-		virtual void Free(void* ptr = nullptr) = 0;
-		virtual size_t Size() const = 0;
+		template<typename T>
+		void Free(T* ptr)
+		{
+			ptr->~T();
+			FreeImpl(static_cast<void*>(ptr));
+		}
+
+		virtual void Reset() {}
 
 		virtual void ForceReallocate() {}
+		virtual std::size_t MaxSize() const = 0;
 
 	protected:
-		virtual void* Alloc(size_t size) = 0;
+		virtual void* AllocImpl(size_t size) = 0;
+		virtual void FreeImpl(void* ptr = nullptr) = 0;
 	};
 }

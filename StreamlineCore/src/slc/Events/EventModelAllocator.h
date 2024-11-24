@@ -6,7 +6,7 @@
 #include "KeyEvent.h"
 #include "MouseEvent.h"
 
-#include "slc/Allocators/PoolAllocator.h"
+#include "slc/Allocators/LinearAllocator.h"
 
 namespace slc {
 
@@ -36,8 +36,8 @@ namespace slc {
 			size_t remaining = 0;
 
 			template<IsEvent T>
-			ModelAllocator(Impl<PoolAllocator<EventModel<T>>> alloc)
-				: allocator(std::move(alloc)), remaining(allocator->Size()) {}
+			ModelAllocator(Impl<LinearAllocator<EventModel<T>>> alloc)
+				: allocator(std::move(alloc)), remaining(allocator->MaxSize()) {}
 		};
 
 		using InternalAllocatorElement = std::pair<TypeName, ModelAllocator>;
@@ -48,7 +48,7 @@ namespace slc {
 		static InternalAllocatorElement BuildEventAllocator()
 		{
 			using Type = EventList::All::Type<I>;
-			return std::make_pair(TypeTraits<Type>::Name, MakeImpl<PoolAllocator<EventModel<Type>>>(DefaultModelChunkSize));
+			return std::make_pair(TypeTraits<Type>::Name, MakeImpl<LinearAllocator<EventModel<Type>>>(DefaultModelChunkSize));
 		}
 
 		template<size_t... Is> 
@@ -127,7 +127,7 @@ namespace slc {
 		{
 			for (auto& [type, model] : mModelAllocators)
 			{
-				model.allocator->Free();
+				model.allocator->Reset();
 
 				// The allocator completely filled up during this frame. Reallocate larger to compensate.
 				if (model.remaining == 0)
@@ -135,7 +135,7 @@ namespace slc {
 					model.allocator->ForceReallocate();
 				}
 
-				model.remaining = model.allocator->Size();
+				model.remaining = model.allocator->MaxSize();
 			}
 
 			CleanupDefaultNewPointers();
@@ -146,7 +146,7 @@ namespace slc {
 		void Register()
 		{
 			using EventType = TypeTraits<T>;
-			mModelAllocators.try_emplace(EventType::Name, MakeImpl<PoolAllocator<EventModel<T>>>(DefaultModelChunkSize));
+			mModelAllocators.try_emplace(EventType::Name, MakeImpl<LinearAllocator<EventModel<T>>>(DefaultModelChunkSize));
 		}
 
 		void CleanupDefaultNewPointers()
