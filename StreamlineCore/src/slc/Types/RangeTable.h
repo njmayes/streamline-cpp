@@ -38,17 +38,6 @@ namespace slc {
             return std::nullopt;
         }
 
-        constexpr const T& Lookup(KeyType value) const noexcept
-        {
-            auto it = mTable.upper_bound(value);
-            ASSERT(it != mTable.begin(), "Value not in any range");
-
-            --it;
-            ASSERT(value >= it->second.low and value < it->second.high, "Value not in any range");
-
-            return it->second.value;
-        }
-
         constexpr bool Contains(KeyType value) const noexcept
         {
             auto it = mTable.upper_bound(value);
