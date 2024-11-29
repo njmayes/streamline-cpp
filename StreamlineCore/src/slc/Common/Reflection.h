@@ -44,11 +44,9 @@ namespace slc {
             std::string_view long_name = GetLongName<Type>();
             auto first = long_name.find_last_of("::");
             if (first == std::string_view::npos)
-                first = long_name.find_last_of(' ');
+                first = long_name.find_last_of(' ') + 1; // If npos, will wrap around to zero
             else
                 first++;
-            if (first == std::string_view::npos)
-                return long_name;
             return long_name.substr(first, long_name.length() - first);
         }
 #endif
@@ -59,8 +57,8 @@ namespace slc {
     struct TypeTraits
     {
 #if defined SLC_FUNC_SIGNATURE_PREFIX
-        static constexpr auto Name = detail::GetLongName<T>();
-        static constexpr auto BaseName = detail::GetLongName<std::remove_cvref_t<T>>();
+        static constexpr auto Name = detail::GetName<T>();
+        static constexpr auto BaseName = detail::GetName<std::remove_cvref_t<T>>();
 #endif
         static constexpr bool IsObject = std::is_class_v<T>;
         static constexpr bool IsReference = std::is_reference_v<T>;

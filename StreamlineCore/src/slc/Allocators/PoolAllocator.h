@@ -81,8 +81,10 @@ namespace slc {
     private:
         void Reallocate()
         {
-            T* tmp = mMemBlock;
-            ptrdiff_t offset = mHead - mMemBlock;
+            Block* tmp = mMemBlock;
+
+            ASSERT(mHead > mMemBlock);
+            size_t offset = mHead - mMemBlock;
             size_t tmpSize = mMaxSize;
 
             mMaxSize *= SCALE_FACTOR;

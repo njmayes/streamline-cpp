@@ -4,32 +4,32 @@
 
 namespace slc {
 
-	namespace OptionEnum {
+	namespace detail {
 
 		enum NoneEnum { None };
 	}
 
 	template<typename T>
-	class Option : public Result<T, OptionEnum::NoneEnum>
+	class Option : public Result<T, detail::NoneEnum>
 	{
 	public:
-		SCONSTEXPR OptionEnum::NoneEnum None = OptionEnum::None;
+		SCONSTEXPR detail::NoneEnum None = detail::None;
 
 	private:
-		using BaseType = Result<T, OptionEnum::NoneEnum>;
+		using BaseType = Result<T, detail::NoneEnum>;
 
 	public:
 		template<IsEnum E>
-		Result<T, E> ok_or(E err) noexcept(BaseType::NoExceptMove)
+		Result<T, E> ok_or(E err) noexcept(BaseType::IsNoExceptMove)
 		{
 			using ReturnType = Result<T, E>;
-			return this->mResult ? ReturnType(this->GetVal()) : ReturnType(err);
+			return this->is_ok() ? ReturnType(this->GetVal()) : ReturnType(err);
 		}
 		template<IsEnum E>
-		Result<T, E> ok_or_else(IsFunc<E> auto&& err) noexcept(BaseType::NoExceptMove)
+		Result<T, E> ok_or_else(IsFunc<E> auto&& err) noexcept(BaseType::IsNoExceptMove)
 		{
 			using ReturnType = Result<T, E>;
-			return this->mResult ? ReturnType(this->GetVal()) : ReturnType(err);
+			return this->is_ok() ? ReturnType(this->GetVal()) : ReturnType(err);
 		}
 	};
 
@@ -48,7 +48,7 @@ namespace slc {
 		}
 
 		template<typename... Args>
-		constexpr Option<T> operator()(Args&&... args) const noexcept(Option<T>::NoExceptMove && Option<T>::template NoExceptNew<Args...>)
+		constexpr Option<T> operator()(Args&&... args) const noexcept(Option<T>::IsNoExceptMove && Option<T>::template IsNoExceptNew<Args...>)
 		{
 			T&& val = T(std::forward<Args>(args)...);
 			return Option<T>(std::move(val));

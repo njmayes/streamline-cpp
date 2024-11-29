@@ -9,20 +9,19 @@ namespace slc {
 	{
 	public:
 		StaticBuffer() = default;
-		StaticBuffer(Byte data[TSize])
+		StaticBuffer(const Byte(&data)[TSize])
 		{
 			memset(mData.data(), 0, TSize);
 			memcpy(mData.data(), data, TSize);
 		}
 
-		template<size_t _Other>
-		StaticBuffer(const StaticBuffer<_Other>& buffer)
+		template<size_t TOther>
+		StaticBuffer(const StaticBuffer<TOther>& buffer)
 		{
 			memset(mData.data(), 0, TSize);
-			if constexpr (_Other <= TSize)
-				memcpy(mData.data(), buffer.mData.data(), _Other);
-			else
-				memcpy(mData.data(), buffer.mData.data(), TSize);
+
+			constexpr auto Size = std::min(TOther, TSize);
+			memcpy(mData.data(), buffer.mData.data(), Size);
 		}
 
 		Byte& operator[](size_t index)
@@ -35,7 +34,7 @@ namespace slc {
 			return mData[index];
 		}
 
-		constexpr size_t Size() const { return TSize; }
+		constexpr size_t Size() const noexcept { return TSize; }
 
 	protected:
 		std::array<Byte, TSize> mData;

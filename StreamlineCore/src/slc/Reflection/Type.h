@@ -8,7 +8,7 @@
 namespace slc {
 
 	/// <summary>
-	/// The main interface for runtime reflection. Retrieve the reflection data for a type T using Type::Get&lt;T&gt;() or Type::Get("class T")
+	/// The main interface for runtime reflection. Retrieve the reflection data for a type T using Type::Get&lt;T&gt;() or Type::Get("T")
 	/// 
 	/// There are two components to using a class T for reflection. 
 	/// 
@@ -93,14 +93,7 @@ namespace slc {
 
 		static Type Get(std::string_view type_name)
 		{
-			SLC_TODO("Remove class/struct from traits name so formatting of name is not needed");
 			if (auto type = Reflection::GetInfo(type_name))
-				return type;
-
-			if (auto type = Reflection::GetInfo(std::format("class {}", type_name)))
-				return type;
-
-			if (auto type = Reflection::GetInfo(std::format("struct {}", type_name)))
 				return type;
 
 			return nullptr;
