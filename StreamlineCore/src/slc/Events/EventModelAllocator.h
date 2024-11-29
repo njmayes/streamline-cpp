@@ -84,9 +84,7 @@ namespace slc {
 		}
 
 		EventModelAllocator(const EventModelAllocator&) = delete;
-		EventModelAllocator(EventModelAllocator&&) = delete;
 		auto operator=(const EventModelAllocator&) = delete;
-		auto operator=(EventModelAllocator&&) = delete;
 
 	public:
 		/// <summary>

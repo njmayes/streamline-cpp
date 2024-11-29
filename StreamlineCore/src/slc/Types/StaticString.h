@@ -5,29 +5,27 @@
 namespace slc {
 
 	template<size_t TSize>
-	class StaticString : protected StaticBuffer<TSize>
+	class StaticString : protected StaticBuffer<TSize + 1>
 	{
 	public:
-		StaticString(const std::string& string)
+		StaticString(std::string_view string)
 		{
-			ASSERT(string.size() < TSize);
+			auto size = std::min(string.size(), TSize);
 
-			memset(this->mData.data(), 0, TSize);
-			memcpy(this->mData.data(), string.c_str(), string.size());;
+			memset(this->mData.data(), 0, TSize + 1);
+			memcpy(this->mData.data(), string.data(), size);;
 		}
 
-		constexpr size_t Length() const { return TSize; }
+		constexpr size_t Length() const noexcept { return TSize; }
 
-		char* Data()
+		char* Data() noexcept
 		{
-			ASSERT(this->mData[TSize - 1] == 0); // At least the last character should be null
-			return (char*)this->mData.data();
+			return reinterpret_cast<char*>( this->mData.data() );
 		}
 
 		std::string ToString() const
 		{
-			ASSERT(this->mData[TSize - 1] == 0); // At least the last character should be null
-			return (const char*)this->mData.data();
+			return reinterpret_cast<const char*>( this->mData.data() );
 		}
 	};
 }

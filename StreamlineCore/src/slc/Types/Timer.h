@@ -9,22 +9,22 @@ namespace slc {
 	public:
 		Timer()
 		{
-			reset();
+			Reset();
 		}
 
-		void reset()
+		void Reset()
 		{
 			mStart = std::chrono::steady_clock::now();
 		}
 
-		float elapsed()
+		float Elapsed()
 		{
 			return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - mStart).count() * 0.001f * 0.001f * 0.001f;
 		}
 
-		float elapsedMillis()
+		float ElapsedMillis()
 		{
-			return elapsed() * 1000.0f;
+			return Elapsed() * 1000.0f;
 		}
 
 	private:

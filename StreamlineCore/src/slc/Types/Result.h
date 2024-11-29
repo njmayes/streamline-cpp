@@ -18,11 +18,11 @@ namespace slc {
 		using StorageType = std::variant<ResultType, ErrorType>;
 		
 		template<typename... Args>
-		SCONSTEXPR bool NoExceptNew		= std::is_nothrow_constructible_v<T, Args...>;
+		SCONSTEXPR bool IsNoExceptNew		= std::is_nothrow_constructible_v<T, Args...>;
 
-		SCONSTEXPR bool NoExceptDefNew  = std::is_nothrow_default_constructible_v<T>;
-		SCONSTEXPR bool NoExceptMove	= std::is_nothrow_move_constructible_v<T> && std::is_nothrow_move_assignable_v<T>;
-		SCONSTEXPR bool NoExceptCopy	= std::is_nothrow_copy_constructible_v<T> && std::is_nothrow_copy_assignable_v<T>;
+		SCONSTEXPR bool IsNoExceptDefNew    = std::is_nothrow_default_constructible_v<T>;
+		SCONSTEXPR bool IsNoExceptMove		= std::is_nothrow_move_constructible_v<T> && std::is_nothrow_move_assignable_v<T>;
+		SCONSTEXPR bool IsNoExceptCopy		= std::is_nothrow_copy_constructible_v<T> && std::is_nothrow_copy_assignable_v<T>;
 
 	public:
 		explicit constexpr Result() = delete;
@@ -30,6 +30,7 @@ namespace slc {
 			: mValue(std::forward<T>(result)), mResult(true) {}
 		explicit constexpr Result(E error) noexcept
 			: mValue(error), mResult(false) {}
+		virtual ~Result() = default;
 
 		/// <summary>
 		/// Converts from const Result<T, E> to Result<const T&, E>
@@ -70,7 +71,7 @@ namespace slc {
 		/// <summary>
 		/// Returns result or the provided default value
 		/// </summary>
-		constexpr T unwrap_or(const T& defaultValue) noexcept(NoExceptCopy && NoExceptMove) requires std::copyable<T>
+		constexpr T unwrap_or(const T& defaultValue) noexcept(IsNoExceptCopy && IsNoExceptMove) requires std::copyable<T>
 		{
 			if (mResult)
 				return MoveVal();
@@ -80,7 +81,7 @@ namespace slc {
 		/// <summary>
 		/// Returns result or the default value of the underlying type
 		/// </summary>
-		constexpr T unwrap_or_default() noexcept(NoExceptDefNew && NoExceptCopy && NoExceptMove) requires std::is_default_constructible_v<T>
+		constexpr T unwrap_or_default() noexcept(IsNoExceptDefNew && IsNoExceptCopy && IsNoExceptMove) requires std::is_default_constructible_v<T>
 		{
 			return unwrap_or(T());
 		}
@@ -88,7 +89,7 @@ namespace slc {
 		/// Returns result or the result of evaluating the provided function
 		/// </summary>
 		template<typename Func> requires IsFunc<Func, T>
-		constexpr T unwrap_or_else(Func&& op) noexcept(noexcept(op()) && NoExceptCopy && NoExceptMove)
+		constexpr T unwrap_or_else(Func&& op) noexcept(noexcept(op()) && IsNoExceptCopy && IsNoExceptMove)
 		{
 			return unwrap_or(op());
 		}
@@ -104,7 +105,7 @@ namespace slc {
 		/// Transforms Result&lt;T, E&gt; into Result&lt;R, E&gt; by applying the provided function to the contained value of Ok and leaving Err values unchanged
 		/// </summary>
 		template<typename U, typename Func> requires IsFunc<Func, U&&, T&&>
-		constexpr Result<U, E> map(Func&& op) noexcept(noexcept(op(std::declval<T&&>())) && Result<U, E>::NoExceptMove && NoExceptMove)
+		constexpr Result<U, E> map(Func&& op) noexcept(noexcept(op(std::declval<T&&>())) && Result<U, E>::IsNoExceptMove && IsNoExceptMove)
 		{
 			if (mResult)
 				return Result<U,E>(op(MoveVal()));
@@ -115,7 +116,7 @@ namespace slc {
 		/// Transforms Result&lt;T, E&gt; into Result&lt;T, O&gt; by applying the provided function to the contained value of Err and leaving Ok values unchanged
 		/// </summary>
 		template<IsEnum O, typename Func> requires IsFunc<Func, O, E>
-		constexpr Result<T, O> map_err(Func&& op) noexcept(noexcept(op(std::declval<E>())) && NoExceptMove)
+		constexpr Result<T, O> map_err(Func&& op) noexcept(noexcept(op(std::declval<E>())) && IsNoExceptMove)
 		{
 			if (mResult)
 				return Result<T, O>(MoveVal());
@@ -133,7 +134,7 @@ namespace slc {
 		/// <param name="op"></param>
 		/// <returns></returns>
 		template<typename U, typename Func> requires IsFunc<Func, U&&, T&&>
-		constexpr U map_or(U&& defaultVal, Func&& op) noexcept(noexcept(op(std::declval<T&&>())) && Result<U, E>::NoExceptMove && NoExceptMove)
+		constexpr U map_or(U&& defaultVal, Func&& op) noexcept(noexcept(op(std::declval<T&&>())) && Result<U, E>::IsNoExceptMove && IsNoExceptMove)
 		{
 			if (mResult)
 				return op(MoveVal());
@@ -149,8 +150,8 @@ namespace slc {
 		constexpr U map_or_else(Func&& op, ErrFunc&& errOp) noexcept(
 			noexcept(op(std::declval<T&&>())) &&
 			noexcept(errOp(std::declval<E>())) &&
-			Result<U, E>::NoExceptMove &&
-			NoExceptMove
+			Result<U, E>::IsNoExceptMove &&
+			IsNoExceptMove
 			)
 		{
 			if (mResult)
@@ -163,7 +164,7 @@ namespace slc {
 		/// Returns the result of the provided function, or the error result
 		/// </summary>
 		template<typename Func> requires IsFunc<Func, Result<T, E>>
-		constexpr Result<T, E> operator |(Func&& next) noexcept(noexcept(next()) && NoExceptMove)
+		constexpr Result<T, E> operator |(Func&& next) noexcept(noexcept(next()) && IsNoExceptMove)
 		{
 			if (mResult)
 				return next();
@@ -175,7 +176,7 @@ namespace slc {
 		/// Returns the result of the provided function, or the error result
 		/// </summary>
 		template<typename Func> requires IsFunc<Func, Result<T, E>, T&&>
-		constexpr Result<T, E> operator |(Func&& next) noexcept(noexcept(next(std::declval<T&&>())) && NoExceptMove)
+		constexpr Result<T, E> operator |(Func&& next) noexcept(noexcept(next(std::declval<T&&>())) && IsNoExceptMove)
 		{
 			if (mResult)
 				return next(MoveVal());
@@ -187,7 +188,7 @@ namespace slc {
 		/// Returns the result of the provided function, or the error result
 		/// </summary>
 		template<typename R, typename Func> requires IsFunc<Func, Result<R, E>, T&&>
-		constexpr Result<R, E> and_then(Func&& next) noexcept(noexcept(next(std::declval<T&&>())) && NoExceptMove)
+		constexpr Result<R, E> and_then(Func&& next) noexcept(noexcept(next(std::declval<T&&>())) && IsNoExceptMove)
 		{
 			if (mResult)
 				return next(MoveVal());
@@ -209,7 +210,7 @@ namespace slc {
 		/// Only for internal use. Should never be used without checking the internal state prior first. Marked noexcept given this assumption as std::get_if should never return null.
 		/// </summary>
 		/// <returns></returns>
-		constexpr T&& MoveVal() noexcept(NoExceptMove) { return std::move(*std::get_if<T>(&mValue)); }
+		constexpr T&& MoveVal() noexcept(IsNoExceptMove) { return std::move(*std::get_if<T>(&mValue)); }
 
 		/// <summary>
 		/// Only for internal use. Should never be used without checking the internal state prior first. Marked noexcept given this assumption as std::get_if should never return null.
@@ -224,10 +225,8 @@ namespace slc {
 		/// <returns></returns>
 		constexpr E GetError() const noexcept { return *std::get_if<E>(&mValue); }
 
-	protected:
-		bool mResult = false;
-
 	private:
+		bool mResult{};
 		StorageType mValue;
 	};
 
@@ -276,7 +275,7 @@ namespace slc {
 		}
 
 		template<typename... Args>
-		constexpr Result<T, E> operator()(Args&&... args) const noexcept(Result<T, E>::NoExceptMove && Result<T, E>::template NoExceptNew<Args...>)
+		constexpr Result<T, E> operator()(Args&&... args) const noexcept(Result<T, E>::IsNoExceptMove && Result<T, E>::template IsNoExceptNew<Args...>)
 		{
 			T&& val = T(std::forward<Args>(args)...);
 			return Result<T, E>(std::move(val));
