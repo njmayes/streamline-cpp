@@ -57,8 +57,8 @@ namespace slc {
     struct TypeTraits
     {
 #if defined SLC_FUNC_SIGNATURE_PREFIX
-        static constexpr auto Name = detail::GetName<T>();
-        static constexpr auto BaseName = detail::GetName<std::remove_cvref_t<T>>();
+        static constexpr auto Name = detail::GetLongName<T>();
+        static constexpr auto BaseName = detail::GetLongName<std::remove_cvref_t<T>>();
 #endif
         static constexpr bool IsObject = std::is_class_v<T>;
         static constexpr bool IsReference = std::is_reference_v<T>;

@@ -42,8 +42,8 @@ namespace slc {
 			if (sizeof...(Args) != mMethod->arguments.size())
 				throw std::invalid_argument("Number of arguments provided does not match the number of arguments of the method.");
 
-			auto make_instance_arg = [&]<typename T>(T&& value) -> Instance {
-				return MakeInstance(std::forward<T>(value));
+			auto make_instance_arg = [&]<typename R>(R&& value) -> Instance {
+				return MakeInstance(std::forward<R>(value));
 			};
 
 			std::vector<Instance> instanced_args = { make_instance_arg(std::forward<Args>(args))... };
@@ -52,7 +52,7 @@ namespace slc {
 			if constexpr (std::is_void_v<T>)
 				return;
 			else
-				return result.data.Get<T>();
+				return result.data.template Get<T>();
 		}
 
 	private:
