@@ -15,9 +15,9 @@ namespace slc {
             msg = std::format("Attempted to convert reflected type to an invalid value. Target type was {} but actual type was {}", target, actual);
         }
 
-        const char* what() const override
+        const char* what() const noexcept override
         {
-            return msg.c_str();
+            return msg.data();
         }
 
     private:
@@ -41,9 +41,9 @@ namespace slc {
             msg = std::format("Attempted to target type {} for reflection when required data has not been reflected. [Args: {}]", type, args);
         }
 
-        const char* what() const override
+        const char* what() const noexcept override
         {
-            return msg.c_str();
+            return msg.data();
         }
 
     private:

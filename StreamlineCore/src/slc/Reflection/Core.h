@@ -183,8 +183,6 @@ namespace slc {
 		>
 		friend constexpr void adl_RegisterBases(void*) {}
 
-		static void BuildReflectionData() {}
-
 	protected:
 		template<typename... Args>
 		using Ctr = detail::Ctr<T, Args...>;
@@ -192,9 +190,18 @@ namespace slc {
 		template<typename R> struct ArgumentType;
 		template<typename R, typename U> struct ArgumentType<R(U)> { using type = U; };
 	};
+	
+	namespace detail {
+
+		template<typename T>
+		concept ReflectableType = std::derived_from<T, Reflectable<T>> and requires
+		{
+			{ T::BuildReflectionData() } -> std::same_as<void>;
+		};
+	}
 
 	template<typename T>
-	concept CanReflect = std::derived_from<T, Reflectable<T>>
+	concept CanReflect = detail::ReflectableType<T>
 		or std::is_arithmetic_v<T>
 		or std::is_enum_v<T>
 		or std::is_pointer_v<T>

@@ -30,7 +30,7 @@ namespace slc {
 				throw BadReflectionCastException(ObjTraits::Name, mProperty->parent_type->name);
 
 			auto instance = GetValue(obj);
-			return instance.data.Get<const T&>();
+			return instance.data.template Get<const T&>();
 		}
 
 		template<CanReflect Obj>

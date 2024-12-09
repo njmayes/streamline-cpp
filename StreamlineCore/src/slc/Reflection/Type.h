@@ -60,7 +60,7 @@ namespace slc {
 			}(), ...);
 			
 			auto instance = ctr->invoker(std::move(instanced_args));
-			return instance.data.Get<T>();
+			return instance.data.template Get<T>();
 		}
 
 		template<typename T, CanReflect Obj, typename... Args>
