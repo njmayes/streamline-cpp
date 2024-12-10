@@ -19,14 +19,6 @@ namespace slc {
 			return &sReflectionData[Traits::Name];
 		}
 
-		static const TypeInfo* GetInfo(std::string_view type_name)
-		{
-			if (not sReflectionData.contains(type_name))
-				return nullptr;
-
-			return &sReflectionData[type_name];
-		}
-
 		template<CanReflect T, typename... Args> requires std::is_constructible_v<T, Args...>
 		static void RegisterConstructor(detail::Ctr<T, Args...>)
 		{
@@ -141,7 +133,7 @@ namespace slc {
 		}
 
 		template<typename T, typename... Ts>
-		static void RegisterBaseClasses(TypeInfo& type, TypeList<Ts...> ts)
+		static void RegisterBaseClasses(TypeInfo& type, TypeList<Ts...>)
 		{
 			([&]()
 			{
@@ -192,7 +184,7 @@ namespace slc {
 			SCONSTEXPR bool IsReturnVoid = std::same_as<ReturnType, void>;
 
 			auto get_arg_types = [] <std::size_t... Is> (std::index_sequence<Is...>) -> std::vector<const TypeInfo*> {
-				return { GetInfo< ArgTypes::template Type<Is>>()... };
+				return { GetInfo< typename ArgTypes::template Type<Is>>()... };
 			};
 
 			auto arg_types = get_arg_types(std::make_index_sequence<ArgTypes::Size>());
@@ -259,13 +251,13 @@ namespace slc {
 
 #define SLC_REFLECT_MEMBER_IMPL(member)															\
     {																							\
-		auto invoker = []<typename T>{															\
-			if constexpr (std::derived_from<T, ::slc::detail::CtrBase>)						    \
-				::slc::Reflection::RegisterConstructor<ClassType>(T{});							\
+		auto invoker = []<typename _T>{															\
+			if constexpr (std::derived_from<_T, ::slc::detail::CtrBase>)						\
+				::slc::Reflection::RegisterConstructor<ClassType>(_T{});						\
 			else																				\
 				::slc::Reflection::RegisterMember<ClassType>(#member, &ClassType::member);		\
 		};																						\
-        using MemberType = decltype(ClassType::template member);								\
+        using MemberType = decltype(&ClassType::member);										\
         invoker.template operator()<MemberType>();											    \
     }
 
@@ -281,4 +273,4 @@ namespace slc {
 
 #define SLC_REMOVE_PAREN(...) ArgumentType<void(__VA_ARGS__)>::type
 
-#define SLC_CTR(...) SLC_REMOVE_PAREN(Ctr<__VA_ARGS__>){}
+#define SLC_CTR(...) template SLC_REMOVE_PAREN(Ctr<__VA_ARGS__>){}
