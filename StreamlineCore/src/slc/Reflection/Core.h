@@ -60,8 +60,15 @@ namespace slc {
 			using type = decltype(helper());
 		};
 
+#if defined(__GNUC__) && defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-value"
+#endif
 		template <typename T>
-		struct BaseList : BaseListLow<T, std::make_index_sequence<(RegisterBases<T>{}, NumBases<T, void>::value)>> {};
+		struct BaseList : BaseListLow < T, std::make_index_sequence < (RegisterBases<T>{}, NumBases<T, void>::value) >> {};
+#if defined(__GNUC__) && defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 	}
 
 	template <typename T>
@@ -170,7 +177,15 @@ namespace slc {
 		struct CtrBase {};
 
 		template<typename T, typename... Args>
-		struct Ctr : CtrBase {};
+		struct Ctr : CtrBase
+		{
+			// This is icky, but needed to allow macro to do &Class::member and produce the correct result and not an error.
+			// This type should only be used to deduce Constructor type parameters anyway
+			Ctr<T, Args...> operator&()
+			{
+				return Ctr<T, Args...>{};
+			}
+		};
 	}
 
 	template <typename T>

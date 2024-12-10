@@ -3,7 +3,7 @@
 #include "Core.h"
 
 #include <exception>
-#include <string>
+#include <sstream>
 
 namespace slc {
 

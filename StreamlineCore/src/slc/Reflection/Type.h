@@ -91,14 +91,6 @@ namespace slc {
 			return Type(Reflection::GetInfo<T>());
 		}
 
-		static Type Get(std::string_view type_name)
-		{
-			if (auto type = Reflection::GetInfo(type_name))
-				return type;
-
-			return nullptr;
-		}
-
 	private:
 		template<typename... Args>
 		const ConstructorInfo* FindConstructor() const
