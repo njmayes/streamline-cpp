@@ -3,8 +3,6 @@
 #include "Property.h"
 #include "Method.h"
 
-#include <iostream>
-
 namespace slc {
 
 	/// <summary>
@@ -78,7 +76,7 @@ namespace slc {
 		std::vector<Method> GetMethods() const;
 
 		template<CanReflect T>
-		bool IsSubclassOf() const { return IsSubclassOf(Reflection::GetInfo<T>()); }
+		bool IsSubclassOf() const { return IsSubclassOf(T::ReflectionData::Info); }
 		bool IsSubclassOf(const Type& other) const;
 
 		auto operator<=>(const Type&) const = default;
@@ -88,7 +86,14 @@ namespace slc {
 		template<CanReflect T>
 		static Type Get()
 		{
-			return Type(Reflection::GetInfo<T>());
+			if constexpr (detail::IsReflectableType<T>)
+			{
+				return Type(T::slc_refl_data::Info);
+			}
+			else
+			{
+				return Type(reflect::Reflection::GetInfo<T>());
+			}
 		}
 
 	private:

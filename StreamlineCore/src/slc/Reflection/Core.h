@@ -209,18 +209,21 @@ namespace slc {
 	namespace detail {
 
 		template<typename T>
-		concept ReflectableType = std::derived_from<T, Reflectable<T>> and requires
+		concept IsReflectableType = std::derived_from<T, Reflectable<T>> and requires
 		{
-			{ T::BuildReflectionData() } -> std::same_as<void>;
+			{ T::slc_refl_data::Build() } -> std::same_as<void>;
+			{ T::slc_refl_data::Info } -> std::same_as<const TypeInfo*&>;
 		};
+
+		template<typename T>
+		concept IsBuiltInReflectable = std::is_arithmetic_v<T>
+			or std::is_enum_v<T>
+			or std::is_pointer_v<T>
+			or std::is_reference_v<T>;
 	}
 
 	template<typename T>
-	concept CanReflect = detail::ReflectableType<T>
-		or std::is_arithmetic_v<T>
-		or std::is_enum_v<T>
-		or std::is_pointer_v<T>
-		or std::is_reference_v<T>;
+	concept CanReflect = detail::IsReflectableType<T> or detail::IsBuiltInReflectable<T>;
 
 	struct Instance
 	{
@@ -240,7 +243,13 @@ namespace slc {
 	};
 
 	template<CanReflect T>
-	Instance MakeInstance(T&& value);
+	Instance MakeInstance(T&& value)
+	{
+		return Instance(
+			T::ReflectionData::Info,
+			std::forward<T>(value)
+		);
+	}
 
 	using GetFunction = std::function<Instance(Instance)>;
 	using SetFunction = std::function<void(Instance, Instance)>;

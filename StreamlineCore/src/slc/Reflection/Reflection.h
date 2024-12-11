@@ -3,12 +3,12 @@
 #include "Core.h"
 #include "Exception.h"
 
-namespace slc {
+namespace slc::reflect {
 
 	class Reflection
 	{
 	public:
-		template<CanReflect T>
+		template<typename T>
 		static const TypeInfo* GetInfo()
 		{
 			using Traits = TypeTraits<T>;
@@ -19,15 +19,15 @@ namespace slc {
 			return &sReflectionData[Traits::Name];
 		}
 
-		template<CanReflect T, typename... Args> requires std::is_constructible_v<T, Args...>
+		template<typename T, typename... Args> requires std::is_constructible_v<T, Args...>
 		static void RegisterConstructor(detail::Ctr<T, Args...>)
 		{
-			auto typeInfo = GetInfoForAddition<T>();
+			auto type_info = GetInfoForAddition<T>();
 
 			using Params = TypeList<Args...>;
 
 			ConstructorInfo ctr;
-			ctr.parent_type = typeInfo;
+			ctr.parent_type = type_info;
 			ctr.arguments = { GetInfo<Args>()... };
 
 			auto gen_tuple_val = []<std::size_t I>(Instance object) {
@@ -52,26 +52,26 @@ namespace slc {
 				);
 			};
 
-			typeInfo->constructors.push_back(std::move(ctr));
+			type_info->constructors.push_back(std::move(ctr));
 		}
 
-		template<CanReflect T, typename... Args>
+		template<typename T, typename... Args>
 		static void RegisterDestructor()
 		{
-			auto typeInfo = GetInfoForAddition<T>();
+			auto* type_info = GetInfoForAddition<T>();
 
 			DestructorInfo dtr;
-			dtr.parent_type = typeInfo;
+			dtr.parent_type = type_info;
 			dtr.invoker = [](Instance object) {
 				if (object.type->name != TypeTraits<T>::Name)
 					return;
 				object.data.Get<T&>().~T();
 			};
 
-			typeInfo->destructor.emplace(std::move(dtr));
+			type_info->destructor.emplace(std::move(dtr));
 		}
 
-		template<CanReflect T, typename MemberType>
+		template<typename T, typename MemberType>
 		static void RegisterMember(std::string_view name, MemberType accessor)
 		{
 			if constexpr (std::is_member_object_pointer_v<MemberType>)
@@ -81,7 +81,7 @@ namespace slc {
 		}
 
 	private:
-		template<CanReflect T>
+		template<typename T>
 		static TypeInfo* GetInfoForAddition()
 		{
 			using Traits = TypeTraits<T>;
@@ -92,21 +92,22 @@ namespace slc {
 			return &sReflectionData[Traits::Name];
 		}
 
-		template<CanReflect T>
+		template<typename T>
 		static void Register()
 		{
+			using Traits = TypeTraits<T>;
+
+			TypeInfo new_type;
+			new_type.name = Traits::Name;
+			new_type.base_name = Traits::BaseName;
+			new_type.rttt.Init<T>();
+
+			sReflectionData.emplace(Traits::Name, std::move(new_type));
+
 			SCONSTEXPR bool IsReflectableType = std::derived_from<T, Reflectable<T>>;
 			if constexpr (IsReflectableType)
 			{
-				using Traits = TypeTraits<T>;
-
-				TypeInfo new_type;
-				new_type.name = Traits::Name;
-				new_type.base_name = Traits::BaseName;
-				new_type.rttt.Init<T>();
-				RegisterBaseClasses<T>(new_type, BaseClassList<T>{});
-
-				sReflectionData.emplace(Traits::Name, std::move(new_type));
+				RegisterBaseClasses<T>(BaseClassList<T>{});
 
 				if constexpr (std::is_default_constructible_v<T>)
 					RegisterConstructor(detail::Ctr<T>{});
@@ -118,43 +119,35 @@ namespace slc {
 				if constexpr (std::is_destructible_v<T>)
 					RegisterDestructor<T>();
 
-				T::BuildReflectionData();
-			}
-			else
-			{
-				using Traits = TypeTraits<T>;
-
-				TypeInfo new_type;
-				new_type.name = Traits::Name;
-				new_type.base_name = Traits::BaseName;
-				new_type.rttt.Init<T>();
-				sReflectionData.emplace(Traits::Name, std::move(new_type));
+				T::slc_refl_data::Build();
 			}
 		}
 
 		template<typename T, typename... Ts>
-		static void RegisterBaseClasses(TypeInfo& type, TypeList<Ts...>)
+		static void RegisterBaseClasses(TypeList<Ts...>)
 		{
-			([&]()
+			auto* type_info = GetInfoForAddition<T>();
+
+			([=]()
 			{
 				using BaseType = typename Ts::type;
 				if constexpr (not std::same_as<T, BaseType> and CanReflect<BaseType>)
 				{
-					type.base_types.push_back(GetInfo<BaseType>());
+					type_info->base_types.push_back(GetInfo<BaseType>());
 				}
 			}(), ...);
 		}
 
-		template<CanReflect T, typename MemberType>
+		template<typename T, typename MemberType>
 		static void RegisterProperty(std::string_view name, MemberType accessor)
 		{
 			using PropType = typename PropertyTraits<decltype(accessor)>::PropType;
 
-			auto typeInfo = GetInfoForAddition<T>();
+			auto* type_info = GetInfoForAddition<T>();
 
 			PropertyInfo prop;
 			prop.name = name;
-			prop.parent_type = typeInfo;
+			prop.parent_type = type_info;
 
 			prop.prop_type = GetInfo<PropType>();
 
@@ -169,13 +162,13 @@ namespace slc {
 				ctx.data.Get<T&>().*accessor = value.data.Get<PropType>();
 			};
 
-			typeInfo->properties.push_back(std::move(prop));
+			type_info->properties.push_back(std::move(prop));
 		}
 
-		template<CanReflect T, typename MemberType>
+		template<typename T, typename MemberType>
 		static void RegisterMethod(std::string_view name, MemberType accessor)
 		{
-			auto typeInfo = GetInfoForAddition<T>();
+			auto* type_info = GetInfoForAddition<T>();
 
 			using MemberTraits = FunctionTraits<MemberType>;
 			using ArgTypes = MemberTraits::Arguments;
@@ -191,7 +184,7 @@ namespace slc {
 
 			MethodInfo method;
 			method.name = name;
-			method.parent_type = typeInfo;
+			method.parent_type = type_info;
 			method.arguments = std::move(arg_types);
 			if constexpr (not IsReturnVoid)
 				method.return_type = GetInfo<ReturnType>();
@@ -231,44 +224,39 @@ namespace slc {
 				}
 				};
 
-			typeInfo->methods.push_back(std::move(method));
+			type_info->methods.push_back(std::move(method));
 		}
 
 	private:
 		using ReflectionData = std::unordered_map<std::string_view, TypeInfo>;
 		inline static ReflectionData sReflectionData;
 	};
-
-	template<CanReflect T>
-	inline Instance MakeInstance(T&& value)
-	{
-		return Instance(
-			Reflection::GetInfo<T>(),
-			std::forward<T>(value)
-		);
-	}
 }
 
-#define SLC_REFLECT_MEMBER_IMPL(member)															\
-    {																							\
-		auto invoker = []<typename _T>{															\
-			if constexpr (std::derived_from<_T, ::slc::detail::CtrBase>)						\
-				::slc::Reflection::RegisterConstructor<ClassType>(_T{});						\
-			else																				\
-				::slc::Reflection::RegisterMember<ClassType>(#member, &ClassType::member);		\
-		};																						\
-        using MemberType = decltype(&ClassType::member);										\
-        invoker.template operator()<MemberType>();											    \
+#define SLC_REFLECT_MEMBER_IMPL(member)																\
+    {																								\
+		auto invoker = []<typename _T>{																\
+			if constexpr (std::derived_from<_T, ::slc::detail::CtrBase>)							\
+				::slc::reflect::Reflection::RegisterConstructor<ClassType>(_T{});					\
+			else																				    \
+				::slc::reflect::Reflection::RegisterMember<ClassType>(#member, &ClassType::member);	\
+		};																							\
+        using MemberType = decltype(&ClassType::member);											\
+        invoker.template operator()<MemberType>();													\
     }
 
-#define SLC_REFLECT_CLASS(CLASS, ...)						\
-    using Reflectable<CLASS>::Ctr;                          \
-    using Reflectable<CLASS>::ArgumentType;                 \
-    static void BuildReflectionData()		                \
-	{														\
-		using ClassType = CLASS;							\
-		SLC_FOR_EACH(SLC_REFLECT_MEMBER_IMPL, __VA_ARGS__)  \
-	}
+#define SLC_REFLECT_CLASS(CLASS, ...)														\
+    using Reflectable<CLASS>::Ctr;															\
+    using Reflectable<CLASS>::ArgumentType;													\
+	struct slc_refl_data															        \
+	{																						\
+		static void Build()																	\
+		{																					\
+			using ClassType = CLASS;														\
+			SLC_FOR_EACH(SLC_REFLECT_MEMBER_IMPL, __VA_ARGS__)								\
+		}																					\
+		inline static const TypeInfo* Info = ::slc::reflect::Reflection::GetInfo<CLASS>();  \
+	};
 
 
 #define SLC_REMOVE_PAREN(...) ArgumentType<void(__VA_ARGS__)>::type
