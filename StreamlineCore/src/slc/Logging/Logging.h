@@ -112,7 +112,7 @@ namespace slc
 		Logger()
 			: mMinLogLevel(LogLevel::Debug)
 			, mTerminate(false)
-			, mLastFlush{ Clock::now() }
+			, mNextFlush{ Clock::now() + MaxTimeBetweenFlush }
 		{
 			mWorker = std::thread(&Logger::ProcessQueue, this);
 		}
@@ -157,7 +157,7 @@ namespace slc
 		{
 			while (true) {
 				std::unique_lock<std::mutex> lock(mQueueMutex);
-				mCV.wait(lock, [this]() { return not NeedToFlush() or mTerminate; });
+				mCV.wait_until(lock, mNextFlush, [this]() { return mMessageQueue.size() < MaxMessagesBeforeFlush or mTerminate; });
 
 				Flush();
 
@@ -181,13 +181,7 @@ namespace slc
 			for (auto entry : mMessageQueue)
 				mArena.ReleaseBuffer(entry.message);
 
-			mLastFlush = Clock::now();
-		}
-
-		bool NeedToFlush()
-		{
-			auto time_since_last_flush = Clock::now() - mLastFlush;
-			return (time_since_last_flush >= MaxTimeBetweenFlush or mMessageQueue.size() >= MaxMessagesBeforeFlush);
+			mNextFlush = Clock::now() + MaxTimeBetweenFlush;
 		}
 
 		template<typename... Args>
@@ -211,7 +205,7 @@ namespace slc
 		std::thread mWorker;
 		std::mutex mQueueMutex;
 		std::condition_variable mCV;
-		TimePoint mLastFlush;
+		TimePoint mNextFlush;
 		bool mTerminate;
 
 		LogLevel mMinLogLevel;
