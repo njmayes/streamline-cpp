@@ -10,6 +10,7 @@
 namespace slc
 {
 	enum class LogLevel {
+		Trace,
 		Debug,
 		Info,
 		Warning,
@@ -19,6 +20,12 @@ namespace slc
 
 	using MessageBuffer = std::span<char>;
 
+	struct MessageEntry
+	{
+		MessageBuffer message;
+		LogLevel level;
+	};
+
 	class LogMemoryArena
 	{
 	public:
@@ -27,7 +34,7 @@ namespace slc
 
 	public:
 		LogMemoryArena()
-			: mBuffer{ MakeImpl< char[] >( DefaultArenaSize ) }
+			: mBuffer{ MakeImpl< char[] >(DefaultArenaSize) }
 		{
 
 		}
@@ -65,15 +72,17 @@ namespace slc
 		std::size_t mTail = 0;
 	};
 
-	class ILogTarget : public RefCounted
+	class ILogTarget
 	{
 	public:
 		ILogTarget(LogLevel level)
 			: mLogLevel{ level }
-		{}
+		{
+		}
 
-		virtual void WriteTarget(MessageBuffer data) = 0;
+		virtual void WriteTarget(std::span<MessageEntry> data) = 0;
 
+		void SetLogLevel(LogLevel level) { mLogLevel = level; }
 		LogLevel GetLogLevel() const { return mLogLevel; }
 
 	private:
@@ -85,6 +94,7 @@ namespace slc
 	private:
 		SCONSTEXPR std::size_t MessageSizeLimit = 1024;
 		SCONSTEXPR std::size_t TemporaryBufferSize = 512;
+		SCONSTEXPR std::size_t MaxMessagesBeforeFlush = 64;
 
 		struct TemporaryBuffer
 		{
@@ -92,10 +102,17 @@ namespace slc
 			std::size_t used;
 		};
 
+		using Clock = std::chrono::steady_clock;
+		using Duration = std::chrono::duration< std::chrono::milliseconds >;
+		using TimePoint = std::chrono::time_point< Clock >;
+
+		SCONSTEXPR Duration MaxTimeBetweenFlush = Duration{ std::chrono::milliseconds(500) };
+
 	public:
 		Logger()
 			: mMinLogLevel(LogLevel::Debug)
 			, mTerminate(false)
+			, mLastFlush{ Clock::now() }
 		{
 			mWorker = std::thread(&Logger::ProcessQueue, this);
 		}
@@ -113,6 +130,9 @@ namespace slc
 		template<typename... Args>
 		void Log(LogLevel level, std::format_string<Args...> message, Args&&... args)
 		{
+			if (std::to_underlying(level) < std::to_underlying(mMinLogLevel))
+				return;
+
 			auto buffer = mArena.RequestBuffer(MessageSizeLimit);
 			std::memset(buffer.data(), 0, buffer.size());
 
@@ -125,9 +145,11 @@ namespace slc
 			auto formatted_message = GetFormatMessage(message, std::forward<Args>(args)...);
 			auto format_result = std::format_to_n(buffer.begin(), MessageSizeLimit, "{}: {}\n", buffer.data(), formatted_message.buffer.data());
 
-			SLC_TODO("Handle null terminator");
-
-			mMessageQueue.push(buffer);
+			{
+				std::lock_guard<std::mutex> lock(mQueueMutex);
+				mMessageQueue.emplace_back(buffer, level);
+			}
+			mCV.notify_one();
 		}
 
 	private:
@@ -135,27 +157,37 @@ namespace slc
 		{
 			while (true) {
 				std::unique_lock<std::mutex> lock(mQueueMutex);
-				mCV.wait(lock, [this]() { return !mMessageQueue.empty() || mTerminate; });
+				mCV.wait(lock, [this]() { return not NeedToFlush() or mTerminate; });
 
-				while (!mMessageQueue.empty()) {
-					auto entry = mMessageQueue.front();
-					mMessageQueue.pop();
-					lock.unlock();
+				Flush();
 
-					SLC_TODO("Replace with log targets");
-					std::cout << entry.data();
-
-					lock.lock();
-				}
-
-				if (mTerminate && mMessageQueue.empty())
+				if (mTerminate and mMessageQueue.empty())
 					break;
 			}
 		}
 
 		void Flush()
 		{
+			{
+				std::vector<std::jthread> writers;
+				writers.reserve(mLogTargets.size());
+				for (auto const& log_target : mLogTargets)
+				{
+					auto worker = [&] { log_target->WriteTarget(mMessageQueue); };
+					writers.emplace_back(worker);
+				}
+			}
 
+			for (auto entry : mMessageQueue)
+				mArena.ReleaseBuffer(entry.message);
+
+			mLastFlush = Clock::now();
+		}
+
+		bool NeedToFlush()
+		{
+			auto time_since_last_flush = Clock::now() - mLastFlush;
+			return (time_since_last_flush >= MaxTimeBetweenFlush or mMessageQueue.size() >= MaxMessagesBeforeFlush);
 		}
 
 		template<typename... Args>
@@ -179,10 +211,11 @@ namespace slc
 		std::thread mWorker;
 		std::mutex mQueueMutex;
 		std::condition_variable mCV;
+		TimePoint mLastFlush;
 		bool mTerminate;
 
 		LogLevel mMinLogLevel;
-		std::queue<MessageBuffer> mMessageQueue;
+		std::vector<MessageEntry> mMessageQueue;
 		std::vector<Impl<ILogTarget>> mLogTargets;
 
 		LogMemoryArena mArena;
