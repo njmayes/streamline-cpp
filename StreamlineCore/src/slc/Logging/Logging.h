@@ -2,6 +2,7 @@
 
 #include "slc/Common/Base.h"
 #include "slc/Common/Time.h"
+#include "slc/Threading/ThreadPool.h"
 
 #include <thread>
 #include <mutex>
@@ -82,21 +83,30 @@ namespace slc
 		{
 		}
 
-		void WriteTarget(std::span<MessageEntry> data)
+		void WriteTarget(MessageEntry const& entry)
 		{
-			for (auto const& entry : data)
-			{
-				DoWriteTarget(entry);
-			}
+			if (not ShouldWriteMessage(entry))
+				return;
 
+			DoWriteTarget(entry);
+		}
+
+		void Flush()
+		{
 			DoFlush();
 		}
 
+		void SetLogLevel(LogLevel level) { mLogLevel = level; }
+		LogLevel GetLogLevel() const { return mLogLevel; }
+
+	private:
 		virtual void DoWriteTarget(MessageEntry const& entry) = 0;
 		virtual void DoFlush() = 0;
 
-		void SetLogLevel(LogLevel level) { mLogLevel = level; }
-		LogLevel GetLogLevel() const { return mLogLevel; }
+		bool ShouldWriteMessage(MessageEntry const& entry)
+		{
+			return std::to_underlying(entry.level) >= std::to_underlying(mLogLevel);
+		}
 
 	private:
 		LogLevel mLogLevel;
@@ -110,6 +120,7 @@ namespace slc
 		{
 		}
 
+	private:
 		void DoWriteTarget(MessageEntry const& entry) override
 		{
 			std::string_view message{ entry.message.data(), entry.length };
@@ -132,6 +143,7 @@ namespace slc
 		{
 		}
 
+	private:
 		void DoWriteTarget(MessageEntry const& entry) override
 		{
 			std::string_view message{ entry.message.data(), entry.length };
@@ -146,7 +158,6 @@ namespace slc
 	private:
 		std::ofstream mFile;
 	};
-
 
 
 	class Logger
@@ -187,7 +198,7 @@ namespace slc
 			mWorker.join();
 		}
 
-		template<typename target_t, typename... Args> requires 
+		template<typename target_t, typename... Args> requires
 			std::derived_from<target_t, ILogTarget> and
 			std::constructible_from<target_t, Args...>
 		void AddLogTarget(Args&&... args)
@@ -205,7 +216,7 @@ namespace slc
 			auto buffer = mArena.RequestBuffer(MessageSizeLimit);
 			std::memset(buffer.data(), 0, buffer.size());
 
-			auto level_string = Enum::ToString(level);
+			auto level_string = LogLevelToString(level);
 			auto level_format_result = std::format_to_n(buffer.begin(), level_string.size() + 2, "[{}]", level_string.data());
 
 			auto timestamp = GetCurrentTimestamp();
@@ -228,7 +239,7 @@ namespace slc
 				std::unique_lock<std::mutex> lock(mQueueMutex);
 				mCV.wait_until(lock, mNextFlush, [this] {
 					return mMessageQueue.size() >= MaxMessagesBeforeFlush or mTerminate;
-				});
+					});
 
 				Flush();
 
@@ -239,15 +250,20 @@ namespace slc
 
 		void Flush()
 		{
+			SLC_TODO("Maybe make concurrent");
+			for (auto const& message : mMessageQueue)
 			{
-				std::vector<std::jthread> writers;
-				writers.reserve(mLogTargets.size());
 				for (auto const& target : mLogTargets)
 				{
-					auto worker = [&] { target->WriteTarget(mMessageQueue); };
-					writers.emplace_back(worker);
+					target->WriteTarget(message);
 				}
 			}
+
+			for (auto const& target : mLogTargets)
+			{
+				target->Flush();
+			}
+
 
 			for (auto const& entry : mMessageQueue)
 				mArena.ReleaseBuffer(entry.message);
