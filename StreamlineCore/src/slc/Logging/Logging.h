@@ -1,6 +1,7 @@
 #pragma once
 
 #include "slc/Common/Base.h"
+#include "slc/Common/Time.h"
 
 #include <thread>
 #include <mutex>
@@ -23,6 +24,7 @@ namespace slc
 	struct MessageEntry
 	{
 		MessageBuffer message;
+		std::size_t length;
 		LogLevel level;
 	};
 
@@ -61,7 +63,7 @@ namespace slc
 			ASSERT(buffer.data() == (mBuffer.get() + mHead), "Arena is a queue, must release the oldest buffer first");
 
 			auto new_head = mHead + buffer.size();
-			ASSERT(new_head < mTail, "Error, released buffer is larger than currently allocated space");
+			ASSERT(new_head <= mTail, "Error, released buffer is larger than currently allocated space");
 
 			mHead = new_head;
 		}
@@ -80,7 +82,18 @@ namespace slc
 		{
 		}
 
-		virtual void WriteTarget(std::span<MessageEntry> data) = 0;
+		void WriteTarget(std::span<MessageEntry> data)
+		{
+			for (auto const& entry : data)
+			{
+				DoWriteTarget(entry);
+			}
+
+			DoFlush();
+		}
+
+		virtual void DoWriteTarget(MessageEntry const& entry) = 0;
+		virtual void DoFlush() = 0;
 
 		void SetLogLevel(LogLevel level) { mLogLevel = level; }
 		LogLevel GetLogLevel() const { return mLogLevel; }
@@ -88,6 +101,53 @@ namespace slc
 	private:
 		LogLevel mLogLevel;
 	};
+
+	class ConsoleLogTarget : public ILogTarget
+	{
+	public:
+		ConsoleLogTarget(LogLevel level = LogLevel::Debug)
+			: ILogTarget(level)
+		{
+		}
+
+		void DoWriteTarget(MessageEntry const& entry) override
+		{
+			std::string_view message{ entry.message.data(), entry.length };
+			std::cout << message;
+		}
+
+		void DoFlush() override
+		{
+			std::cout << std::flush;
+		}
+	};
+
+
+	class FileLogTarget : public ILogTarget
+	{
+	public:
+		FileLogTarget(const std::string& filename, LogLevel level = LogLevel::Debug)
+			: ILogTarget(level)
+			, mFile(filename, std::ios_base::out | std::ios_base::app)
+		{
+		}
+
+		void DoWriteTarget(MessageEntry const& entry) override
+		{
+			std::string_view message{ entry.message.data(), entry.length };
+			mFile << message;
+		}
+
+		void DoFlush() override
+		{
+			mFile << std::flush;
+		}
+
+	private:
+		std::ofstream mFile;
+	};
+
+
 
 	class Logger
 	{
@@ -98,15 +158,15 @@ namespace slc
 
 		struct TemporaryBuffer
 		{
-			std::array<char, TemporaryBufferSize> buffer;
+			std::array<char, TemporaryBufferSize> buffer{};
 			std::size_t used;
 		};
 
 		using Clock = std::chrono::steady_clock;
-		using Duration = std::chrono::duration< std::chrono::milliseconds >;
-		using TimePoint = std::chrono::time_point< Clock >;
+		using Duration = std::chrono::duration< double >;
+		using TimePoint = std::chrono::time_point< Clock, Duration >;
 
-		SCONSTEXPR Duration MaxTimeBetweenFlush = Duration{ std::chrono::milliseconds(500) };
+		SCONSTEXPR Duration MaxTimeBetweenFlush = Duration{ std::chrono::milliseconds(100) };
 
 	public:
 		Logger()
@@ -125,6 +185,15 @@ namespace slc
 			}
 			mCV.notify_all();
 			mWorker.join();
+		}
+
+		template<typename target_t, typename... Args> requires 
+			std::derived_from<target_t, ILogTarget> and
+			std::constructible_from<target_t, Args...>
+		void AddLogTarget(Args&&... args)
+		{
+			auto target = MakeImpl<target_t>(std::forward<Args>(args)...);
+			mLogTargets.push_back(std::move(target));
 		}
 
 		template<typename... Args>
@@ -147,7 +216,7 @@ namespace slc
 
 			{
 				std::lock_guard<std::mutex> lock(mQueueMutex);
-				mMessageQueue.emplace_back(buffer, level);
+				mMessageQueue.emplace_back(buffer, format_result.size, level);
 			}
 			mCV.notify_one();
 		}
@@ -157,7 +226,9 @@ namespace slc
 		{
 			while (true) {
 				std::unique_lock<std::mutex> lock(mQueueMutex);
-				mCV.wait_until(lock, mNextFlush, [this]() { return mMessageQueue.size() < MaxMessagesBeforeFlush or mTerminate; });
+				mCV.wait_until(lock, mNextFlush, [this] {
+					return mMessageQueue.size() >= MaxMessagesBeforeFlush or mTerminate;
+				});
 
 				Flush();
 
@@ -171,16 +242,17 @@ namespace slc
 			{
 				std::vector<std::jthread> writers;
 				writers.reserve(mLogTargets.size());
-				for (auto const& log_target : mLogTargets)
+				for (auto const& target : mLogTargets)
 				{
-					auto worker = [&] { log_target->WriteTarget(mMessageQueue); };
+					auto worker = [&] { target->WriteTarget(mMessageQueue); };
 					writers.emplace_back(worker);
 				}
 			}
 
-			for (auto entry : mMessageQueue)
+			for (auto const& entry : mMessageQueue)
 				mArena.ReleaseBuffer(entry.message);
 
+			mMessageQueue.clear();
 			mNextFlush = Clock::now() + MaxTimeBetweenFlush;
 		}
 
@@ -188,16 +260,18 @@ namespace slc
 		TemporaryBuffer GetFormatMessage(std::format_string<Args...> message, Args&&... args)
 		{
 			TemporaryBuffer temp;
-			temp.used = std::format_to_n(temp.buffer.data(), temp.buffer.size(), message, std::forward<Args>(args)...);
+			auto result = std::format_to_n(temp.buffer.data(), temp.buffer.size(), message, std::forward<Args>(args)...);
+			temp.used = result.size;
 			return temp;
 		}
 
 		TemporaryBuffer GetCurrentTimestamp() {
 			auto now = std::chrono::system_clock::now();
 			auto now_c = std::chrono::system_clock::to_time_t(now);
+			auto time = GetLocalTime(&now_c);
 
-			TemporaryBuffer temp;
-			temp.used = std::strftime(temp.buffer.data(), temp.buffer.size(), "%F %T", std::localtime(&now_c));
+			TemporaryBuffer temp{};
+			temp.used = std::strftime(temp.buffer.data(), temp.buffer.size(), "%F %T", &time);
 			return temp;
 		}
 
