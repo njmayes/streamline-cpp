@@ -3,6 +3,7 @@
 #include "slc/Events/IEventListener.h"
 #include "slc/IO/Window.h"
 #include "slc/ImGui/Controller.h"
+#include "slc/Logging/Logger.h"
 #include "slc/Types/Timestep.h"
 
 #include <string>
@@ -59,6 +60,8 @@ namespace slc {
 
 		std::vector<Action<>> mainThreadQueue;
 		std::mutex mainThreadQueueMutex;
+
+		Logger logger;
 	};
 
 	class Application : public IEventListener
@@ -95,6 +98,12 @@ namespace slc {
 			mAppSystems.emplace_back(T::Shutdown);
 		}
 
+		template<typename T, typename... Args>
+		void AddLogTarget(Args&&... args)
+		{
+			mState.logger.AddLogTarget<T>(std::forward<Args>(args)...);
+		}
+
 	private:
 		bool OnWindowClose(WindowCloseEvent& e);
 		bool OnWindowResize(WindowResizeEvent& e);
@@ -102,6 +111,8 @@ namespace slc {
 	public:
 		static void Close();
 		static Application& Get() { return *sInstance; }
+
+		static Logger& GetLogger() { return sInstance->mState.logger; }
 
 		static const ApplicationSpecification& GetSpec() { return *sInstance->mSpecification; }
 		template<typename T> requires std::derived_from<T, ApplicationSpecification>
