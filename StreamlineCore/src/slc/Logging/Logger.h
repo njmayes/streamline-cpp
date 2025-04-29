@@ -12,7 +12,7 @@ namespace slc {
 	{
 	private:
 		SCONSTEXPR std::size_t MessageSizeLimit = 256;
-		SCONSTEXPR std::size_t MaxMessagesBeforeFlush = 512;
+		SCONSTEXPR std::size_t MaxMessagesBeforeFlush = 1024;
 		SCONSTEXPR std::size_t TemporaryBufferSize = 256;
 
 		struct TemporaryBuffer
