@@ -2,49 +2,54 @@
 
 namespace slc {
 
-	LogMemoryArena::LogMemoryArena()
-		: mBuffer{ MakeImpl< char[] >(DefaultArenaSize) }
-		, mSize{ DefaultArenaSize }
+	LogMemoryArena::LogMemoryArena(std::size_t size)
+		: mBuffer{ MakeImpl< char[] >(size) }
+		, mCapacity{ size }
 	{
 
 	}
 
 	std::optional<MessageBuffer> LogMemoryArena::RequestBuffer(std::size_t size)
 	{
-		auto new_tail = mTail + size;
-		if (new_tail <= mHead)
+		if (Available() < size)
 			return std::nullopt;
 
-		if (new_tail >= DefaultArenaSize)
+		std::size_t end = mHead + size;
+		if (end <= mCapacity)
 		{
-			new_tail %= DefaultArenaSize;
-			if (new_tail >= mHead)
-				return std::nullopt;
+			auto buffer = MessageBuffer(mBuffer.get() + mHead, size);
+			mHead = (mHead + size) % mCapacity;
+			mFull = mHead == mTail;
+			return buffer;
+		}
+		else if (mTail > size)
+		{
+			auto buffer = MessageBuffer(mBuffer.get(), size);
+			mHead = size;
+			mFull = mHead == mTail;
+			return buffer;
 		}
 
-		auto buffer = MessageBuffer(mBuffer.get() + mTail, size);
-		mTail = new_tail;
-
-		return buffer;
+		return std::nullopt;
 	}
 
 	void LogMemoryArena::ReleaseBuffer(MessageBuffer buffer)
 	{
-		ASSERT(buffer.data() == (mBuffer.get() + mHead), "Arena is a queue, must release the oldest buffer first");
+		ASSERT(mBuffer.get() + mTail == buffer.data(), "Arena is a stack, must release the oldest buffer first");
+		ASSERT(mHead != mTail, "There is no currently in use memory");
 
-		auto new_head = mHead + buffer.size();
-		ASSERT(new_head <= mTail, "Error, released buffer is larger than currently allocated space");
-
-		mHead = new_head;
+		mTail = (mTail + buffer.size()) % mCapacity;
+		mFull = false;
 	}
 
-	void LogMemoryArena::Reallocate()
+	std::size_t LogMemoryArena::Available()
 	{
-		ASSERT(mHead == mTail == 0, "Should never reallocate while there is still used memory");
+		if (mFull)
+			return 0;
 
-		mSize = static_cast<std::size_t>(mSize * ReallocScaleFactor);
-		mBuffer = MakeImpl< char[] >(mSize);
-		mHead = 0;
-		mTail = 0;
+		if (mHead >= mTail)
+			return mCapacity - (mHead - mTail);
+
+		return mTail - mHead;
 	}
 }

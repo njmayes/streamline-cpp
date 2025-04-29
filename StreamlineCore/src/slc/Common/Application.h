@@ -60,8 +60,6 @@ namespace slc {
 
 		std::vector<Action<>> mainThreadQueue;
 		std::mutex mainThreadQueueMutex;
-
-		Logger logger;
 	};
 
 	class Application : public IEventListener
@@ -101,7 +99,7 @@ namespace slc {
 		template<typename T, typename... Args>
 		void AddLogTarget(Args&&... args)
 		{
-			mState.logger.AddLogTarget<T>(std::forward<Args>(args)...);
+			Logger::GetGlobalLogger().AddLogTarget<T>(std::forward<Args>(args)...);
 		}
 
 	private:
@@ -111,8 +109,6 @@ namespace slc {
 	public:
 		static void Close();
 		static Application& Get() { return *sInstance; }
-
-		static Logger& GetLogger() { return sInstance->mState.logger; }
 
 		static const ApplicationSpecification& GetSpec() { return *sInstance->mSpecification; }
 		template<typename T> requires std::derived_from<T, ApplicationSpecification>
