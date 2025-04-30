@@ -28,6 +28,8 @@ namespace {
 #elif defined(SLC_PLATFORM_LINUX)
 		auto result = ::write(STDOUT_FILENO, mMessageBuffer.data(), mMessageBuffer.size());
 		ASSERT(result != -1, "Failed to write to stdout")
+#else
+		std::fwrite(buffer.data(), 1, buffer.size(), stdout);
 #endif
 	}
 }
@@ -42,7 +44,6 @@ namespace slc {
 	void ConsoleLogTarget::DoWriteTarget(std::vector<char> const& buffer)
 	{
 		WriteToConsoleFast(buffer);
-		//std::fwrite(buffer.data(), 1, buffer.size(), stdout);
 	}
 
 	void ConsoleLogTarget::DoPreFlush()
