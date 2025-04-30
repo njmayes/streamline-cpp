@@ -17,17 +17,17 @@ namespace slc::Log {
 		logger.Log(LogLevel::Trace, message, std::forward<Args>(args)...);
 	}
 
-	inline void Trace(std::string_view message)
+	inline void Debug(std::string_view message)
 	{
 		auto& logger = Logger::GetGlobalLogger();
-		logger.Log(LogLevel::Trace, message);
+		logger.Log(LogLevel::Debug, message);
 	}
 
 	template<typename... Args>
-	void Trace(std::format_string<Args...> message, Args&&... args)
+	void Debug(std::format_string<Args...> message, Args&&... args)
 	{
 		auto& logger = Logger::GetGlobalLogger();
-		logger.Log(LogLevel::Trace, message, std::forward<Args>(args)...);
+		logger.Log(LogLevel::Debug, message, std::forward<Args>(args)...);
 	}
 
 	inline void Info(std::string_view message)

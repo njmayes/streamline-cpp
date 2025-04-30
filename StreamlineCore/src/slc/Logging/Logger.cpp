@@ -20,6 +20,7 @@ namespace slc {
 		, mArena(message_size_limit* max_messages_before_flush)
 	{
 		mWorker = std::thread(&Logger::ProcessQueue, this);
+		mMessageBuffer.reserve(mMessageSizeLimit * mMaxMessagesBeforeFlush);
 	}
 
 	Logger::~Logger()
@@ -102,16 +103,10 @@ namespace slc {
 		timer.Reset();
 		for (auto const& target : mLogTargets)
 		{
-			target->WriteTarget(mMessageQueue);
-		}
-		mStats.total_write_time += Duration{ timer.ElapsedMicros() };
-
-		timer.Reset();
-		for (auto const& target : mLogTargets)
-		{
+			target->WriteTarget(mMessageQueue, mMessageBuffer);
 			target->Flush();
 		}
-		mStats.total_flush_time += Duration{ timer.ElapsedMicros() };
+		mStats.total_write_time += Duration{ timer.ElapsedMicros() };
 
 		for (auto const& entry : mMessageQueue)
 			mArena.ReleaseBuffer(entry.message);

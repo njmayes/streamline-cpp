@@ -1,6 +1,8 @@
 #pragma once
 
-#include "Common.h"
+#include "../Common.h"
+
+#include <vector>
 
 namespace slc {
 
@@ -12,12 +14,11 @@ namespace slc {
 		{
 		}
 
-		void WriteTarget(MessageEntry const& entry)
-		{
-			if (not ShouldWriteMessage(entry))
-				return;
+		void WriteTarget(std::span<MessageEntry> data, std::vector<char>& buffer);
 
-			DoWriteTarget(entry);
+		void PreFlush()
+		{
+			DoPreFlush();
 		}
 
 		void Flush()
@@ -29,7 +30,8 @@ namespace slc {
 		LogLevel GetLogLevel() const { return mLogLevel; }
 
 	private:
-		virtual void DoWriteTarget(MessageEntry const& entry) = 0;
+		virtual void DoWriteTarget(std::vector<char> const& buffer) = 0;
+		virtual void DoPreFlush() = 0;
 		virtual void DoFlush() = 0;
 
 		bool ShouldWriteMessage(MessageEntry const& entry)

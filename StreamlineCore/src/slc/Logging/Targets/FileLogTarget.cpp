@@ -8,10 +8,9 @@ namespace slc
 	{
 	}
 
-	void FileLogTarget::DoWriteTarget(MessageEntry const& entry)
+	void FileLogTarget::DoWriteTarget(std::vector<char> const& buffer)
 	{
-		std::string_view message{ entry.message.data(), entry.length };
-		mFile << message;
+		mFile << buffer.data();
 	}
 
 	void FileLogTarget::DoFlush()

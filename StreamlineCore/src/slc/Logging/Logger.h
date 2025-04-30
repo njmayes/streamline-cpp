@@ -31,7 +31,6 @@ namespace slc {
 		{
 			Duration total_pre_flush_time{};
 			Duration total_write_time{};
-			Duration total_flush_time{};
 
 			std::size_t total_flushes{};
 			std::size_t messages_since_last_flush{};
@@ -75,7 +74,7 @@ namespace slc {
 
 			std::memset(buffer->data(), 0, buffer->size());
 
-			auto level_string = LogLevelToString(level);
+			auto level_string = Enum::ToString(level);
 			auto level_format_result = std::format_to_n(buffer->begin(), level_string.size() + 2, "[{}]", level_string.data());
 
 			auto timestamp = GetCurrentTimestamp();
@@ -125,6 +124,7 @@ namespace slc {
 		std::vector<Impl<ILogTarget>> mLogTargets;
 
 		LogMemoryArena mArena;
+		std::vector<char> mMessageBuffer;
 
 		LoggerStats mStats;
 

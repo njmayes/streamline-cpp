@@ -10,7 +10,8 @@ namespace slc {
 		ConsoleLogTarget(LogLevel level);
 
 	private:
-		void DoWriteTarget(MessageEntry const& entry) override;
+		void DoWriteTarget(std::vector<char> const& buffer) override;
+		void DoPreFlush() override;
 		void DoFlush() override;
 	};
 }
