@@ -6,11 +6,31 @@
 
 #define SLC_EXPAND_MACRO(x) x
 
-#ifdef SLC_DEBUG
-	#define ASSERT(x, ...)  assert(x)
+#ifdef __has_cpp_attribute
+	#define SLC_HAS_ATTRIBUTE(x) __has_cpp_attribute(x)
 #else
-	#define ASSERT(...) [[assume(x)]]
+	#define SLC_HAS_ATTRIBUTE(x)
 #endif
+
+
+#ifdef SLC_DEBUG
+	#define ASSERT(x, ...) assert(x)
+#else
+	#if SLC_HAS_ATTRIBUTE(assume)
+		#define ASSERT(...) [[assume(x)]]
+	#else
+		#if defined(SLC_COMPILER_MSVC)
+			#define ASSERT(x, ...)  __assume(x)
+		#elif defined(SLC_COMPILER_GCC)	
+			#define ASSERT(x, ...)  __attribute__((assume(x)))
+		#elif defined(SLC_COMPILER_CLANG)	
+			#define ASSERT(x, ...)  __builtin_assume(x)
+		#else
+			#error "No assume attribute"
+		#endif // SLC_PLATFORM_LINUX
+	#endif // __has_cpp_attribute(assume)
+#endif
+
 
 #define SLC_STRINGIFY( L )  #L 
 #define SLC_MAKE_STRING( x ) SLC_STRINGIFY(x)
