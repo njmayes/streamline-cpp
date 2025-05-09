@@ -12,17 +12,11 @@ namespace slc {
 		LogMemoryArena(std::size_t size);
 
 		std::optional<MessageBuffer> RequestBuffer(std::size_t size);
-		void ReleaseBuffer(MessageBuffer buffer);
-
-	private:
-		std::size_t Available();
+		void ReleaseBuffers();
 
 	private:
 		Impl<char[]> mBuffer;
 		std::size_t mCapacity;
-		std::size_t mHead = 0;
-		std::size_t mTail = 0;
-
-		bool mFull{};
+		std::size_t mUsed = 0;
 	};
 }

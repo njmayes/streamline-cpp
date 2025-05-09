@@ -35,36 +35,52 @@ namespace slc {
 
 	void Logger::Log(LogLevel level, std::string_view message)
 	{
+		SLC_PROFILE_FUNCTION();
+
 		if (std::to_underlying(level) < std::to_underlying(mMinLogLevel))
 			return;
 
-		auto buffer = mArena.RequestBuffer(mMessageSizeLimit);
+		std::optional<MessageBuffer> buffer = mArena.RequestBuffer(mMessageSizeLimit);
 		if (not buffer.has_value())
 		{
 			{
+				SLC_PROFILE_SCOPE("Logging - Notify");
+
+				mCV.notify_one();
+			}
+			{
+				SLC_PROFILE_SCOPE("Logging - Wait");
+
 				std::unique_lock<std::mutex> lock(mQueueMutex);
-				Flush();
+				mCV.wait(lock, [this] { return mMessageQueue.size() < mMaxMessagesBeforeFlush; });
 			}
 
-			buffer = mArena.RequestBuffer(mMessageSizeLimit);
-			ASSERT(buffer.has_value(), "Still could not create message buffer despite flush");
+			{
+				SLC_PROFILE_SCOPE("Logging - Get Buffer Retry");
+
+				buffer = mArena.RequestBuffer(mMessageSizeLimit);
+				ASSERT(buffer.has_value(), "Still could not create message buffer despite flush");
+			}
 		}
 
-		std::memset(buffer->data(), 0, buffer->size());
-
 		auto level_string = Enum::ToString(level);
-		auto level_format_result = std::format_to_n(buffer->begin(), level_string.size() + 2, "[{}]", level_string.data());
 
-		auto timestamp = GetCurrentTimestamp();
-		auto timestamp_format_result = std::format_to_n(buffer->begin(), level_format_result.size + timestamp.used + 3, "{} ({})", buffer->data(), timestamp.buffer.data());
+		UpdateCurrentTimestamp();
 
-		auto format_result = std::format_to_n(buffer->begin(), mMessageSizeLimit, "{}: {}", buffer->data(), message.data());
-		auto formatted_size = std::min(static_cast<std::size_t>(format_result.size), mMessageSizeLimit);
+		std::size_t formatted_size{};
+		{
+			SLC_PROFILE_SCOPE("Logging - Format message");
+
+			auto format_result = std::format_to_n(buffer->begin(), mMessageSizeLimit, "[{}] {}: {}", level_string, mTimestampCache.format_string.data(), message.data());
+			formatted_size = std::min(static_cast<std::size_t>(format_result.size), mMessageSizeLimit);
+		}
 
 		if (formatted_size == mMessageSizeLimit)
 			mStats.large_message_count++;
 
 		{
+			SLC_PROFILE_SCOPE("Logging - Lock queue and push");
+
 			std::lock_guard<std::mutex> lock(mQueueMutex);
 			mMessageQueue.emplace_back(*buffer, formatted_size, level);
 		}
@@ -77,12 +93,15 @@ namespace slc {
 	void Logger::ProcessQueue()
 	{
 		while (true) {
-			std::unique_lock<std::mutex> lock(mQueueMutex);
-			mCV.wait_until(lock, mLastFlush + MaxTimeBetweenFlush, [this] {
-				return mMessageQueue.size() >= mMaxMessagesBeforeFlush or mTerminate;
-				});
+			{
+				std::unique_lock<std::mutex> lock(mQueueMutex);
+				mCV.wait_until(lock, mLastFlush + MaxTimeBetweenFlush, [this] {
+					return mMessageQueue.size() >= mMaxMessagesBeforeFlush or mTerminate;
+					});
 
-			Flush();
+				Flush();
+			}
+			mCV.notify_one();
 
 			if (mTerminate and mMessageQueue.empty())
 				break;
@@ -91,43 +110,66 @@ namespace slc {
 
 	void slc::Logger::Flush()
 	{
-		Timer timer;
-		for (auto const& target : mLogTargets)
+		SLC_PROFILE_FUNCTION();
+
 		{
-			target->PreFlush();
+			SLC_PROFILE_SCOPE("Pre-write");
+
+			for (auto const& target : mLogTargets)
+			{
+				target->PreFlush();
+			}
 		}
-		mStats.total_pre_flush_time += Duration{ timer.ElapsedMicros() };
 
-		SLC_TODO("Maybe make concurrent");
-
-		timer.Reset();
-		for (auto const& target : mLogTargets)
 		{
-			target->WriteTarget(mMessageQueue, mMessageBuffer);
-			target->Flush();
+			SLC_PROFILE_SCOPE("Writing");
+
+			for (auto const& target : mLogTargets)
+			{
+				target->WriteTarget(mMessageQueue, mMessageBuffer);
+				target->Flush();
+			}
 		}
-		mStats.total_write_time += Duration{ timer.ElapsedMicros() };
 
-		for (auto const& entry : mMessageQueue)
-			mArena.ReleaseBuffer(entry.message);
-		mMessageQueue.clear();
+		{
+			SLC_PROFILE_SCOPE("Cleanup");
 
-		mStats.total_flushes++;
-		mStats.large_message_count = 0;
-		mStats.messages_since_last_flush = 0;
+			{
+				SLC_PROFILE_SCOPE("Cleanup - Release buffer");
+				mArena.ReleaseBuffers();
+			}
+			{
+				SLC_PROFILE_SCOPE("Cleanup - Clear queue");
+				mMessageQueue.clear();
+			}
+		}
 
-		auto flush_time = Clock::now();
-		mStats.time_since_last_flush = flush_time - mLastFlush;
-		mLastFlush = flush_time;
+		{
+			SLC_PROFILE_SCOPE("Stats");
+
+			mStats.total_flushes++;
+			mStats.large_message_count = 0;
+			mStats.messages_since_last_flush = 0;
+
+			auto flush_time = Clock::now();
+			mStats.time_since_last_flush = flush_time - mLastFlush;
+			mLastFlush = flush_time;
+		}
 	}
 
-	Logger::TemporaryBuffer Logger::GetCurrentTimestamp() {
+	void Logger::UpdateCurrentTimestamp()
+	{
+		SLC_PROFILE_FUNCTION();
+
 		auto now = std::chrono::system_clock::now();
+
+		if (now == mTimestampCache.timestamp)
+			return;
+
 		auto now_c = std::chrono::system_clock::to_time_t(now);
 		auto time = GetLocalTime(&now_c);
 
-		TemporaryBuffer temp{};
-		temp.used = std::strftime(temp.buffer.data(), temp.buffer.size(), "%F %T", &time);
-		return temp;
+		mTimestampCache.timestamp = now;
+		std::strftime(mTimestampCache.format_string.data(), mTimestampCache.format_string.size(), "%F %T", &time);
 	}
 }

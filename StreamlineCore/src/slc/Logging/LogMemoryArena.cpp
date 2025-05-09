@@ -1,5 +1,7 @@
 #include "LogMemoryArena.h"
 
+#include "slc/Common/Profiling.h"
+
 namespace slc {
 
 	LogMemoryArena::LogMemoryArena(std::size_t size)
@@ -11,45 +13,21 @@ namespace slc {
 
 	std::optional<MessageBuffer> LogMemoryArena::RequestBuffer(std::size_t size)
 	{
-		if (Available() < size)
+		SLC_PROFILE_FUNCTION();
+
+		auto available = mCapacity - mUsed;
+		if (available < size)
 			return std::nullopt;
 
-		std::size_t end = mHead + size;
-		if (end <= mCapacity)
-		{
-			auto buffer = MessageBuffer(mBuffer.get() + mHead, size);
-			mHead = (mHead + size) % mCapacity;
-			mFull = mHead == mTail;
-			return buffer;
-		}
-		else if (mTail > size)
-		{
-			auto buffer = MessageBuffer(mBuffer.get(), size);
-			mHead = size;
-			mFull = mHead == mTail;
-			return buffer;
-		}
-
-		return std::nullopt;
+		auto buffer = MessageBuffer(mBuffer.get() + mUsed, size);
+		mUsed += size;
+		return buffer;
 	}
 
-	void LogMemoryArena::ReleaseBuffer(MessageBuffer buffer)
+	void LogMemoryArena::ReleaseBuffers()
 	{
-		ASSERT(mBuffer.get() + mTail == buffer.data(), "Arena is a stack, must release the oldest buffer first");
-		ASSERT(mHead != mTail, "There is no currently in use memory");
+		SLC_PROFILE_FUNCTION();
 
-		mTail = (mTail + buffer.size()) % mCapacity;
-		mFull = false;
-	}
-
-	std::size_t LogMemoryArena::Available()
-	{
-		if (mFull)
-			return 0;
-
-		if (mHead >= mTail)
-			return mCapacity - (mHead - mTail);
-
-		return mTail - mHead;
+		mUsed = 0;
 	}
 }
