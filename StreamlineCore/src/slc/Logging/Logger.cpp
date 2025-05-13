@@ -158,18 +158,42 @@ namespace slc {
 	}
 
 	void Logger::UpdateCurrentTimestamp()
+	{teCurrentTimestamp()
 	{
 		SLC_PROFILE_FUNCTION();
 
-		auto now = std::chrono::system_clock::now();
+		std::chrono::system_clock::time_point now;
+		{
+			SLC_PROFILE_SCOPE("Update timestamp - Get time");
+			now = std::chrono::system_clock::now();
+		}
 
-		if (now == mTimestampCache.timestamp)
-			return;
+		{
+			SLC_PROFILE_SCOPE("Update timestamp - Check if time is same");
+			if (std::chrono::floor<std::chrono::seconds>(now) == std::chrono::floor<std::chrono::seconds>(mTimestampCache.timestamp))
+				return;
+		}
 
-		auto now_c = std::chrono::system_clock::to_time_t(now);
-		auto time = GetLocalTime(&now_c);
+		std::time_t now_c{};
+		{
+			SLC_PROFILE_SCOPE("Update timestamp - To time_t");
+			now_c = std::chrono::system_clock::to_time_t(now);
+		}
 
-		mTimestampCache.timestamp = now;
-		std::strftime(mTimestampCache.format_string.data(), mTimestampCache.format_string.size(), "%F %T", &time);
+		std::tm time{};
+		{
+			SLC_PROFILE_SCOPE("Update timestamp - Get local time");
+			time = GetLocalTime(&now_c);
+		}
+
+		{
+			SLC_PROFILE_SCOPE("Update timestamp - update saved timestamp");
+			mTimestampCache.timestamp = now;
+		}
+
+		{
+			SLC_PROFILE_SCOPE("Update timestamp - Format time");
+			std::strftime(mTimestampCache.format_string.data(), mTimestampCache.format_string.size(), "%F %T", &time);
+		}
 	}
 }

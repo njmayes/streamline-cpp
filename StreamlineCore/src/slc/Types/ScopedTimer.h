@@ -7,7 +7,7 @@ namespace slc {
 	class ScopedTimer
 	{
 	public:
-		ScopedTimer(std::string_view name) : m_Name(name) {}
+		ScopedTimer(std::string_view name) : mName(name) {}
 		~ScopedTimer()
 		{
 			float time = mTimer.ElapsedMillis();
