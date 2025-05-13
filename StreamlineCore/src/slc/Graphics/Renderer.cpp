@@ -4,6 +4,8 @@
 
 #include "Renderer2D.h"
 
+#include "slc/Logging/Log.h"
+
 namespace slc {
 
 	void OpenGLMessageCallback(
@@ -17,10 +19,10 @@ namespace slc {
 	{
 		switch (severity)
 		{
-		case GL_DEBUG_SEVERITY_HIGH:         LOG(message); return;
-		case GL_DEBUG_SEVERITY_MEDIUM:       LOG(message); return;
-		case GL_DEBUG_SEVERITY_LOW:          LOG(message); return;
-		case GL_DEBUG_SEVERITY_NOTIFICATION: LOG(message); return;
+		case GL_DEBUG_SEVERITY_HIGH:         Log::Error(message); return;
+		case GL_DEBUG_SEVERITY_MEDIUM:       Log::Warn(message); return;
+		case GL_DEBUG_SEVERITY_LOW:          Log::Info(message); return;
+		case GL_DEBUG_SEVERITY_NOTIFICATION: Log::Trace(message); return;
 		}
 
 		ASSERT(false, "Unknown severity level!");

@@ -43,7 +43,7 @@ namespace slc::Log {
 		logger.Log(LogLevel::Info, message, std::forward<Args>(args)...);
 	}
 
-	inline void Warning(std::string_view message)
+	inline void Warn(std::string_view message)
 	{
 		auto& logger = Logger::GetGlobalLogger();
 		logger.Log(LogLevel::Warning, message);

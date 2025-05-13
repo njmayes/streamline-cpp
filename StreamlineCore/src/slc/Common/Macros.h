@@ -50,8 +50,6 @@
 #define GET_LEVEL(_1, _2, _3, _4, LEVEL_N, ...)		LEVEL_N
 #define EXPAND_TEMPLATE(...) SLC_EXPAND_MACRO(GET_LEVEL(__VA_ARGS__, CONCAT_4, CONCAT_3, CONCAT_2, CONCAT_1)(__VA_ARGS__))
 
-#define LOG(...) // TODO
-
 
 
 #define SLC_PARENS ()

@@ -2,6 +2,8 @@
 
 #include "Base.h"
 
+#include "slc/Logging/Log.h"
+
 namespace slc::Environment {
 
 	void SetVar(std::string_view envName, std::string_view envVal)
@@ -14,7 +16,9 @@ namespace slc::Environment {
 		int error = -1;
 #endif
 		if (error)
-			LOG("Could not set the environment variable!");
+		{
+			Log::Error("Could not set the environment variable!");
+		}
 	}
 
 	std::string GetVar(std::string_view envName)
@@ -25,7 +29,7 @@ namespace slc::Environment {
 
 		if (error)
 		{
-			LOG("Could not get the environment variable");
+			Log::Error("Could not get the environment variable");
 			return {};
 		}
 
@@ -34,7 +38,7 @@ namespace slc::Environment {
 
 		if (error)
 		{
-			LOG("Could not get the environment variable");
+			Log::Error("Could not get the environment variable");
 			return {};
 		}
 
