@@ -117,7 +117,7 @@ namespace slc {
 
 			for (auto const& target : mLogTargets)
 			{
-				target->PreFlush();
+				target->PreFlush(mMessageBuffer);
 			}
 		}
 
@@ -158,7 +158,6 @@ namespace slc {
 	}
 
 	void Logger::UpdateCurrentTimestamp()
-	{teCurrentTimestamp()
 	{
 		SLC_PROFILE_FUNCTION();
 

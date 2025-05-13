@@ -15,9 +15,9 @@ namespace slc {
 	private:
 		SCONSTEXPR std::size_t MessageSizeLimit = 512;
 		SCONSTEXPR std::size_t MaxMessagesBeforeFlush = 1024;
-		SCONSTEXPR std::size_t TemporaryBufferSize = 128;
+		SCONSTEXPR std::size_t TemporaryBufferSize = MessageSizeLimit;
 
-		using TemporaryBuffer = std::array<char, TemporaryBufferSize>;
+		using TemporaryBuffer = std::array<char, MessageSizeLimit>;
 
 		using Clock = std::chrono::steady_clock;
 		using Duration = std::chrono::duration< float, std::micro >;
@@ -92,7 +92,7 @@ namespace slc {
 
 				auto formatted_message = GetFormatMessage(message, std::forward<Args>(args)...);
 				auto format_result = std::format_to_n(buffer->begin(), mMessageSizeLimit, "[{}] {}: {}", level_string, mTimestampCache.format_string.data(), formatted_message.data());
-				auto formatted_size = std::min(static_cast<std::size_t>(format_result.size), mMessageSizeLimit);
+				formatted_size = std::min(static_cast<std::size_t>(format_result.size), mMessageSizeLimit);
 			}
 
 
@@ -116,11 +116,11 @@ namespace slc {
 		void Flush();
 
 		template<typename... Args>
-		MessageBuffer GetFormatMessage(std::format_string<Args...> message, Args&&... args)
+		TemporaryBuffer GetFormatMessage(std::format_string<Args...> message, Args&&... args)
 		{
 			SLC_PROFILE_FUNCTION();
 
-			MessageBuffer temp;
+			TemporaryBuffer temp;
 			auto result = std::format_to_n(temp.data(), temp.size(), message, std::forward<Args>(args)...);
 			return temp;
 		}
