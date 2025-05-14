@@ -36,15 +36,26 @@
 #elif defined(__linux__)
     #define SLC_PLATFORM_LINUX
 #else
-    /* Unknown compiler/platform */
+    /* Unknown platform */
     #error "Unknown platform!"
 #endif // End of platform detection
 
-
-
-// Build configuration detection using predefined macros
-#ifdef NDEBUG
-    #define SLC_RELEASE
+#ifdef _MSC_VER
+    #define SLC_COMPILER_MSVC
+    #define SLC_COMPILER_NAME "MSVC"
+#elif defined(__clang__)
+    #define SLC_COMPILER_CLANG
+    #define SLC_COMPILER_NAME "Clang"
+#elif defined(__GNUC__)
+    #define SLC_COMPILER_GCC
+    #define SLC_COMPILER_NAME "gcc"
+#elif defined(__MINGW32__) || defined(__MINGW64__)
+    #define SLC_COMPILER_MINGW
+    #define SLC_COMPILER_NAME "MinGW"
+#elif defined(__INTEL_COMPILER)
+    #define SLC_COMPILER_INTEL
+    #define SLC_COMPILER_NAME "Intel"
 #else
-    #define SLC_DEBUG
+    /* Unknown platform */
+    #error "Unknown compiler!"
 #endif

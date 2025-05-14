@@ -1,5 +1,7 @@
 #include "Texture.h"
 
+#include "slc/Logging/Log.h"
+
 #include <glad/glad.h>
 
 #include "stb_image.h"
@@ -30,7 +32,7 @@ namespace slc {
 		data = stbi_load(path.data(), &width, &height, &channels, 0);
 
 		if (stbi_failure_reason())
-			LOG("{0}", stbi_failure_reason());
+			Log::Warn("{0}", stbi_failure_reason());
 		ASSERT(data, "Failed to load image!");
 
 		mWidth = width;

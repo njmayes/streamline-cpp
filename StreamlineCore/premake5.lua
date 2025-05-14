@@ -64,6 +64,10 @@ project "StreamlineCore"
     filter "configurations:Debug"
 		runtime "Debug"
         symbols "on"
+	    defines 
+        {
+            "SLC_DEBUG"
+        }
         links
 		{
 			"%{Library.ShaderC_Debug}",
@@ -74,6 +78,10 @@ project "StreamlineCore"
     filter "configurations:Release"
 		runtime "Release"
         optimize "on"
+	    defines 
+        {
+            "SLC_RELEASE"
+        }
         links
 		{
 			"%{Library.ShaderC_Release}",

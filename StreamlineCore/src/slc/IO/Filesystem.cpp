@@ -1,5 +1,7 @@
 #include "Filesystem.h"
 
+#include "slc/Logging/Log.h"
+
 #include <fstream>
 
 #include <portable-file-dialogs.h>
@@ -24,7 +26,7 @@ namespace slc::FileUtils {
 		if (size == 0)
 		{
 			// File is empty
-			LOG("File {} was empty!", filepath);
+			Log::Warn("File {} was empty!", filepath);
 			return nullptr;
 		}
 
@@ -42,7 +44,7 @@ namespace slc::FileUtils {
 		if (!stream)
 		{
 			// Failed to open the file
-			LOG("Failed to open {}", filepath);
+			Log::Warn("Failed to open {}", filepath);
 			return {};
 		}
 
@@ -53,7 +55,7 @@ namespace slc::FileUtils {
 		if (size == 0)
 		{
 			// File is empty
-			LOG("File {} was empty!", filepath);
+			Log::Warn("File {} was empty!", filepath);
 			return {};
 		}
 
@@ -72,7 +74,7 @@ namespace slc::FileUtils {
 		if (!stream)
 		{
 			// Failed to open the file
-			LOG("Failed to open file {}", filepath);
+			Log::Warn("Failed to open file {}", filepath);
 			return;
 		}
 
@@ -89,7 +91,7 @@ namespace slc::FileUtils {
 		if (!stream)
 		{
 			// Failed to open the file
-			LOG("Failed to open file {}", filepath);
+			Log::Warn("Failed to open file {}", filepath);
 			return;
 		}
 
@@ -105,7 +107,7 @@ namespace slc::FileUtils {
 		if (!stream)
 		{
 			// Failed to open the file
-			LOG("Failed to create file {}", filepath);
+			Log::Warn("Failed to create file {}", filepath);
 			return;
 		}
 	}
@@ -124,7 +126,7 @@ namespace slc::FileUtils {
 	{
 		if (!fs::exists(filepath))
 		{
-			LOG("File does not exist!");
+			Log::Warn("File does not exist!");
 			return;
 		}
 
@@ -135,7 +137,7 @@ namespace slc::FileUtils {
 	{
 		if (!fs::exists(filepath))
 		{
-			LOG("Directory does not exist!");
+			Log::Warn("Directory does not exist!");
 			return;
 		}
 

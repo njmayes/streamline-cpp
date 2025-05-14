@@ -27,6 +27,11 @@ namespace slc {
 			return Elapsed() * 1000.0f;
 		}
 
+		float ElapsedMicros()
+		{
+			return ElapsedMillis() * 1000.0f;
+		}
+
 	private:
 		std::chrono::time_point<std::chrono::steady_clock> mStart;
 	};
