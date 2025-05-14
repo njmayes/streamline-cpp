@@ -11,6 +11,7 @@
 #include <spirv_cross/spirv_glsl.hpp>
 
 #include "slc/IO/Filesystem.h"
+#include "slc/Logging/Log.h"
 #include "slc/Types/Timer.h"
 
 namespace slc {
@@ -99,7 +100,7 @@ namespace slc {
 			CompileOrGetVulkanBinaries(shaderSources);
 			CompileOrGetOpenGLBinaries();
 			CreateProgram();
-			LOG("Shader creation took {0} ms", timer.elapsedMillis());
+			Log::Info("Shader creation took {0} ms", timer.elapsedMillis());
 		}
 
 		//Extract name from file path
@@ -186,7 +187,7 @@ namespace slc {
 				shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(source, Utils::GLShaderStageToShaderC(stage), mFilepath.c_str(), options);
 				if (module.GetCompilationStatus() != shaderc_compilation_status_success)
 				{
-					LOG(module.GetErrorMessage());
+					Log::Error(module.GetErrorMessage());
 					ASSERT(false);
 				}
 
@@ -247,7 +248,7 @@ namespace slc {
 				shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(source, Utils::GLShaderStageToShaderC(stage), mFilepath.c_str());
 				if (module.GetCompilationStatus() != shaderc_compilation_status_success)
 				{
-					LOG(module.GetErrorMessage());
+					Log::Error(module.GetErrorMessage());
 					ASSERT(false);
 				}
 
@@ -289,7 +290,7 @@ namespace slc {
 
 			std::vector<GLchar> infoLog(maxLength);
 			glGetProgramInfoLog(program, maxLength, &maxLength, infoLog.data());
-			LOG("Shader linking failed ({0}):\n{1}", mFilepath, infoLog.data());
+			Log::Error("Shader linking failed ({0}):\n{1}", mFilepath, infoLog.data());
 
 			glDeleteProgram(program);
 
@@ -311,11 +312,11 @@ namespace slc {
 		spirv_cross::Compiler compiler(shaderData);
 		spirv_cross::ShaderResources resources = compiler.get_shader_resources();
 
-		LOG("Shader::Reflect - {0} {1}", Utils::GLShaderStageToString(stage), mFilepath);
-		LOG("    {0} uniform buffers", resources.uniform_buffers.size());
-		LOG("    {0} resources", resources.sampled_images.size());
+		Log::Trace("Shader::Reflect - {0} {1}", Utils::GLShaderStageToString(stage), mFilepath);
+		Log::Trace("    {0} uniform buffers", resources.uniform_buffers.size());
+		Log::Trace("    {0} resources", resources.sampled_images.size());
 
-		LOG("Uniform buffers:");
+		Log::Trace("Uniform buffers:");
 		for (const auto& resource : resources.uniform_buffers)
 		{
 			const auto& bufferType = compiler.get_type(resource.base_type_id);
@@ -323,10 +324,10 @@ namespace slc {
 			uint32_t binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
 			size_t memberCount = bufferType.member_types.size();
 
-			LOG("  {0}", resource.name);
-			LOG("    Size = {0}", bufferSize);
-			LOG("    Binding = {0}", binding);
-			LOG("    Members = {0}", memberCount);
+			Log::Trace("  {0}", resource.name);
+			Log::Trace("    Size = {0}", bufferSize);
+			Log::Trace("    Binding = {0}", binding);
+			Log::Trace("    Members = {0}", memberCount);
 		}
 	}
 
@@ -395,7 +396,7 @@ namespace slc {
 		if (location == -1)
 		{
 			//Don't store in cache if unable to find uniform.
-			LOG("Could not get uniform `{0}` from shader to add to cache!", name);
+			Log::Warn("Could not get uniform `{0}` from shader to add to cache!", name);
 			return location;
 		}
 

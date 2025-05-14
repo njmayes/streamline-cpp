@@ -1,6 +1,7 @@
 #include "Window.h"
 
 #include "slc/Events/EventManager.h"
+#include "slc/Logging/Log.h"
 
 #include <glad/glad.h>
 #include "GLFW/glfw3.h"
@@ -11,7 +12,7 @@ namespace slc {
 
 	static void GLFWErrorCallback(int error, const char* description)
 	{
-		LOG("GLFW Error ({0}): {1}", error, description);
+		Log::Error("GLFW Error ({0}): {1}", error, description);
 	}
 
 	Impl<Window> Window::Create(const WindowProperties& props)
@@ -78,7 +79,7 @@ namespace slc {
 			glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
 		}
 
-		LOG("Creating window {0} ({1}, {2})", mData.title, mData.width, mData.height);
+		Log::Trace("Creating window {0} ({1}, {2})", mData.title, mData.width, mData.height);
 
 		{
 #if defined(_DEBUG)
@@ -93,10 +94,10 @@ namespace slc {
 		int status = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 		ASSERT(status, "Failed to initialize Glad!");
 
-		LOG("OpenGL Info:");
-		LOG("  Vendor: {0}", glGetString(GL_VENDOR));
-		LOG("  Renderer: {0}", glGetString(GL_RENDERER));
-		LOG("  Version: {0}", glGetString(GL_VERSION));
+		Log::Info("OpenGL Info:");
+		Log::Info("  Vendor: {0}", glGetString(GL_VENDOR));
+		Log::Info("  Renderer: {0}", glGetString(GL_RENDERER));
+		Log::Info("  Version: {0}", glGetString(GL_VERSION));
 
 		ASSERT(GLVersion.major > 4 || (GLVersion.major == 4 && GLVersion.minor >= 5), "Streamline requires at least OpenGL version 4.5!");
 
@@ -194,6 +195,6 @@ namespace slc {
 		{
 			glfwTerminate();
 		}
-		LOG("Shutdown complete");
+		Log::Info("Shutdown complete");
 	}
 }

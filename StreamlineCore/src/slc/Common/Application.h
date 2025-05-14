@@ -3,6 +3,7 @@
 #include "slc/Events/IEventListener.h"
 #include "slc/IO/Window.h"
 #include "slc/ImGui/Controller.h"
+#include "slc/Logging/Logger.h"
 #include "slc/Types/Timestep.h"
 
 #include <string>
@@ -93,6 +94,12 @@ namespace slc {
 		{
 			T::Init(std::forward<Args>(args)...);
 			mAppSystems.emplace_back(T::Shutdown);
+		}
+
+		template<typename T, typename... Args>
+		void AddLogTarget(Args&&... args)
+		{
+			Logger::GetGlobalLogger().AddLogTarget<T>(std::forward<Args>(args)...);
 		}
 
 	private:

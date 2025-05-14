@@ -47,6 +47,14 @@ project "TestApp"
     filter "configurations:Debug"
 		runtime "Debug"
         symbols "on"
+	    defines 
+        {
+            "SLC_DEBUG"
+        }
     filter "configurations:Release"
 		runtime "Release"
         optimize "on"
+	    defines 
+        {
+            "SLC_RELEASE"
+        }
