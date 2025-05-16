@@ -61,9 +61,23 @@
 #define SLC_EXPAND3(arg) SLC_EXPAND4(SLC_EXPAND4(SLC_EXPAND4(SLC_EXPAND4(arg))))
 #define SLC_EXPAND4(arg) SLC_EXPAND_MACRO(arg)
 
-#define SLC_FOR_EACH(macro, ...)                                    \
-  __VA_OPT__(SLC_EXPAND(SLC_FOR_EACH_HELPER(macro, __VA_ARGS__)))
-#define SLC_FOR_EACH_HELPER(macro, a1, ...)                         \
-  macro(a1)                                                     \
-  __VA_OPT__(SLC_FOR_EACH_AGAIN SLC_PARENS (macro, __VA_ARGS__))
-#define SLC_FOR_EACH_AGAIN() SLC_FOR_EACH_HELPER
+#define SLC_FOR_EACH_SEP(macro, sep, ...) \
+  __VA_OPT__(SLC_FOR_EACH_SEP_HELPER(macro, sep, __VA_ARGS__))
+
+#define SLC_FOR_EACH_SEP_HELPER(macro, sep, a1, ...) \
+  macro(a1) \
+  __VA_OPT__(SLC_FOR_EACH_SEP_AGAIN() (macro, sep, __VA_ARGS__))
+
+#define SLC_FOR_EACH_SEP_AGAIN() SLC_FOR_EACH_SEP_HELPER_WITH_SEP
+
+#define SLC_FOR_EACH_SEP_HELPER_WITH_SEP(macro, sep, a1, ...) \
+  sep() macro(a1) \
+  __VA_OPT__(SLC_FOR_EACH_SEP_AGAIN() (macro, sep, __VA_ARGS__))
+
+
+
+#define SLC_FOR_EACH(macro, ...) SLC_FOR_EACH_SEP(macro, SLC_NONE, __VA_ARGS__)
+
+// Separator macro example:
+#define SLC_COMMA() ,
+#define SLC_NONE()
