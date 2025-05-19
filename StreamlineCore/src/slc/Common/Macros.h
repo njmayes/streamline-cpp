@@ -64,20 +64,20 @@
 #define SLC_FOR_EACH_SEP(macro, sep, ...) \
   __VA_OPT__(SLC_FOR_EACH_SEP_HELPER(macro, sep, __VA_ARGS__))
 
-#define SLC_FOR_EACH_SEP_HELPER(macro, sep, a1, ...) \
-  macro(a1) \
+#define SLC_FOR_EACH_SEP_HELPER(macro, sep, a1, ...)				\
+  macro(a1)															\
   __VA_OPT__(SLC_FOR_EACH_SEP_AGAIN() (macro, sep, __VA_ARGS__))
 
 #define SLC_FOR_EACH_SEP_AGAIN() SLC_FOR_EACH_SEP_HELPER_WITH_SEP
 
-#define SLC_FOR_EACH_SEP_HELPER_WITH_SEP(macro, sep, a1, ...) \
-  sep() macro(a1) \
+#define SLC_FOR_EACH_SEP_HELPER_WITH_SEP(macro, sep, a1, ...)		\
+  sep() macro(a1)													\
   __VA_OPT__(SLC_FOR_EACH_SEP_AGAIN() (macro, sep, __VA_ARGS__))
 
-
-
-#define SLC_FOR_EACH(macro, ...) SLC_FOR_EACH_SEP(macro, SLC_NONE, __VA_ARGS__)
 
 // Separator macro example:
 #define SLC_COMMA() ,
 #define SLC_NONE()
+
+
+#define SLC_FOR_EACH(macro, ...) SLC_FOR_EACH_SEP(macro, SLC_NONE, __VA_ARGS__)

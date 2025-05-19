@@ -1,6 +1,7 @@
 #include "streamline.h"
 
 #include "slc/Common/Reflection.h"
+#include "slc/Types/Enum.h"
 
 #include <iostream>
 
@@ -254,7 +255,25 @@ Application* CreateApplication(int argc, char** argv)
 	return new TestApp(std::move(spec));
 }
 
+
+SLC_MAKE_RUST_ENUM(TestEnum,
+	OutOfBounds,
+	(Unexpected, std::string)
+);
+
+
 int main(int argc, char* argv[])
 {
-	std::cin.get();
+ 	TestEnum test = TestEnum::EnumConstant<TestEnum::OutOfBounds>{};
+
+	test.SetMatchFunc<TestEnum::OutOfBounds>([] { std::cout << "OutOfBounds\n"; })
+		.SetMatchFunc<TestEnum::Unexpected>([](std::string const& value) { std::cout << std::format("Unexpected: {}\n", value);  })
+		.Match();
+
+
+	test = std::string("Value");
+
+	test.Match();
+
+	int here = 0;
 }

@@ -2,24 +2,6 @@
 
 #include "slc/Common/Base.h"
 
-namespace slc {
-
-	template<typename... Ts>
-	concept ValidEnumTypes = ((not std::is_pointer_v<Ts> and std::same_as<std::remove_cvref_t<Ts>, Ts>) and ...);
-
-	template<typename... Ts> requires ValidEnumTypes<Ts...>
-	class RustEnum
-	{
-	private:
-		using Types = TypeList<Ts...>;
-		using StorageType = Types::VariantType;
-
-	private:
-		StorageType mData;
-	};
-}
-
-
 #define SLC_PROBE(x) x, 1
 #define SLC_IS_PROBE(...) SLC_GET_SECOND(__VA_ARGS__, 0)
 #define SLC_GET_SECOND(a, b, ...) b
@@ -44,67 +26,136 @@ namespace slc {
 
 #define SLC_EXTRACT_TYPE_SECOND(a, b) b
 
+#define SLC_MATCH_CASE(enum_case)																	\
+	case enum_case:																					\
+	{																								\
+		invoker.template operator()<enum_case>();													\
+		break;																						\
+	}																								
 
 
-#define SLC_MAKE_RUST_ENUM_UNDERLYING(name, ...)		\
-namespace detail_##name {								\
-	using Types = ::slc::TypeList<SLC_FOR_EACH_SEP(SLC_EXTRACT_TYPE, SLC_COMMA, __VA_ARGS__ )>;	\
-																				\
-	enum class name##_UnderlyingEnum : std::size_t		\
-	{													\
-		SLC_FOR_EACH_SEP(SLC_EXTRACT_IDENT, SLC_COMMA, __VA_ARGS__)	\
-	};													\
-}
-
-SLC_MAKE_RUST_ENUM_UNDERLYING(Test,
-	OutOfBounds,
-	(Unexpected, std::string)
-)
-
-
-namespace detail_Test {
-
-	template<typename T>
-	class Test_RustEnum;
+namespace slc {
 
 	template<typename... Ts>
-	struct Test_RustEnum<::slc::TypeList<Ts...>>
-	{
-	private:
-		using Types = ::slc::TypeList<Ts...>;
-		using StorageType = Types::VariantType;
-
-	public:
-		enum Test_UnderlyingEnum : std::size_t
-		{
-			OutOfBounds,
-			Unexpected
-		};
-
-		template<Test_UnderlyingEnum Element>
-		using TypeAt = typename Types::template Type<Element>;
-
-		template<Test_UnderlyingEnum Element>
-		bool IsHolding() const noexcept
-		{
-			return std::get_if<Element>(&mData) != nullptr;
-		}
-
-		template<Test_UnderlyingEnum Element>
-		TypeAt<Element> const& Get()
-		{
-			return *std::get_if<Element>(&mData);
-		}
-
-	private:
-		StorageType mData;
-	};
-
-	using Types = ::slc::TypeList<std::monostate, std::string>;
-	using Impl = Test_RustEnum<Types>;
+	concept ValidEnumTypes = ((not std::is_pointer_v<Ts> and std::same_as<std::remove_cvref_t<Ts>, Ts>) and ...);
 }
 
-using Test = detail_Test::Impl;
+#define SLC_MAKE_RUST_ENUM(name, ...)																																				\
+namespace detail_##name {																																							\
+	template<typename T>																																							\
+	class name##_RustEnum;																																							\
+																																													\
+	template<typename... Ts> requires ::slc::ValidEnumTypes<Ts...>																													\
+	class name##_RustEnum<::slc::TypeList<Ts...>>																																	\
+	{																																												\
+	public:																																											\
+		enum name##_UnderlyingEnum : std::size_t																																	\
+		{																																											\
+			SLC_FOR_EACH_SEP(SLC_EXTRACT_IDENT, SLC_COMMA, __VA_ARGS__)																												\
+		};																																											\
+																																													\
+		using Enum = name##_UnderlyingEnum;																																			\
+																																													\
+		template<Enum Element>																																						\
+		using EnumConstant = std::integral_constant<Enum, Element>;																													\
+																																													\
+		template<typename T>																																						\
+		using MatchFunction = std::conditional_t<std::same_as<T, std::monostate>, std::function<void()>, std::function<void(T const&)>>;											\
+																																													\
+	private:																																										\
+		using ValueTypes = ::slc::TypeList<Ts...>;																																	\
+		using FunctionTypes = ::slc::TypeList<MatchFunction<Ts>...>;																												\
+		using Self = name##_RustEnum<ValueTypes>;																																	\
+		using ValueStorageType = ValueTypes::VariantType;																															\
+		using FunctionStorageType = FunctionTypes::TupleType;																														\
+																																													\
+		template<Enum Element>																																						\
+		using ValueTypeAt = typename ValueTypes::template Type<Element>;																											\
+																																													\
+		template<Enum Element>																																						\
+		using FunctionTypeAt = typename FunctionTypes::template Type<Element>;																										\
+																																													\
+		template<Enum Element>																																						\
+		SCONSTEXPR bool HasType = !(std::same_as<ValueTypeAt<Element>, std::monostate>);																							\
+																																													\
+		template<typename T>																																						\
+		SCONSTEXPR bool ContainsType = ValueTypes::template Contains<T>;																											\
+																																													\
+	public:																																											\
+		name##_RustEnum() = default;																																				\
+		name##_RustEnum(name##_RustEnum const&) = default;																															\
+		name##_RustEnum(name##_RustEnum&&) = default;																																\
+		name##_RustEnum& operator=(name##_RustEnum const&) = default;																												\
+		name##_RustEnum& operator=(name##_RustEnum&&) = default;																													\
+		~name##_RustEnum() = default;																																				\
+																																													\
+		template<typename T> requires ContainsType<T>																																\
+		name##_RustEnum(T&& value)																																					\
+			: mValueData(std::forward<T>(value))																																	\
+		{																																											\
+		}																																											\
+		template<Enum Element> requires std::is_default_constructible_v<ValueTypeAt<Element>>																						\
+		name##_RustEnum(EnumConstant<Element>)																																		\
+			: mValueData(std::in_place_index_t<Element>{})																															\
+		{																																											\
+		}																																											\
+																																													\
+		template<typename T> requires ContainsType<T>																																\
+		name##_RustEnum& operator=(T&& value)																																		\
+		{																																											\
+			mValueData = std::forward<T>(value);																																	\
+			return *this;																																							\
+		}																																											\
+		template<Enum Element> requires std::is_default_constructible_v<ValueTypeAt<Element>>																						\
+		name##_RustEnum& operator=(EnumConstant<Element>)																															\
+		{																																											\
+			mValueData.emplace<Element>();																																			\
+			return *this;																																							\
+		}																																											\
+																																													\
+		template<Enum Element, typename Func> requires std::convertible_to<Func, FunctionTypeAt<Element>>																			\
+		Self& SetMatchFunc(Func&& func)																																				\
+		{																																											\
+			std::get<Element>(mMatchData) = std::move(func);																														\
+			return *this;																																							\
+		}																																											\
+																																													\
+		void Match()																																								\
+		{																																											\
+			auto invoker = [this]<Enum Element>(){																																	\
+				if constexpr (HasType<Element>)																																		\
+					std::invoke(std::get<Element>(mMatchData), *std::get_if<Element>(&mValueData));																					\
+				else																																								\
+					std::invoke(std::get<Element>(mMatchData));																														\
+			};																																										\
+																																													\
+			switch (mValueData.index())																																				\
+			{																																										\
+				SLC_FOR_EACH(SLC_MATCH_CASE, SLC_FOR_EACH_SEP(SLC_EXTRACT_IDENT, SLC_COMMA, __VA_ARGS__))																			\
+			}																																										\
+		}																																											\
+																																													\
+	private:																																										\
+		template<Enum Element>																																						\
+		bool IsHolding() const noexcept																																				\
+		{																																											\
+			return std::get_if<Element>(&mValueData) != nullptr;																													\
+		}																																											\
+																																													\
+		template<Enum Element>																																						\
+		ValueTypeAt<Element> const& Get() noexcept																																	\
+		{																																											\
+			return *std::get_if<Element>(&mValueData);																																\
+		}																																											\
+																																													\
+	private:																																										\
+		ValueStorageType mValueData;																																				\
+		FunctionStorageType mMatchData;																																				\
+	};																																												\
+																																													\
+	using Impl = name##_RustEnum<::slc::TypeList<SLC_FOR_EACH_SEP(SLC_EXTRACT_TYPE, SLC_COMMA, __VA_ARGS__)>>;																		\
+}																																													\
+using name = detail_##name::Impl;																						
 
 /*
 	MAKE_RUST_ENUM(Error, 
