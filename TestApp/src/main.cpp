@@ -1,11 +1,18 @@
 #include "streamline.h"
 
 #include "slc/Common/Reflection.h"
+#include "slc/Logging/Targets/ConsoleLogTarget.h"
 #include "slc/Types/Enum.h"
 
 #include <iostream>
 
-namespace slc {
+namespace slc
+{
+
+	// SLC_MAKE_RUST_ENUM( Error,
+	//	(InvalidChar, char),
+	//	(InvalidRandom, int ),
+	//);
 
 	enum class Error
 	{
@@ -16,103 +23,109 @@ namespace slc {
 	{
 		RandomFail
 	};
-	using FooResult = Result<int, Error>;
-	using BarResult = Result<float, Error>;
-	using BazResult = Result<int, Failure>;
+	using FooResult = Result< int, Error >;
+	using BarResult = Result< float, Error >;
+	using BazResult = Result< int, Failure >;
 
-    class TestLayer : public ApplicationLayer
-    {
+	class TestLayer : public ApplicationLayer
+	{
 	private:
 		FooResult GetInput()
 		{
 			int input;
-			if (!(std::cin >> input))
-				return Err<FooResult>(Error::InvalidChar);
+			if ( !( std::cin >> input ) )
+				return Err< FooResult >( Error::InvalidChar );
 
-			return Ok<FooResult>(input);
+			return Ok< FooResult >( input );
 		}
 
 		FooResult GetRandom()
 		{
-			srand(time(NULL));
+			srand( time( NULL ) );
 			int val = rand() % 2;
 
-			if (val == 0)
-				return Ok<FooResult>(1000);
+			if ( val == 0 )
+				return Ok< FooResult >( 1000 );
 
-			return Err<FooResult>(Error::InvalidRandom);
+			return Err< FooResult >( Error::InvalidRandom );
 		}
 
-		FooResult GetRandomTwo(int value)
+		FooResult GetRandomTwo( int value )
 		{
-			if (value % 2 == 0)
-				return Ok<FooResult>(500);
+			if ( value % 2 == 0 )
+				return Ok< FooResult >( 500 );
 
-			return Err<FooResult>(Error::InvalidRandom);
+			return Err< FooResult >( Error::InvalidRandom );
 		}
 
-		BarResult CheckRandom(int val)
+		BarResult CheckRandom( int val )
 		{
-			if (val % 2 == 0)
-				return Ok<BarResult>(3.14159);
+			if ( val % 2 == 0 )
+				return Ok< BarResult >( 3.14159 );
 
-			return Err<BarResult>(Error::InvalidRandom);
+			return Err< BarResult >( Error::InvalidRandom );
 		}
 
-    public:
-		virtual void OnAttach() override {}
-		virtual void OnDetach() override {}
-		virtual void OnUpdate(Timestep ts) override
+	public:
+		virtual void OnAttach() override
+		{}
+		virtual void OnDetach() override
+		{}
+		virtual void OnUpdate( Timestep ts ) override
 		{
-			auto a = Do<float>(
+			auto a = Do< float >(
 				GetRandom(),
-				NEXT(CheckRandom)
-			);
+				NEXT( CheckRandom ) );
 
-			FooResult b = a.map<int>([](float val) { return (int)val; })
-				.map_err<Failure>([](Error error) { return Failure::RandomFail; })
-				.map_err<Error>([](Failure f) { return Error::InvalidRandom; });
+			FooResult b = a.map< int >( []( float val ) { return ( int )val; } )
+							  .map_err< Failure >( []( Error error ) { return Failure::RandomFail; } )
+							  .map_err< Error >( []( Failure f ) { return Error::InvalidRandom; } );
 
-			MATCH_START(b)
-				MATCH_OK(std::cout << "User entered value of " << value << "\n")
-				MATCH(Error::InvalidChar, std::cout << "Invalid character entered\n")
-				MATCH(Error::InvalidRandom, std::cout << "RNG not satisfied\n")
+			MATCH_START( b )
+			MATCH_OK( std::cout << "User entered value of " << value << "\n" )
+			MATCH( Error::InvalidChar, std::cout << "Invalid character entered\n" )
+			MATCH( Error::InvalidRandom, std::cout << "RNG not satisfied\n" )
 			MATCH_END;
 
 			auto bVal = b.unwrap_or_default();
 
-			auto c = Do<float>(
-				GetRandom(),
-				NEXT(CheckRandom)
-			).map_or<std::string>("Error", [](float val) { return std::to_string(val); });
+			auto c = Do< float >(
+						 GetRandom(),
+						 NEXT( CheckRandom ) )
+						 .map_or< std::string >( "Error", []( float val ) { return std::to_string( val ); } );
 
 
 			auto d = GetRandom() |
-				NEXT(GetRandomTwo) |
-				CHAIN(GetRandom);
+					 NEXT( GetRandomTwo ) |
+					 CHAIN( GetRandom );
 
-			MATCH_START(d)
-				MATCH_OK(std::cout << "User entered value of " << value << "\n")
-				MATCH(Error::InvalidChar, std::cout << "Invalid character entered\n")
-				MATCH(Error::InvalidRandom, std::cout << "RNG not satisfied\n")
+			MATCH_START( d )
+			MATCH_OK( std::cout << "User entered value of " << value << "\n" )
+			MATCH( Error::InvalidChar, std::cout << "Invalid character entered\n" )
+			MATCH( Error::InvalidRandom, std::cout << "RNG not satisfied\n" )
 			MATCH_END;
 
-			auto dVal = d.unwrap_or_else([]() { return 0; });
+			auto dVal = d.unwrap_or_else( []() { return 0; } );
 		}
-		virtual void OnRender() override {}
-		virtual void OnOverlayRender() override {}
-		virtual void OnEvent(Event& e) override {}
+		virtual void OnRender() override
+		{}
+		virtual void OnOverlayRender() override
+		{}
+		virtual void OnEvent( Event& e ) override
+		{}
 
-		LISTENING_EVENTS(EventType::KeyPressed, EventType::MouseButtonPressed)
-    };
+		LISTENING_EVENTS( EventType::KeyPressed, EventType::MouseButtonPressed )
+	};
 
 	class TestApp : public Application
 	{
 	public:
-		TestApp(Impl<ApplicationSpecification> spec)
-			: Application(std::move(spec))
+		TestApp( Impl< ApplicationSpecification > spec )
+			: Application( std::move( spec ) )
 		{
-			PushLayer<TestLayer>();
+			PushLayer< TestLayer >();
+
+			AddLogTarget< ConsoleLogTarget >( LogLevel::Debug );
 		}
 
 		~TestApp()
@@ -130,18 +143,18 @@ namespace slc {
 		InvalidFormatString,
 	};
 
-	using IntInputResult = Result<int, InputError>;
-	using StringInputResult = Result<std::string, InputError>;
+	using IntInputResult = Result< int, InputError >;
+	using StringInputResult = Result< std::string, InputError >;
 
-	using InputData = std::tuple<std::string, int>;
+	using InputData = std::tuple< std::string, int >;
 
 	IntInputResult GetIntegerInput();
 	StringInputResult GetStringInput();
-	StringInputResult CombineStrings(InputData formatData);
+	StringInputResult CombineStrings( InputData formatData );
 
 	// Functional Demo
 
-	//int main()
+	// int main()
 	//{
 	//	using Test = TypeTraits<int>;
 	//	bool isIn = Test::InTypes<bool, long, int>;
@@ -176,54 +189,53 @@ namespace slc {
 	IntInputResult GetIntegerInput()
 	{
 		int input;
-		if (!(std::cin >> input))
+		if ( !( std::cin >> input ) )
 		{
-			return Err<IntInputResult>(InputError::InvalidChar);
+			return Err< IntInputResult >( InputError::InvalidChar );
 		}
 
-		return Ok<IntInputResult>(input);
+		return Ok< IntInputResult >( input );
 	}
 
 	StringInputResult GetStringInput()
 	{
 		std::string input;
-		if (!(std::cin >> input))
+		if ( !( std::cin >> input ) )
 		{
-			return Err<StringInputResult>(InputError::InvalidState);
+			return Err< StringInputResult >( InputError::InvalidState );
 		}
 
-		return Ok<StringInputResult>(input);
+		return Ok< StringInputResult >( input );
 	}
 
-	StringInputResult CombineStrings(InputData formatData)
+	StringInputResult CombineStrings( InputData formatData )
 	{
-		std::string& fmt = std::get<0>(formatData);
-		int param = std::get<1>(formatData);
+		std::string& fmt = std::get< 0 >( formatData );
+		int param = std::get< 1 >( formatData );
 
-		if (fmt.find("{0}") != std::string::npos)
+		if ( fmt.find( "{0}" ) != std::string::npos )
 		{
-			return Ok<StringInputResult>(std::vformat(fmt, std::make_format_args(param)));
+			return Ok< StringInputResult >( std::vformat( fmt, std::make_format_args( param ) ) );
 		}
 
-		return Err<StringInputResult>(InputError::InvalidFormatString);
+		return Err< StringInputResult >( InputError::InvalidFormatString );
 	}
-
 
 
 	using namespace std::chrono_literals;
 
-	Task<int> TaskTestAsync()
+	Task< int > TaskTestAsync()
 	{
 		std::cout << "TaskTestAsync\n";
 		co_return 0;
 	}
 
-	Task<int> LazyTaskTestAsync()
+	Task< int > LazyTaskTestAsync()
 	{
 		std::cout << "LazyTaskTestAsync\n";
 		co_return 0;
 	}
-	Task<int> TaskTestAsyncInt()
+	Task< int > TaskTestAsyncInt()
 	{
 		std::cout << "TaskTestAsyncInt\n";
 		auto taskI = LazyTaskTestAsync();
@@ -235,7 +247,7 @@ namespace slc {
 		co_return i + h;
 	}
 
-}
+} // namespace slc
 
 using namespace slc;
 
@@ -244,36 +256,33 @@ struct SerialisationTest
 {
 	int a, b;
 
-	SLC_JSON_SERIALISE(SerialisationTest, a, b);
+	SLC_JSON_SERIALISE( SerialisationTest, a, b );
 };
 
-Application* CreateApplication(int argc, char** argv)
+Application* CreateApplication( int argc, char** argv )
 {
-	Impl<ApplicationSpecification> spec = MakeImpl<ApplicationSpecification>();
+	Impl< ApplicationSpecification > spec = MakeImpl< ApplicationSpecification >();
 	spec->name = "TestApp";
 
-	return new TestApp(std::move(spec));
+	return new TestApp( std::move( spec ) );
 }
 
-
-SLC_MAKE_RUST_ENUM(TestEnum,
+SLC_MAKE_RUST_ENUM( TestEnum,
 	OutOfBounds,
-	(Unexpected, std::string)
+	( Unexpected, std::string )
 );
 
-
-int main(int argc, char* argv[])
+int main( int argc, char* argv[] )
 {
- 	TestEnum test = TestEnum::EnumConstant<TestEnum::OutOfBounds>{};
+	TestEnum test = TestEnum::OutOfBounds;
 
-	test.SetMatchFunc<TestEnum::OutOfBounds>([] { std::cout << "OutOfBounds\n"; })
-		.SetMatchFunc<TestEnum::Unexpected>([](std::string const& value) { std::cout << std::format("Unexpected: {}\n", value);  })
-		.Match();
+	test.Match(
+		MatchCase< TestEnum::OutOfBounds >( [] { std::cout << "OutOfBounds\n"; } ),
+		MatchCase< TestEnum::Unexpected >( []( std::string const& value ) { std::cout << std::format( "Unexpected: {}\n", value ); } ) );
 
+	test = TestEnum( TestEnum::Unexpected, "Test" );
 
-	test = std::string("Value");
-
-	test.Match();
-
-	int here = 0;
+	test.Match(
+		MatchCase< TestEnum::OutOfBounds >( [] { std::cout << "OutOfBounds\n"; } ),
+		MatchCase< TestEnum::Unexpected >( []( std::string const& value ) { std::cout << std::format( "Unexpected: {}\n", value ); } ) );
 }
