@@ -5,15 +5,14 @@
 namespace slc {
 
 	namespace detail {
-
-		enum NoneEnum { None };
+		SLC_MAKE_RUST_ENUM( NoneEnum, None )
 	}
 
 	template<typename T>
 	class Option : public Result<T, detail::NoneEnum>
 	{
 	public:
-		SCONSTEXPR detail::NoneEnum None = detail::None;
+		SCONSTEXPR detail::NoneEnum None = detail::NoneEnum::None;
 
 	private:
 		using BaseType = Result<T, detail::NoneEnum>;

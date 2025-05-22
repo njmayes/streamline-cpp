@@ -26,14 +26,14 @@
 
 #define SLC_EXTRACT_TYPE_SECOND( a, b ) b
 
-#define SLC_MATCH_CASE( enum_case )                                                         \
-	case std::to_underlying( Enum::enum_case ):                                             \
-	{                                                                                       \
-		if constexpr ( HasType< Enum::enum_case > )                                         \
-			std::forward< Matcher >( matcher )( enum_case, GetValue< Enum::enum_case >() ); \
-		else                                                                                \
-			std::forward< Matcher >( matcher )( enum_case );                                \
-		break;                                                                              \
+#define SLC_MATCH_CASE( enum_case )                                                                                   \
+	case std::to_underlying( Enum::enum_case ):                                                                       \
+	{                                                                                                                 \
+		if constexpr ( HasType< Enum::enum_case > )                                                                   \
+			std::forward< Matcher >( matcher )( enum_case, GetValue( ::slc::detail::EnumTag< Enum::enum_case >{} ) ); \
+		else                                                                                                          \
+			std::forward< Matcher >( matcher )( enum_case );                                                          \
+		break;                                                                                                        \
 	}
 
 #define SLC_MAKE_INTERNAL_ENUM( enum_case ) \
@@ -58,7 +58,7 @@ namespace slc
 		};
 
 		template < auto E, typename F >
-		struct MatchCaseHandler
+		struct EnumMatchCaseHandler
 		{
 			F func;
 
@@ -69,14 +69,11 @@ namespace slc
 			}
 		};
 
-
 		template < typename... Fs >
 		struct Overload : Fs...
 		{
 			using Fs::operator()...;
 		};
-		template < typename... Fs >
-		Overload( Fs... ) -> Overload< Fs... >;
 
 	} // namespace detail
 
@@ -85,21 +82,21 @@ namespace slc
 
 
 	template < auto E, typename F >
-	detail::MatchCaseHandler< E, F > MatchCase( F&& f )
+	detail::EnumMatchCaseHandler< E, F > MatchCase( F&& f )
 	{
-		return detail::MatchCaseHandler< E, F >{ std::forward< F >( f ) };
+		return detail::EnumMatchCaseHandler< E, F >{ std::forward< F >( f ) };
 	}
 } // namespace slc
 
 #define SLC_MAKE_RUST_ENUM( name, ... )                                                                                              \
-	namespace detail_##name                                                                                                          \
+	struct detail_##name                                                                                                             \
 	{                                                                                                                                \
 		template < typename T >                                                                                                      \
 		class name##_RustEnum;                                                                                                       \
                                                                                                                                      \
 		template < typename... Ts >                                                                                                  \
 			requires ::slc::detail::ValidEnumTypes< Ts... >                                                                          \
-		class name##_RustEnum< ::slc::TypeList< Ts... > > : ::slc::detail::RustEnum_Base                                             \
+		class name##_RustEnum< ::slc::TypeList< Ts... > > : public ::slc::detail::RustEnum_Base                                      \
 		{                                                                                                                            \
 		private:                                                                                                                     \
 			enum class name##_UnderlyingEnum : std::size_t{                                                                          \
@@ -122,13 +119,13 @@ namespace slc
 			template < Enum Element >                                                                                                \
 			SCONSTEXPR bool HasType = !( std::same_as< ValueTypeAt< Element >, std::monostate > );                                   \
                                                                                                                                      \
-			template < typename T >                                                                                                  \
-			SCONSTEXPR bool ContainsType = ValueTypes::template Contains< T >;                                                       \
+			template < typename R >                                                                                                  \
+			SCONSTEXPR bool ContainsType = ValueTypes::template Contains< R >;                                                       \
                                                                                                                                      \
 		public:                                                                                                                      \
-			name##_RustEnum() = default;                                                                                             \
-			name##_RustEnum( name##_RustEnum const& ) = default;                                                                     \
-			name##_RustEnum( name##_RustEnum&& ) = default;                                                                          \
+			constexpr name##_RustEnum() = default;                                                                                   \
+			constexpr name##_RustEnum( name##_RustEnum const& ) = default;                                                           \
+			constexpr name##_RustEnum( name##_RustEnum&& ) = default;                                                                \
 			name##_RustEnum& operator=( name##_RustEnum const& other )                                                               \
 			{                                                                                                                        \
 				mValueData = other.mValueData;                                                                                       \
@@ -142,13 +139,13 @@ namespace slc
 			~name##_RustEnum() = default;                                                                                            \
                                                                                                                                      \
 			template < Enum Element, typename... Args >                                                                              \
-			name##_RustEnum( ::slc::detail::EnumTag< Element >, Args&&... args )                                                     \
+			constexpr name##_RustEnum( ::slc::detail::EnumTag< Element >, Args&&... args )                                           \
 				: mValueData( std::in_place_index_t< ::slc::detail::EnumTag< Element >::Value >{}, std::forward< Args >( args )... ) \
 			{                                                                                                                        \
 			}                                                                                                                        \
                                                                                                                                      \
 			template < typename... Cases >                                                                                           \
-			void Match( Cases&&... cases )                                                                                           \
+			void Match( Cases&&... cases ) const                                                                                     \
 			{                                                                                                                        \
 				auto matcher = ::slc::detail::Overload{ std::forward< Cases >( cases )... };                                         \
 				using Matcher = decltype( matcher );                                                                                 \
@@ -159,9 +156,14 @@ namespace slc
 				}                                                                                                                    \
 			}                                                                                                                        \
                                                                                                                                      \
-		private:                                                                                                                     \
 			template < Enum Element >                                                                                                \
-			ValueTypeAt< Element > const& GetValue() noexcept                                                                        \
+			ValueTypeAt< Element >& GetValue( ::slc::detail::EnumTag< Element > )                                                    \
+			{                                                                                                                        \
+				return *std::get_if< ::slc::detail::EnumTag< Element >::Value >( &mValueData );                                      \
+			}                                                                                                                        \
+                                                                                                                                     \
+			template < Enum Element >                                                                                                \
+			ValueTypeAt< Element > const& GetValue( ::slc::detail::EnumTag< Element > ) const                                        \
 			{                                                                                                                        \
 				return *std::get_if< ::slc::detail::EnumTag< Element >::Value >( &mValueData );                                      \
 			}                                                                                                                        \
@@ -171,7 +173,7 @@ namespace slc
 		};                                                                                                                           \
                                                                                                                                      \
 		using Impl = name##_RustEnum< ::slc::TypeList< SLC_FOR_EACH_SEP( SLC_EXTRACT_TYPE, SLC_COMMA, __VA_ARGS__ ) > >;             \
-	}                                                                                                                                \
+	};                                                                                                                               \
 	using name = detail_##name::Impl;
 
 /*

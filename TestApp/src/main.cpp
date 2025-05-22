@@ -9,20 +9,12 @@
 namespace slc
 {
 
-	// SLC_MAKE_RUST_ENUM( Error,
-	//	(InvalidChar, char),
-	//	(InvalidRandom, int ),
-	//);
+	SLC_MAKE_RUST_ENUM( Error,
+						InvalidChar,
+						( InvalidRandom, int ), );
 
-	enum class Error
-	{
-		InvalidChar,
-		InvalidRandom
-	};
-	enum class Failure
-	{
-		RandomFail
-	};
+	SLC_MAKE_RUST_ENUM( Failure, RandomFail );
+
 	using FooResult = Result< int, Error >;
 	using BarResult = Result< float, Error >;
 	using BazResult = Result< int, Failure >;
@@ -47,7 +39,7 @@ namespace slc
 			if ( val == 0 )
 				return Ok< FooResult >( 1000 );
 
-			return Err< FooResult >( Error::InvalidRandom );
+			return Err< FooResult >( Error::InvalidRandom, val );
 		}
 
 		FooResult GetRandomTwo( int value )
@@ -55,7 +47,7 @@ namespace slc
 			if ( value % 2 == 0 )
 				return Ok< FooResult >( 500 );
 
-			return Err< FooResult >( Error::InvalidRandom );
+			return Err< FooResult >( Error::InvalidRandom, value );
 		}
 
 		BarResult CheckRandom( int val )
@@ -63,7 +55,7 @@ namespace slc
 			if ( val % 2 == 0 )
 				return Ok< BarResult >( 3.14159 );
 
-			return Err< BarResult >( Error::InvalidRandom );
+			return Err< BarResult >( Error::InvalidRandom, val );
 		}
 
 	public:
@@ -81,11 +73,12 @@ namespace slc
 							  .map_err< Failure >( []( Error error ) { return Failure::RandomFail; } )
 							  .map_err< Error >( []( Failure f ) { return Error::InvalidRandom; } );
 
-			MATCH_START( b )
-			MATCH_OK( std::cout << "User entered value of " << value << "\n" )
-			MATCH( Error::InvalidChar, std::cout << "Invalid character entered\n" )
-			MATCH( Error::InvalidRandom, std::cout << "RNG not satisfied\n" )
-			MATCH_END;
+
+			b.match(
+				MatchCase< FooResult::Ok >( []( int value ) { std::cout << "User entered value of " << value << "\n"; } ),
+				MatchCase< Error::InvalidChar >( [] { "Invalid character entered\n"; } ),
+				MatchCase< Error::InvalidRandom >( []( int value ) { std::cout << "RNG not satisfied\n"; } ) 
+			);
 
 			auto bVal = b.unwrap_or_default();
 
@@ -99,11 +92,12 @@ namespace slc
 					 NEXT( GetRandomTwo ) |
 					 CHAIN( GetRandom );
 
-			MATCH_START( d )
-			MATCH_OK( std::cout << "User entered value of " << value << "\n" )
-			MATCH( Error::InvalidChar, std::cout << "Invalid character entered\n" )
-			MATCH( Error::InvalidRandom, std::cout << "RNG not satisfied\n" )
-			MATCH_END;
+			
+			d.match(
+				MatchCase< FooResult::Ok >( []( int value ) { std::cout << "User entered value of " << value << "\n"; } ),
+				MatchCase< Error::InvalidChar >( [] { "Invalid character entered\n"; } ),
+				MatchCase< Error::InvalidRandom >( []( int value ) { std::cout << "RNG not satisfied\n"; } ) 
+			);
 
 			auto dVal = d.unwrap_or_else( []() { return 0; } );
 		}
@@ -136,12 +130,10 @@ namespace slc
 
 	// Demo Types and Functions
 
-	enum class InputError
-	{
-		InvalidChar,
-		InvalidState,
-		InvalidFormatString,
-	};
+	SLC_MAKE_RUST_ENUM( InputError,
+						( InvalidChar, char ),
+						InvalidState,
+						( InvalidFormatString, std::string ) )
 
 	using IntInputResult = Result< int, InputError >;
 	using StringInputResult = Result< std::string, InputError >;
@@ -268,9 +260,45 @@ Application* CreateApplication( int argc, char** argv )
 }
 
 SLC_MAKE_RUST_ENUM( TestEnum,
-	OutOfBounds,
-	( Unexpected, std::string )
-);
+					OutOfBounds,
+					( Unexpected, std::string ) );
+
+
+FooResult GetInput()
+{
+	int input;
+	if ( !( std::cin >> input ) )
+		return Err< FooResult >( Error::InvalidChar );
+
+	return Ok< FooResult >( input );
+}
+
+FooResult GetRandom()
+{
+	srand( time( NULL ) );
+	int val = rand() % 2;
+
+	if ( val == 0 )
+		return Ok< FooResult >( 1000 );
+
+	return Err< FooResult >( Error::InvalidRandom, val );
+}
+
+FooResult GetRandomTwo( int value )
+{
+	if ( value % 2 == 0 )
+		return Ok< FooResult >( 500 );
+
+	return Err< FooResult >( Error::InvalidRandom, value );
+}
+
+BarResult CheckRandom( int val )
+{
+	if ( val % 2 == 0 )
+		return Ok< BarResult >( 3.14159 );
+
+	return Err< BarResult >( Error::InvalidRandom, val );
+}
 
 int main( int argc, char* argv[] )
 {
@@ -278,11 +306,51 @@ int main( int argc, char* argv[] )
 
 	test.Match(
 		MatchCase< TestEnum::OutOfBounds >( [] { std::cout << "OutOfBounds\n"; } ),
-		MatchCase< TestEnum::Unexpected >( []( std::string const& value ) { std::cout << std::format( "Unexpected: {}\n", value ); } ) );
+		MatchCase< TestEnum::Unexpected >( []( std::string const& value ) { std::cout << std::format( "Unexpected: {}\n", value ); } ) 
+	);
 
-	test = TestEnum( TestEnum::Unexpected, "Test" );
+	test = TestEnum::Unexpected;
 
 	test.Match(
 		MatchCase< TestEnum::OutOfBounds >( [] { std::cout << "OutOfBounds\n"; } ),
-		MatchCase< TestEnum::Unexpected >( []( std::string const& value ) { std::cout << std::format( "Unexpected: {}\n", value ); } ) );
+		MatchCase< TestEnum::Unexpected >( []( std::string const& value ) { std::cout << std::format( "Unexpected: {}\n", value ); } )
+	);
+
+
+	
+	auto a = Do< float >(
+		GetRandom(),
+		NEXT( CheckRandom ) );
+
+	FooResult b = a.map< int >( []( float val ) { return ( int )val; } )
+						.map_err< Failure >( []( Error error ) { return Failure::RandomFail; } )
+						.map_err< Error >( []( Failure f ) { return Error::InvalidRandom; } );
+
+
+	b.match(
+		MatchCase< FooResult::Ok >( []( int value ) { std::cout << "User entered value of " << value << "\n"; } ),
+		MatchCase< Error::InvalidChar >( [] { "Invalid character entered\n"; } ),
+		MatchCase< Error::InvalidRandom >( []( int value ) { std::cout << "RNG not satisfied\n"; } ) 
+	);
+
+	auto bVal = b.unwrap_or_default();
+
+	auto c = Do< float >(
+					GetRandom(),
+					NEXT( CheckRandom ) 
+			).map_or< std::string >( "Error", []( float val ) { return std::to_string( val ); } );
+
+
+	auto d = GetRandom() |
+				NEXT( GetRandomTwo ) |
+				CHAIN( GetRandom );
+
+			
+	d.match(
+		MatchCase< FooResult::Ok >( []( int value ) { std::cout << "User entered value of " << value << "\n"; } ),
+		MatchCase< Error::InvalidChar >( [] { "Invalid character entered\n"; } ),
+		MatchCase< Error::InvalidRandom >( []( int value ) { std::cout << "RNG not satisfied\n"; } ) 
+	);
+
+	auto dVal = d.unwrap_or_else( []() { return 0; } );
 }
