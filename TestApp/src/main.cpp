@@ -263,7 +263,6 @@ SLC_MAKE_RUST_ENUM( TestEnum,
 					OutOfBounds,
 					( Unexpected, std::string ) );
 
-
 FooResult GetInput()
 {
 	int input;
@@ -306,7 +305,7 @@ int main( int argc, char* argv[] )
 
 	test.Match(
 		MatchCase< TestEnum::OutOfBounds >( [] { std::cout << "OutOfBounds\n"; } ),
-		MatchCase< TestEnum::Unexpected >( []( std::string const& value ) { std::cout << std::format( "Unexpected: {}\n", value ); } ) 
+		DefaultCase( []( auto const& value ) { std::cout << "Default case\n"; } ) 
 	);
 
 	test = TestEnum::Unexpected;
@@ -330,7 +329,7 @@ int main( int argc, char* argv[] )
 	b.match(
 		MatchCase< FooResult::Ok >( []( int value ) { std::cout << "User entered value of " << value << "\n"; } ),
 		MatchCase< Error::InvalidChar >( [] { "Invalid character entered\n"; } ),
-		MatchCase< Error::InvalidRandom >( []( int value ) { std::cout << "RNG not satisfied\n"; } ) 
+		DefaultCase( []( auto const& value ) { std::cout << "Default case\n"; } ) 
 	);
 
 	auto bVal = b.unwrap_or_default();
@@ -348,8 +347,8 @@ int main( int argc, char* argv[] )
 			
 	d.match(
 		MatchCase< FooResult::Ok >( []( int value ) { std::cout << "User entered value of " << value << "\n"; } ),
-		MatchCase< Error::InvalidChar >( [] { "Invalid character entered\n"; } ),
-		MatchCase< Error::InvalidRandom >( []( int value ) { std::cout << "RNG not satisfied\n"; } ) 
+		MatchCase< Error::InvalidRandom >( []( int value ) { std::cout << "RNG not satisfied\n"; } ),
+		DefaultCase( []( auto const& value ) { std::cout << "Default case\n"; } )
 	);
 
 	auto dVal = d.unwrap_or_else( []() { return 0; } );
