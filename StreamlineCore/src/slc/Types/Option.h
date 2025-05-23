@@ -5,31 +5,30 @@
 namespace slc {
 
 	namespace detail {
-
-		enum NoneEnum { None };
+		SLC_MAKE_SMART_ENUM( NoneEnum, None )
 	}
 
 	template<typename T>
 	class Option : public Result<T, detail::NoneEnum>
 	{
 	public:
-		SCONSTEXPR detail::NoneEnum None = detail::None;
+		SCONSTEXPR detail::NoneEnum None = detail::NoneEnum::None;
 
 	private:
 		using BaseType = Result<T, detail::NoneEnum>;
 
 	public:
 		template<IsEnum E>
-		Result<T, E> ok_or(E err) noexcept(BaseType::IsNoExceptMove)
+		Result<T, E> OkOr(E err) noexcept(BaseType::IsNoExceptMove)
 		{
 			using ReturnType = Result<T, E>;
-			return this->is_ok() ? ReturnType(this->GetVal()) : ReturnType(err);
+			return this->IsOk() ? ReturnType(this->GetVal()) : ReturnType(err);
 		}
 		template<IsEnum E>
-		Result<T, E> ok_or_else(IsFunc<E> auto&& err) noexcept(BaseType::IsNoExceptMove)
+		Result<T, E> OkOrElse(IsFunc<E> auto&& err) noexcept(BaseType::IsNoExceptMove)
 		{
 			using ReturnType = Result<T, E>;
-			return this->is_ok() ? ReturnType(this->GetVal()) : ReturnType(err);
+			return this->IsOk() ? ReturnType(this->GetVal()) : ReturnType(err);
 		}
 	};
 
