@@ -5,7 +5,7 @@
 namespace slc {
 
 	namespace detail {
-		SLC_MAKE_RUST_ENUM( NoneEnum, None )
+		SLC_MAKE_SMART_ENUM( NoneEnum, None )
 	}
 
 	template<typename T>

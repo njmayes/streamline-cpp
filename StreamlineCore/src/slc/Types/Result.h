@@ -29,7 +29,7 @@ namespace slc
 		SCONSTEXPR bool IsNoExceptMove = std::is_nothrow_move_constructible_v< T > && std::is_nothrow_move_assignable_v< T >;
 		SCONSTEXPR bool IsNoExceptCopy = std::is_nothrow_copy_constructible_v< T > && std::is_nothrow_copy_assignable_v< T >;
 
-		SLC_MAKE_RUST_ENUM( ResultEnum, ( Success, ResultType ) )
+		SLC_MAKE_SMART_ENUM( ResultEnum, ( Success, ResultType ) )
 
 		SCONSTEXPR auto Ok = ResultEnum::Success;
 		

@@ -115,7 +115,7 @@ namespace slc
 	}
 } // namespace slc
 
-#define SLC_MAKE_RUST_ENUM( name, ... )                                                                                              \
+#define SLC_MAKE_SMART_ENUM( name, ... )                                                                                             \
 	struct detail_##name                                                                                                             \
 	{                                                                                                                                \
 		template < typename T >                                                                                                      \

@@ -9,18 +9,18 @@
 namespace slc
 {
 
-	SLC_MAKE_RUST_ENUM( Error,
+	SLC_MAKE_SMART_ENUM( Error,
 						InvalidChar,
 						( InvalidRandom, int ), );
 
-	SLC_MAKE_RUST_ENUM( Failure, RandomFail );
+	SLC_MAKE_SMART_ENUM( Failure, RandomFail );
 
 	using FooResult = Result< int, Error >;
 	using BarResult = Result< float, Error >;
 	using BazResult = Result< int, Failure >;
 	// Demo Types and Functions
 
-	SLC_MAKE_RUST_ENUM( InputError,
+	SLC_MAKE_SMART_ENUM( InputError,
 						( InvalidChar, char ),
 						InvalidState,
 						( InvalidFormatString, std::string ) )
@@ -77,7 +77,7 @@ struct SerialisationTest
 	SLC_JSON_SERIALISE( SerialisationTest, a, b );
 };
 
-SLC_MAKE_RUST_ENUM( TestEnum,
+SLC_MAKE_SMART_ENUM( TestEnum,
 					OutOfBounds,
 					( Unexpected, std::string ) );
 
