@@ -19,16 +19,16 @@ namespace slc {
 
 	public:
 		template<IsEnum E>
-		Result<T, E> ok_or(E err) noexcept(BaseType::IsNoExceptMove)
+		Result<T, E> OkOr(E err) noexcept(BaseType::IsNoExceptMove)
 		{
 			using ReturnType = Result<T, E>;
-			return this->is_ok() ? ReturnType(this->GetVal()) : ReturnType(err);
+			return this->IsOk() ? ReturnType(this->GetVal()) : ReturnType(err);
 		}
 		template<IsEnum E>
-		Result<T, E> ok_or_else(IsFunc<E> auto&& err) noexcept(BaseType::IsNoExceptMove)
+		Result<T, E> OkOrElse(IsFunc<E> auto&& err) noexcept(BaseType::IsNoExceptMove)
 		{
 			using ReturnType = Result<T, E>;
-			return this->is_ok() ? ReturnType(this->GetVal()) : ReturnType(err);
+			return this->IsOk() ? ReturnType(this->GetVal()) : ReturnType(err);
 		}
 	};
 

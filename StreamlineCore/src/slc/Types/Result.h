@@ -51,7 +51,7 @@ namespace slc
 		/// <summary>
 		/// Converts from const Result<T, E> to Result<const T&, E>
 		/// </summary>
-		constexpr Result< const T&, E > as_ref() const noexcept
+		constexpr Result< const T&, E > AsConst() const noexcept
 		{
 			return mResult ? Result< const T&, E >( GetValRef() ) : Result< const T&, E >( GetError() );
 		}
@@ -59,16 +59,16 @@ namespace slc
 		/// <summary>
 		/// Converts from Result<T, E> to Result<T&, E>
 		/// </summary>
-		constexpr Result< T&, E > as_mut() noexcept
+		constexpr Result< T&, E > AsMutable() noexcept
 		{
 			return mResult ? Result< T&, E >( GetValRef() ) : Result< T&, E >( GetError() );
 		}
 
-		constexpr bool is_ok() const noexcept
+		constexpr bool IsOk() const noexcept
 		{
 			return mResult;
 		}
-		constexpr bool is_err() const noexcept
+		constexpr bool IsError() const noexcept
 		{
 			return !mResult;
 		}
@@ -83,7 +83,7 @@ namespace slc
 		/// <summary>
 		/// Throws runtime error with a provided custom message or returns result
 		/// </summary>
-		constexpr T expect( const std::string_view msg )
+		constexpr T Expect( const std::string_view msg )
 		{
 			if ( !mResult )
 				throw std::runtime_error( msg.data() );
@@ -94,15 +94,15 @@ namespace slc
 		/// <summary>
 		/// Throws runtime error with a generic message or returns result
 		/// </summary>
-		constexpr T unwrap()
+		constexpr T Unwrap()
 		{
-			return expect( "emergency failure" );
+			return Expect( "emergency failure" );
 		}
 
 		/// <summary>
 		/// Returns result or the provided default value
 		/// </summary>
-		constexpr T unwrap_or( T&& defaultValue ) noexcept( IsNoExceptCopy && IsNoExceptMove )
+		constexpr T UnwrapOr( T&& defaultValue ) noexcept( IsNoExceptCopy && IsNoExceptMove )
 			requires( IsReference or std::copyable< T > )
 		{
 			if ( !mResult )
@@ -113,19 +113,19 @@ namespace slc
 		/// <summary>
 		/// Returns result or the default value of the underlying type
 		/// </summary>
-		constexpr T unwrap_or_default() noexcept( IsNoExceptDefNew && IsNoExceptCopy && IsNoExceptMove )
+		constexpr T UnwrapOrDefault() noexcept( IsNoExceptDefNew && IsNoExceptCopy && IsNoExceptMove )
 			requires( not IsReference and std::is_default_constructible_v< T > )
 		{
-			return unwrap_or( T() );
+			return UnwrapOr( T() );
 		}
 		/// <summary>
 		/// Returns result or the result of evaluating the provided function
 		/// </summary>
 		template < typename Func >
 			requires IsFunc< Func, T >
-		constexpr T unwrap_or_else( Func&& op ) noexcept( noexcept( op() ) && IsNoExceptCopy && IsNoExceptMove )
+		constexpr T UnwrapOrElse( Func&& op ) noexcept( noexcept( op() ) && IsNoExceptCopy && IsNoExceptMove )
 		{
-			return unwrap_or( op() );
+			return UnwrapOr( op() );
 		}
 
 
@@ -140,7 +140,7 @@ namespace slc
 		/// </summary>
 		template < typename U, typename Func >
 			requires IsFunc< Func, U&&, T&& >
-		constexpr Result< U, E > map( Func&& op ) noexcept( noexcept( op( std::declval< T&& >() ) ) && Result< U, E >::IsNoExceptMove && IsNoExceptMove )
+		constexpr Result< U, E > Map( Func&& op ) noexcept( noexcept( op( std::declval< T&& >() ) ) && Result< U, E >::IsNoExceptMove && IsNoExceptMove )
 		{
 			if ( mResult )
 				return Result< U, E >( op( MoveVal() ) );
@@ -152,7 +152,7 @@ namespace slc
 		/// </summary>
 		template < IsRustEnum O, typename Func >
 			requires IsFunc< Func, O, E >
-		constexpr Result< T, O > map_err( Func&& op ) noexcept( noexcept( op( std::declval< E >() ) ) && IsNoExceptMove )
+		constexpr Result< T, O > MapError( Func&& op ) noexcept( noexcept( op( std::declval< E >() ) ) && IsNoExceptMove )
 		{
 			if ( mResult )
 				return Result< T, O >( MoveVal() );
@@ -171,7 +171,7 @@ namespace slc
 		/// <returns></returns>
 		template < typename U, typename Func >
 			requires IsFunc< Func, U&&, T&& >
-		constexpr U map_or( U&& defaultVal, Func&& op ) noexcept( noexcept( op( std::declval< T&& >() ) ) && Result< U, E >::IsNoExceptMove && IsNoExceptMove )
+		constexpr U MapOr( U&& defaultVal, Func&& op ) noexcept( noexcept( op( std::declval< T&& >() ) ) && Result< U, E >::IsNoExceptMove && IsNoExceptMove )
 		{
 			if ( mResult )
 				return op( MoveVal() );
@@ -185,16 +185,16 @@ namespace slc
 		/// </summary>
 		template < typename U, typename Func, typename ErrFunc >
 			requires IsFunc< Func, U&&, T&& > and IsFunc< ErrFunc, U&&, E >
-		constexpr U map_or_else( Func&& op, ErrFunc&& errOp ) noexcept(
+		constexpr U MapOrElse( Func&& op, ErrFunc&& err_op ) noexcept(
 			noexcept( op( std::declval< T&& >() ) ) &&
-			noexcept( errOp( std::declval< E >() ) ) &&
+			noexcept( err_op( std::declval< E >() ) ) &&
 			Result< U, E >::IsNoExceptMove &&
 			IsNoExceptMove )
 		{
 			if ( mResult )
 				return op( MoveVal() );
 
-			return errOp( GetError() );
+			return err_op( GetError() );
 		}
 
 		/// <summary>
@@ -228,7 +228,7 @@ namespace slc
 		/// </summary>
 		template < typename R, typename Func >
 			requires IsFunc< Func, Result< R, E >, T&& >
-		constexpr Result< R, E > and_then( Func&& next ) noexcept( noexcept( next( std::declval< T&& >() ) ) && IsNoExceptMove )
+		constexpr Result< R, E > AndThen( Func&& next ) noexcept( noexcept( next( std::declval< T&& >() ) ) && IsNoExceptMove )
 		{
 			if ( mResult )
 				return next( MoveVal() );
@@ -236,23 +236,8 @@ namespace slc
 			return Result< R, E >( GetError() );
 		}
 
-		/// <summary>
-		/// For use with macros only.
-		/// </summary>
-		constexpr const E* as_err() const noexcept
-		{
-			return std::get_if< E >( &mValue );
-		}
-		/// <summary>
-		/// For use with macros only.
-		/// </summary>
-		constexpr RefType as_valref() noexcept
-		{
-			return *std::get_if< T >( &mValue );
-		}
-
 		template < typename... Cases >
-		void match( Cases&&... cases )
+		void Match( Cases&&... cases )
 		{
 			auto matcher = ::slc::detail::Overload{ std::forward< Cases >( cases )... };
 			using Matcher = decltype( matcher );
@@ -319,7 +304,7 @@ namespace slc
 			using FuncReturnType = std::invoke_result_t< NextFunc, R&& >;
 			using ResultValueType = FuncReturnType::ResultType;
 
-			return first.and_then< ResultValueType >( next );
+			return first.AndThen< ResultValueType >( next );
 		}
 
 		template < typename T, typename R, IsRustEnum E, typename NextFunc, typename... Func >
@@ -329,7 +314,7 @@ namespace slc
 			using FuncReturnType = std::invoke_result_t< NextFunc, R&& >;
 			using ResultValueType = FuncReturnType::ResultType;
 
-			return DoOperation< ResultValueType, T, E >( first.and_then< ResultValueType >( next ), std::forward< Func >( ops )... );
+			return DoOperation< ResultValueType, T, E >( first.AndThen< ResultValueType >( next ), std::forward< Func >( ops )... );
 		}
 	} // namespace detail
 
