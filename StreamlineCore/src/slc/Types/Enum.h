@@ -26,21 +26,21 @@
 
 #define SLC_EXTRACT_TYPE_SECOND( a, b ) b
 
-#define SLC_MATCH_CASE( enum_case )                                                                                          \
-	case std::to_underlying( Enum::enum_case ):                                                                              \
-	{                                                                                                                        \
-		if constexpr ( HasMatchFunc< Matcher, Enum::enum_case > )                                                            \
-		{                                                                                                                    \
-			if constexpr ( HasType< Enum::enum_case > )                                                                      \
-				std::forward< Matcher >( matcher )( enum_case, GetValue( ::slc::detail::EnumTag< Enum::enum_case >{} ) );    \
-			else                                                                                                             \
-				std::forward< Matcher >( matcher )( enum_case );                                                             \
-		}                                                                                                                    \
-		else                                                                                                                 \
-		{                                                                                                                    \
-			std::forward< Matcher >( matcher )( std::monostate{}, GetValue( ::slc::detail::EnumTag< Enum::enum_case >{} ) ); \
-		}                                                                                                                    \
-		break;                                                                                                               \
+#define SLC_MATCH_CASE( enum_case )                                                                                        \
+	case std::to_underlying( Enum::enum_case ):                                                                            \
+	{                                                                                                                      \
+		if constexpr ( HasMatchFunc< Matcher, Enum::enum_case > )                                                          \
+		{                                                                                                                  \
+			if constexpr ( HasType< Enum::enum_case > )                                                                    \
+				std::forward< Matcher >( matcher )( enum_case, Unwrap( ::slc::detail::EnumTag< Enum::enum_case >{} ) );    \
+			else                                                                                                           \
+				std::forward< Matcher >( matcher )( enum_case );                                                           \
+		}                                                                                                                  \
+		else                                                                                                               \
+		{                                                                                                                  \
+			std::forward< Matcher >( matcher )( std::monostate{}, Unwrap( ::slc::detail::EnumTag< Enum::enum_case >{} ) ); \
+		}                                                                                                                  \
+		break;                                                                                                             \
 	}
 
 #define SLC_MAKE_INTERNAL_ENUM( enum_case ) \
@@ -150,7 +150,7 @@ namespace slc
 			SCONSTEXPR bool ContainsType = ValueTypes::template Contains< R >;                                                       \
                                                                                                                                      \
 			template < typename F, Enum Element >                                                                                    \
-			static consteval bool ComputeHasMatchFunc()                                                                              \
+			SCONSTEVAL bool ComputeHasMatchFunc()                                                                                    \
 			{                                                                                                                        \
 				if constexpr ( HasType< Element > )                                                                                  \
 					return std::invocable< F, ::slc::detail::EnumTag< Element >, const ValueTypeAt< Element >& >;                    \
@@ -158,8 +158,9 @@ namespace slc
 					return std::invocable< F, ::slc::detail::EnumTag< Element > >;                                                   \
 			}                                                                                                                        \
                                                                                                                                      \
+		public:                                                                                                                      \
 			template < typename F, Enum Element >                                                                                    \
-			static constexpr bool HasMatchFunc = ComputeHasMatchFunc< F, Element >();                                                \
+			SCONSTEXPR bool HasMatchFunc = ComputeHasMatchFunc< F, Element >();                                                      \
                                                                                                                                      \
 		public:                                                                                                                      \
 			constexpr name##_RustEnum() = default;                                                                                   \
@@ -196,13 +197,13 @@ namespace slc
 			}                                                                                                                        \
                                                                                                                                      \
 			template < Enum Element >                                                                                                \
-			ValueTypeAt< Element >& GetValue( ::slc::detail::EnumTag< Element > )                                                    \
+			ValueTypeAt< Element >& Unwrap( ::slc::detail::EnumTag< Element > )                                                      \
 			{                                                                                                                        \
 				return *std::get_if< ::slc::detail::EnumTag< Element >::Value >( &mValueData );                                      \
 			}                                                                                                                        \
                                                                                                                                      \
 			template < Enum Element >                                                                                                \
-			ValueTypeAt< Element > const& GetValue( ::slc::detail::EnumTag< Element > ) const                                        \
+			ValueTypeAt< Element > const& Unwrap( ::slc::detail::EnumTag< Element > ) const                                          \
 			{                                                                                                                        \
 				return *std::get_if< ::slc::detail::EnumTag< Element >::Value >( &mValueData );                                      \
 			}                                                                                                                        \

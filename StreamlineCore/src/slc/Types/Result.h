@@ -48,22 +48,6 @@ namespace slc
 		{}
 		virtual ~Result() = default;
 
-		/// <summary>
-		/// Converts from const Result<T, E> to Result<const T&, E>
-		/// </summary>
-		constexpr Result< const T&, E > AsConst() const noexcept
-		{
-			return mResult ? Result< const T&, E >( GetValRef() ) : Result< const T&, E >( GetError() );
-		}
-
-		/// <summary>
-		/// Converts from Result<T, E> to Result<T&, E>
-		/// </summary>
-		constexpr Result< T&, E > AsMutable() noexcept
-		{
-			return mResult ? Result< T&, E >( GetValRef() ) : Result< T&, E >( GetError() );
-		}
-
 		constexpr bool IsOk() const noexcept
 		{
 			return mResult;
@@ -244,8 +228,8 @@ namespace slc
 
 			if ( mResult )
 			{
-				auto const& value = GetValRef();
-				std::forward< Matcher >( matcher )( Ok, value );
+				auto const& success = GetSuccessEnum();
+				success.Match( std::forward< Matcher >( matcher ) );
 			}
 			else
 			{
@@ -273,11 +257,21 @@ namespace slc
 		/// <returns></returns>
 		constexpr RefType GetValRef() noexcept
 		{
-			return std::get_if< ResultEnum >( &mValue )->GetValue( Ok );
+			return GetSuccessEnum().Unwrap( Ok );
 		}
 		constexpr const RefType GetValRef() const noexcept
 		{
-			return std::get_if< ResultEnum >( &mValue )->GetValue( Ok );
+			return GetSuccessEnum().Unwrap( Ok );
+		}
+
+		constexpr ResultEnum& GetSuccessEnum() noexcept
+		{
+			return *std::get_if< ResultEnum >( &mValue );
+		}
+
+		constexpr ResultEnum const& GetSuccessEnum() const noexcept
+		{
+			return *std::get_if< ResultEnum >( &mValue );
 		}
 
 		/// <summary>
