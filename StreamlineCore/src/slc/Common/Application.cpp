@@ -5,7 +5,7 @@
 
 namespace slc {
 
-	Application::Application(Impl<ApplicationSpecification> spec)
+	Application::Application(Unique<ApplicationSpecification> spec)
 		: IEventListener(EventManager::ListenerType::App), mSpecification(std::move(spec))
 	{
 		if (sInstance)

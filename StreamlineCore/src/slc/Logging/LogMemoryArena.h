@@ -15,7 +15,7 @@ namespace slc {
 		void ReleaseBuffers();
 
 	private:
-		Impl<char[]> mBuffer;
+		Unique<char[]> mBuffer;
 		std::size_t mCapacity;
 		std::size_t mUsed = 0;
 	};
