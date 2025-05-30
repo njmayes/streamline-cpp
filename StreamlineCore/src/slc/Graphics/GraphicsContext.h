@@ -14,7 +14,7 @@ namespace slc {
 		virtual void Init();
 		virtual void SwapBuffers();
 
-		static Impl<GraphicsContext> Create(void* window) { return MakeImpl<GraphicsContext>((GLFWwindow*)window); }
+		static Unique<GraphicsContext> Create(void* window) { return MakeUnique<GraphicsContext>((GLFWwindow*)window); }
 
 	private:
 		GLFWwindow* mWindowHandle;

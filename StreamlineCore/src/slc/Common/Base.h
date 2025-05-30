@@ -36,5 +36,8 @@ namespace slc {
 
     SCONSTEXPR size_t MakeBit(int bit) { return 1ull << bit; }
 
+    template<typename T>
+	SCONSTEXPR bool AlwaysFalse = false;
+
     namespace fs = std::filesystem;
 }
