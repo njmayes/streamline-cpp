@@ -32,7 +32,7 @@
 		break;
 
 
-#define SLC_MAKE_INTERNAL_ENUM( enum_case ) \
+#define SLC_MAKE_STATIC_ENUM( enum_case ) \
 	SCONSTEXPR auto enum_case = ::slc::detail::EnumTag< Enum::enum_case >{};
 
 namespace slc
@@ -42,7 +42,7 @@ namespace slc
 		template < typename... Ts >
 		concept ValidEnumTypes = ( ( not std::is_pointer_v< Ts > and std::same_as< std::remove_cvref_t< Ts >, Ts > ) and ... );
 
-		struct RustEnum_Base
+		struct SmartEnum_Base
 		{};
 
 
@@ -50,7 +50,7 @@ namespace slc
 			requires std::is_scoped_enum_v< decltype( E ) >
 		struct EnumTag : std::integral_constant< decltype( E ), E >
 		{
-			SCONSTEXPR auto Value = std::to_underlying( E );
+			SCONSTEXPR auto Index = std::to_underlying( E );
 		};
 
 		template < auto E, typename F >
@@ -82,8 +82,6 @@ namespace slc
 		{
 			using Fs::operator()...;
 		};
-		template < typename... Ts >
-		Overload( Ts... ) -> Overload< Ts... >;
 
 
 		template < typename T >
@@ -122,7 +120,7 @@ namespace slc
 	} // namespace detail
 
 	template < typename T >
-	concept IsSmartEnum = std::derived_from< T, detail::RustEnum_Base >;
+	concept IsSmartEnum = std::derived_from< T, detail::SmartEnum_Base >;
 
 
 	template < auto E, typename F >
@@ -146,7 +144,7 @@ namespace slc
                                                                                                                                                   \
 		template < typename... Ts >                                                                                                               \
 			requires ::slc::detail::ValidEnumTypes< Ts... >                                                                                       \
-		class name##_RustEnum< ::slc::TypeList< Ts... > > : public ::slc::detail::RustEnum_Base                                                   \
+		class name##_RustEnum< ::slc::TypeList< Ts... > > : public ::slc::detail::SmartEnum_Base                                                  \
 		{                                                                                                                                         \
 		private:                                                                                                                                  \
 			enum class Enum : std::size_t                                                                                                         \
@@ -156,7 +154,7 @@ namespace slc
                                                                                                                                                   \
                                                                                                                                                   \
 		public:                                                                                                                                   \
-			SLC_FOR_EACH( SLC_MAKE_INTERNAL_ENUM, SLC_FOR_EACH_SEP( SLC_EXTRACT_IDENT, SLC_COMMA, __VA_ARGS__ ) )                                 \
+			SLC_FOR_EACH( SLC_MAKE_STATIC_ENUM, SLC_FOR_EACH_SEP( SLC_EXTRACT_IDENT, SLC_COMMA, __VA_ARGS__ ) )                                   \
                                                                                                                                                   \
 		private:                                                                                                                                  \
 			using ValueTypes = ::slc::TypeList< Ts... >;                                                                                          \
@@ -164,7 +162,7 @@ namespace slc
 			using ValueStorageType = ValueTypes::VariantType;                                                                                     \
                                                                                                                                                   \
 			template < Enum Element >                                                                                                             \
-			using ValueTypeAt = typename ValueTypes::template Type< ::slc::detail::EnumTag< Element >::Value >;                                   \
+			using ValueTypeAt = typename ValueTypes::template Type< ::slc::detail::EnumTag< Element >::Index >;                                   \
                                                                                                                                                   \
 			template < Enum Element >                                                                                                             \
 			SCONSTEXPR bool HasType = !( std::same_as< ValueTypeAt< Element >, std::monostate > );                                                \
@@ -210,7 +208,6 @@ namespace slc
 				}                                                                                                                                 \
 			}                                                                                                                                     \
                                                                                                                                                   \
-		public:                                                                                                                                   \
 			template < typename F, Enum Element >                                                                                                 \
 			SCONSTEXPR bool HasMatchFunc = ComputeHasMatchFunc< F, Element >();                                                                   \
                                                                                                                                                   \
@@ -237,7 +234,7 @@ namespace slc
                                                                                                                                                   \
 			template < Enum Element, typename... Args >                                                                                           \
 			constexpr name##_RustEnum( ::slc::detail::EnumTag< Element >, Args&&... args )                                                        \
-				: mValueData( std::in_place_index_t< ::slc::detail::EnumTag< Element >::Value >{}, std::forward< Args >( args )... )              \
+				: mValueData( std::in_place_index_t< ::slc::detail::EnumTag< Element >::Index >{}, std::forward< Args >( args )... )              \
 			{                                                                                                                                     \
 			}                                                                                                                                     \
                                                                                                                                                   \
@@ -253,16 +250,10 @@ namespace slc
 				}                                                                                                                                 \
 			}                                                                                                                                     \
                                                                                                                                                   \
-			template < Enum Element >                                                                                                             \
-			ValueTypeAt< Element >& Unwrap( ::slc::detail::EnumTag< Element > )                                                                   \
+			template < Enum Element, typename Self >                                                                                              \
+			decltype( auto ) Unwrap( this Self&& self, ::slc::detail::EnumTag< Element > )                                                        \
 			{                                                                                                                                     \
-				return *std::get_if< ::slc::detail::EnumTag< Element >::Value >( &mValueData );                                                   \
-			}                                                                                                                                     \
-                                                                                                                                                  \
-			template < Enum Element >                                                                                                             \
-			ValueTypeAt< Element > const& Unwrap( ::slc::detail::EnumTag< Element > ) const                                                       \
-			{                                                                                                                                     \
-				return *std::get_if< ::slc::detail::EnumTag< Element >::Value >( &mValueData );                                                   \
+				return *std::get_if< ::slc::detail::EnumTag< Element >::Index >( std::addressof( std::forward< Self >( self ).mValueData ) );     \
 			}                                                                                                                                     \
                                                                                                                                                   \
 		private:                                                                                                                                  \

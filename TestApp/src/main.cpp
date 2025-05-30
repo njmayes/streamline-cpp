@@ -1,9 +1,5 @@
 #include "streamline.h"
 
-#include "slc/Common/Reflection.h"
-#include "slc/Logging/Targets/ConsoleLogTarget.h"
-#include "slc/Types/Enum.h"
-
 #include <iostream>
 
 namespace slc
@@ -122,7 +118,7 @@ int main( int argc, char* argv[] )
 
 	test.Match(
 		MatchCase< TestEnum::OutOfBounds >( [] { std::cout << "OutOfBounds\n"; } ),
-		DefaultCase( []( auto const& value ) { std::cout << "Default case\n"; } ) );
+		DefaultCase( [] { std::cout << "Default case\n"; } ) );
 
 
 	test = TestEnum( TestEnum::Unexpected, "Unexpected" );
