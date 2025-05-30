@@ -290,7 +290,7 @@ namespace slc
 				}                                                                                                                                 \
 				else                                                                                                                              \
 				{                                                                                                                                 \
-					static_assert( AlwaysFalse< Matcher >, "Must provide a match case for all cases" );                                           \
+					static_assert( false, "Must provide a match case for all cases" );                                                            \
 				}                                                                                                                                 \
 			}                                                                                                                                     \
                                                                                                                                                   \
