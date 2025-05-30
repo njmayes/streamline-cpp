@@ -60,10 +60,38 @@
 #define SLC_EXPAND2(arg) SLC_EXPAND3(SLC_EXPAND3(SLC_EXPAND3(SLC_EXPAND3(arg))))
 #define SLC_EXPAND3(arg) SLC_EXPAND4(SLC_EXPAND4(SLC_EXPAND4(SLC_EXPAND4(arg))))
 #define SLC_EXPAND4(arg) SLC_EXPAND_MACRO(arg)
+#define SLC_EVAL( ... ) SLC_EVAL1024( __VA_ARGS__ )
+#define SLC_EVAL1024( ... ) SLC_EVAL512( SLC_EVAL512( __VA_ARGS__ ) )
+#define SLC_EVAL512( ... ) SLC_EVAL256( SLC_EVAL256( __VA_ARGS__ ) )
+#define SLC_EVAL256( ... ) SLC_EVAL128( SLC_EVAL128( __VA_ARGS__ ) )
+#define SLC_EVAL128( ... ) SLC_EVAL64( SLC_EVAL64( __VA_ARGS__ ) )
+#define SLC_EVAL64( ... ) SLC_EVAL32( SLC_EVAL32( __VA_ARGS__ ) )
+#define SLC_EVAL32( ... ) SLC_EVAL16( SLC_EVAL16( __VA_ARGS__ ) )
+#define SLC_EVAL16( ... ) SLC_EVAL8( SLC_EVAL8( __VA_ARGS__ ) )
+#define SLC_EVAL8( ... ) SLC_EVAL4( SLC_EVAL4( __VA_ARGS__ ) )
+#define SLC_EVAL4( ... ) SLC_EVAL2( SLC_EVAL2( __VA_ARGS__ ) )
+#define SLC_EVAL2( ... ) SLC_EVAL1( SLC_EVAL1( __VA_ARGS__ ) )
+#define SLC_EVAL1( ... ) __VA_ARGS__
 
-#define SLC_FOR_EACH(macro, ...)                                    \
-  __VA_OPT__(SLC_EXPAND(SLC_FOR_EACH_HELPER(macro, __VA_ARGS__)))
-#define SLC_FOR_EACH_HELPER(macro, a1, ...)                         \
-  macro(a1)                                                     \
-  __VA_OPT__(SLC_FOR_EACH_AGAIN SLC_PARENS (macro, __VA_ARGS__))
-#define SLC_FOR_EACH_AGAIN() SLC_FOR_EACH_HELPER
+#define SLC_EMPTY()
+#define SLC_DEFER( id ) id SLC_EMPTY()
+#define SLC_OBSTRUCT( ... ) __VA_ARGS__ SLC_DEFER( SLC_EMPTY )()
+
+#define SLC_FOR_EACH_SEP( macro, sep, ... ) \
+	SLC_EVAL( SLC_FOR_EACH_SEP_INNER( macro, sep, __VA_ARGS__ ) )
+
+#define SLC_FOR_EACH_SEP_INNER( macro, sep, a1, ... ) \
+	macro( a1 )                                       \
+	__VA_OPT__( SLC_OBSTRUCT( SLC_FOR_EACH_SEP_CONTINUE )()( macro, sep, __VA_ARGS__ ) )
+
+#define SLC_FOR_EACH_SEP_CONTINUE() SLC_FOR_EACH_SEP_INNER_NEXT
+#define SLC_FOR_EACH_SEP_INNER_NEXT( macro, sep, a1, ... ) \
+	sep() macro( a1 )                                      \
+	__VA_OPT__( SLC_OBSTRUCT( SLC_FOR_EACH_SEP_CONTINUE )()( macro, sep, __VA_ARGS__ ) )
+
+// Separator macro example:
+#define SLC_COMMA() ,
+#define SLC_NONE()
+
+
+#define SLC_FOR_EACH(macro, ...) SLC_FOR_EACH_SEP(macro, SLC_NONE, __VA_ARGS__)

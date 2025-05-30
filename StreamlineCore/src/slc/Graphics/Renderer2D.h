@@ -42,6 +42,6 @@ namespace slc {
 		static void NextBatch();
 
 	private:
-		inline static Impl<Renderer2DData> sRenderData;
+		inline static Unique<Renderer2DData> sRenderData;
 	};
 }

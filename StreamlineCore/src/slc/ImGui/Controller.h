@@ -22,7 +22,7 @@ namespace slc {
 		void EndFrame() const;
 
 		template<typename... Args>
-		static Impl<ImGuiController> Create(Args&&... args) { return MakeImpl<ImGuiController>(std::forward<Args>(args)...); }
+		static Unique<ImGuiController> Create(Args&&... args) { return MakeUnique<ImGuiController>(std::forward<Args>(args)...); }
 
     public:
 		void OnEvent(Event& e);

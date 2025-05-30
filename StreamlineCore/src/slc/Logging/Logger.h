@@ -49,7 +49,7 @@ namespace slc {
 			std::constructible_from<target_t, Args...>
 			void AddLogTarget(Args&&... args)
 		{
-			auto target = MakeImpl<target_t>(std::forward<Args>(args)...);
+			auto target = MakeUnique<target_t>(std::forward<Args>(args)...);
 			mLogTargets.push_back(std::move(target));
 		}
 
@@ -140,7 +140,7 @@ namespace slc {
 
 		LogLevel mMinLogLevel;
 		std::vector<MessageEntry> mMessageQueue;
-		std::vector<Impl<ILogTarget>> mLogTargets;
+		std::vector<Unique<ILogTarget>> mLogTargets;
 
 		LogMemoryArena mArena;
 		std::vector<char> mMessageBuffer;

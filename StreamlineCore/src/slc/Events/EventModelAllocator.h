@@ -32,11 +32,11 @@ namespace slc {
 
 		struct ModelAllocator
 		{
-			Impl<IAllocator> allocator = nullptr;
+			Unique<IAllocator> allocator = nullptr;
 			size_t remaining = 0;
 
 			template<IsEvent T>
-			ModelAllocator(Impl<LinearAllocator<EventModel<T>>> alloc)
+			ModelAllocator(Unique<LinearAllocator<EventModel<T>>> alloc)
 				: allocator(std::move(alloc)), remaining(allocator->MaxSize()) {}
 		};
 
@@ -48,7 +48,7 @@ namespace slc {
 		static InternalAllocatorElement BuildEventAllocator()
 		{
 			using Type = EventList::All::Type<I>;
-			return std::make_pair(TypeTraits<Type>::Name, MakeImpl<LinearAllocator<EventModel<Type>>>(DefaultModelChunkSize));
+			return std::make_pair(TypeTraits<Type>::Name, MakeUnique<LinearAllocator<EventModel<Type>>>(DefaultModelChunkSize));
 		}
 
 		template<size_t... Is> 
@@ -144,7 +144,7 @@ namespace slc {
 		void Register()
 		{
 			using EventType = TypeTraits<T>;
-			mModelAllocators.try_emplace(EventType::Name, MakeImpl<LinearAllocator<EventModel<T>>>(DefaultModelChunkSize));
+			mModelAllocators.try_emplace(EventType::Name, MakeUnique<LinearAllocator<EventModel<T>>>(DefaultModelChunkSize));
 		}
 
 		void CleanupDefaultNewPointers()

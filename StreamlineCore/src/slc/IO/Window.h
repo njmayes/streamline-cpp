@@ -49,7 +49,7 @@ namespace slc {
 
 		GLFWwindow* GetNativeWindow() const { return mWindow; }
 
-		static Impl<Window> Create(const WindowProperties& props = WindowProperties());
+		static Unique<Window> Create(const WindowProperties& props = WindowProperties());
 
 	private:
 		void Init(const WindowProperties& props);

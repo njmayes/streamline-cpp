@@ -13,8 +13,13 @@
 
 #include "slc/IO/Json.h"
 
+#include "slc/Logging/Log.h"
+#include "slc/Logging/Targets/FileLogTarget.h"
+#include "slc/Logging/Targets/ConsoleLogTarget.h"
+
 #include "slc/Reflection/Type.h"
 
+#include "slc/Types/Enum.h"
 #include "slc/Types/Option.h"
 #include "slc/Types/Result.h"
 #include "slc/Types/UUID.h"

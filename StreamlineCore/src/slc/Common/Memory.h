@@ -8,10 +8,10 @@ namespace slc {
 	// Unique Pointer
 
 	template<typename T>
-	using Impl = std::unique_ptr<T>;
+	using Unique = std::unique_ptr<T>;
 
 	template<typename T, typename... Args>
-	inline static constexpr Impl<T> MakeImpl(Args&&... args) { return std::make_unique<T>(std::forward<Args>(args)...); }
+	inline static constexpr Unique<T> MakeUnique(Args&&... args) { return std::make_unique<T>(std::forward<Args>(args)...); }
 
 
 
