@@ -9,7 +9,7 @@ namespace slc
 	template < typename T >
 	class Option;
 
-	template < typename T, IsRustEnum E >
+	template < typename T, IsSmartEnum E >
 	class Result
 	{
 	public:
@@ -134,7 +134,7 @@ namespace slc
 		/// <summary>
 		/// Transforms Result&lt;T, E&gt; into Result&lt;T, O&gt; by applying the provided function to the contained value of Err and leaving Ok values unchanged
 		/// </summary>
-		template < IsRustEnum O, typename Func >
+		template < IsSmartEnum O, typename Func >
 			requires IsFunc< Func, O, E >
 		constexpr Result< T, O > MapError( Func&& op ) noexcept( noexcept( op( std::declval< E >() ) ) && IsNoExceptMove )
 		{
@@ -291,7 +291,7 @@ namespace slc
 	namespace detail
 	{
 
-		template < typename T, typename R, IsRustEnum E, typename NextFunc, typename... Func >
+		template < typename T, typename R, IsSmartEnum E, typename NextFunc, typename... Func >
 			requires IsFunc< NextFunc, Result< T, E >, R&& >
 		SCONSTEXPR Result< T, E > DoOperation( Result< R, E > first, NextFunc&& next )
 		{
@@ -301,7 +301,7 @@ namespace slc
 			return first.AndThen< ResultValueType >( next );
 		}
 
-		template < typename T, typename R, IsRustEnum E, typename NextFunc, typename... Func >
+		template < typename T, typename R, IsSmartEnum E, typename NextFunc, typename... Func >
 			requires IsFunc< NextFunc, Result< T, E >, R&& >
 		SCONSTEXPR Result< T, E > DoOperation( Result< R, E > first, NextFunc&& next, Func&&... ops )
 		{
@@ -312,7 +312,7 @@ namespace slc
 		}
 	} // namespace detail
 
-	template < typename T, typename R, IsRustEnum E, typename... Func >
+	template < typename T, typename R, IsSmartEnum E, typename... Func >
 	SCONSTEXPR Result< T, E > Do( Result< R, E > first, Func&&... ops )
 	{
 		return detail::DoOperation< T, R, E >( first, std::forward< Func >( ops )... );
@@ -325,7 +325,7 @@ namespace slc
 	template < typename T >
 	struct ErrorFunctor;
 
-	template < typename T, IsRustEnum E >
+	template < typename T, IsSmartEnum E >
 	struct OkFunctor< Result< T, E > >
 	{
 		constexpr Result< T, E > operator()( T&& result ) const noexcept( noexcept( T( std::forward< T >( std::declval< T >() ) ) ) )
@@ -341,7 +341,7 @@ namespace slc
 		}
 	};
 
-	template < typename T, IsRustEnum E >
+	template < typename T, IsSmartEnum E >
 	struct ErrorFunctor< Result< T, E > >
 	{
 		constexpr Result< T, E > operator()( E error ) const noexcept
