@@ -8,4 +8,4 @@ namespace slc {
 	{
 		uint8_t r, g, b, a;
 	};
-}
+} // namespace slc

@@ -4,47 +4,47 @@
 
 namespace slc {
 
-	std::vector<Type> Type::GetBaseClasses() const
+	std::vector< Type > Type::GetBaseClasses() const
 	{
 		return mInfo->base_types |
-			std::views::transform([](const auto& type) { return Type(type); }) |
-			std::ranges::to<std::vector>();
+			   std::views::transform( []( const auto& type ) { return Type( type ); } ) |
+			   std::ranges::to< std::vector >();
 	}
 
-	Property Type::GetProperty(std::string_view name) const
+	Property Type::GetProperty( std::string_view name ) const
 	{
-		auto it = std::ranges::find_if(mInfo->properties, [name](const auto& prop) { return prop.name == name; });
-		if (it == mInfo->properties.end())
+		auto it = std::ranges::find_if( mInfo->properties, [ name ]( const auto& prop ) { return prop.name == name; } );
+		if ( it == mInfo->properties.end() )
 			return {};
 
-		return Property(*it);
+		return Property( *it );
 	}
 
-	std::vector<Property> Type::GetProperties() const
+	std::vector< Property > Type::GetProperties() const
 	{
-		return mInfo->properties | 
-			std::views::transform([](const auto& property) { return Property(property); }) |
-			std::ranges::to<std::vector>();
+		return mInfo->properties |
+			   std::views::transform( []( const auto& property ) { return Property( property ); } ) |
+			   std::ranges::to< std::vector >();
 	}
 
-	Method Type::GetMethod(std::string_view name) const
+	Method Type::GetMethod( std::string_view name ) const
 	{
-		auto it = std::ranges::find_if(mInfo->methods, [name](const auto& method) { return method.name == name; });
-		if (it == mInfo->methods.end())
+		auto it = std::ranges::find_if( mInfo->methods, [ name ]( const auto& method ) { return method.name == name; } );
+		if ( it == mInfo->methods.end() )
 			return {};
 
-		return Method(*it);
+		return Method( *it );
 	}
 
-	std::vector<Method> Type::GetMethods() const
+	std::vector< Method > Type::GetMethods() const
 	{
 		return mInfo->methods |
-			std::views::transform([](const auto& method) { return Method(method); }) |
-			std::ranges::to<std::vector>();
+			   std::views::transform( []( const auto& method ) { return Method( method ); } ) |
+			   std::ranges::to< std::vector >();
 	}
 
-	bool Type::IsSubclassOf(const Type& other) const
+	bool Type::IsSubclassOf( const Type& other ) const
 	{
-		return std::ranges::any_of(GetBaseClasses(), [other](auto const& type) { return type == other; });
+		return std::ranges::any_of( GetBaseClasses(), [ other ]( auto const& type ) { return type == other; } );
 	}
-}
+} // namespace slc

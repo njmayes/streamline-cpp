@@ -2,6 +2,7 @@
 Language: Cpp
 BasedOnStyle: LLVM
 AccessModifierOffset: -4
+AlignAfterOpenBracket: BlockIndent
 AlignConsecutiveAssignments: false
 AlignConsecutiveDeclarations: false
 AlignOperands: true
@@ -22,7 +23,7 @@ BraceWrapping:
   AfterControlStatement: true
   AfterEnum: true
   AfterFunction: true
-  AfterNamespace: true
+  AfterNamespace: false
   AfterStruct: true
   AfterUnion: true
   AfterExternBlock: false

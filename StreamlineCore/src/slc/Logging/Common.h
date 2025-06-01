@@ -2,9 +2,10 @@
 
 #include <span>
 
-namespace slc
-{
-	enum class LogLevel {
+namespace slc {
+
+	enum class LogLevel
+	{
 		Trace,
 		Debug,
 		Info,
@@ -13,7 +14,7 @@ namespace slc
 		Fatal
 	};
 
-	using MessageBuffer = std::span<char>;
+	using MessageBuffer = std::span< char >;
 
 	struct MessageEntry
 	{
@@ -21,4 +22,4 @@ namespace slc
 		std::size_t length;
 		LogLevel level;
 	};
-}
+} // namespace slc

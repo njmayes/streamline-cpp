@@ -19,7 +19,7 @@ namespace slc {
 
 		float Elapsed()
 		{
-			return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - mStart).count() * 0.001f * 0.001f * 0.001f;
+			return std::chrono::duration_cast< std::chrono::nanoseconds >( std::chrono::steady_clock::now() - mStart ).count() * 0.001f * 0.001f * 0.001f;
 		}
 
 		float ElapsedMillis()
@@ -33,7 +33,7 @@ namespace slc {
 		}
 
 	private:
-		std::chrono::time_point<std::chrono::steady_clock> mStart;
+		std::chrono::time_point< std::chrono::steady_clock > mStart;
 	};
 
-}
+} // namespace slc

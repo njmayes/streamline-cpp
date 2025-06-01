@@ -4,8 +4,8 @@
 
 namespace slc {
 
-	void IRenderable::BindTexture(uint32_t slot) const
+	void IRenderable::BindTexture( uint32_t slot ) const
 	{
-		glBindTextureUnit(slot, GetTextureID());
+		glBindTextureUnit( slot, GetTextureID() );
 	};
-}
+} // namespace slc

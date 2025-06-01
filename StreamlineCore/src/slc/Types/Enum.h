@@ -35,10 +35,8 @@
 #define SLC_MAKE_STATIC_ENUM( enum_case ) \
 	SCONSTEXPR auto enum_case = ::slc::detail::EnumTag< Enum::enum_case >{};
 
-namespace slc
-{
-	namespace detail
-	{
+namespace slc {
+	namespace detail {
 		template < typename... Ts >
 		concept ValidEnumTypes = ( ( not std::is_pointer_v< Ts > and std::same_as< std::remove_cvref_t< Ts >, Ts > ) and ... );
 

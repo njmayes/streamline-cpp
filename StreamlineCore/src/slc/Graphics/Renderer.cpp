@@ -15,36 +15,45 @@ namespace slc {
 		unsigned severity,
 		int length,
 		const char* message,
-		const void* userParam)
+		const void* userParam
+	)
 	{
-		switch (severity)
+		switch ( severity )
 		{
-		case GL_DEBUG_SEVERITY_HIGH:         Log::Error(message); return;
-		case GL_DEBUG_SEVERITY_MEDIUM:       Log::Warn(message); return;
-		case GL_DEBUG_SEVERITY_LOW:          Log::Info(message); return;
-		case GL_DEBUG_SEVERITY_NOTIFICATION: Log::Trace(message); return;
+			case GL_DEBUG_SEVERITY_HIGH:
+				Log::Error( message );
+				return;
+			case GL_DEBUG_SEVERITY_MEDIUM:
+				Log::Warn( message );
+				return;
+			case GL_DEBUG_SEVERITY_LOW:
+				Log::Info( message );
+				return;
+			case GL_DEBUG_SEVERITY_NOTIFICATION:
+				Log::Trace( message );
+				return;
 		}
 
-		ASSERT(false, "Unknown severity level!");
+		ASSERT( false, "Unknown severity level!" );
 	}
 
 	void Renderer::Init()
 	{
 #ifdef LAB_DEBUG
-		glEnable(GL_DEBUG_OUTPUT);
-		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-		glDebugMessageCallback(OpenGLMessageCallback, nullptr);
+		glEnable( GL_DEBUG_OUTPUT );
+		glEnable( GL_DEBUG_OUTPUT_SYNCHRONOUS );
+		glDebugMessageCallback( OpenGLMessageCallback, nullptr );
 
-		glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_NOTIFICATION, 0, NULL, GL_FALSE);
+		glDebugMessageControl( GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_NOTIFICATION, 0, NULL, GL_FALSE );
 #endif
 
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		glEnable(GL_BLEND);
+		glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+		glEnable( GL_BLEND );
 
-		glDepthFunc(GL_LESS);
-		glEnable(GL_DEPTH_TEST);
+		glDepthFunc( GL_LESS );
+		glEnable( GL_DEPTH_TEST );
 
-		glEnable(GL_LINE_SMOOTH);
+		glEnable( GL_LINE_SMOOTH );
 
 		Renderer2D::Init();
 	}
@@ -54,40 +63,40 @@ namespace slc {
 		Renderer2D::Shutdown();
 	}
 
-	void Renderer::SetViewport(uint32_t w, uint32_t h)
+	void Renderer::SetViewport( uint32_t w, uint32_t h )
 	{
-		glViewport(0, 0, w, h);
+		glViewport( 0, 0, w, h );
 	}
 
-	void Renderer::SetClearColor(const glm::vec4& colour)
+	void Renderer::SetClearColor( const glm::vec4& colour )
 	{
-		glClearColor(colour.r, colour.g, colour.b, colour.a);
+		glClearColor( colour.r, colour.g, colour.b, colour.a );
 	}
 
 	void Renderer::Clear()
 	{
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 	}
 
-	void Renderer::SetLineWidth(float width)
+	void Renderer::SetLineWidth( float width )
 	{
-		glLineWidth(width);
+		glLineWidth( width );
 	}
 
-	void Renderer::DrawIndexed(const Ref<VertexArray>& vertexArray, uint32_t indexCount)
+	void Renderer::DrawIndexed( const Ref< VertexArray >& vertexArray, uint32_t indexCount )
 	{
 		uint32_t count = indexCount ? indexCount : vertexArray->GetIndexBuffer()->GetCount();
 		vertexArray->Bind();
-		glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, nullptr);
+		glDrawElements( GL_TRIANGLES, count, GL_UNSIGNED_INT, nullptr );
 #if LAB_DEBUG
 		vertexArray->Unbind();
 #endif
 	}
 
-	void Renderer::DrawLines(const Ref<VertexArray>& vertexArray, uint32_t vertexCount)
+	void Renderer::DrawLines( const Ref< VertexArray >& vertexArray, uint32_t vertexCount )
 	{
 		vertexArray->Bind();
-		glDrawArrays(GL_LINES, 0, vertexCount);
+		glDrawArrays( GL_LINES, 0, vertexCount );
 #if LAB_DEBUG
 		vertexArray->Unbind();
 #endif
@@ -95,11 +104,11 @@ namespace slc {
 
 	void Renderer::EnableDepth()
 	{
-		glEnable(GL_DEPTH_TEST);
+		glEnable( GL_DEPTH_TEST );
 	}
 
 	void Renderer::DisableDepth()
 	{
-		glDisable(GL_DEPTH_TEST);
+		glDisable( GL_DEPTH_TEST );
 	}
-}
+} // namespace slc

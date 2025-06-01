@@ -10,53 +10,56 @@ namespace slc {
 	{
 	public:
 		Property() = default;
-		Property(const PropertyInfo& info)
-			: mProperty(&info)
+		Property( const PropertyInfo& info )
+			: mProperty( &info )
 		{}
 
 		Type GetType() const;
-		std::string_view GetName() const { return mProperty->name; }
-
-		template<CanReflect T, CanReflect Obj>
-		const T& GetValue(const Obj& obj) const
+		std::string_view GetName() const
 		{
-			using Traits = TypeTraits<T>;
-			using ObjTraits = TypeTraits<Obj>;
-
-			if (Traits::Name != mProperty->prop_type->name)
-				throw BadReflectionCastException(Traits::Name, mProperty->prop_type->name);
-
-			if (ObjTraits::Name != mProperty->parent_type->name)
-				throw BadReflectionCastException(ObjTraits::Name, mProperty->parent_type->name);
-
-			auto instance = GetValue(obj);
-			return instance.data.template Get<const T&>();
+			return mProperty->name;
 		}
 
-		template<CanReflect Obj>
-		Instance GetValue(const Obj& obj) const
+		template < CanReflect T, CanReflect Obj >
+		const T& GetValue( const Obj& obj ) const
 		{
-			return mProperty->accessor(MakeInstance(obj));
+			using Traits = TypeTraits< T >;
+			using ObjTraits = TypeTraits< Obj >;
+
+			if ( Traits::Name != mProperty->prop_type->name )
+				throw BadReflectionCastException( Traits::Name, mProperty->prop_type->name );
+
+			if ( ObjTraits::Name != mProperty->parent_type->name )
+				throw BadReflectionCastException( ObjTraits::Name, mProperty->parent_type->name );
+
+			auto instance = GetValue( obj );
+			return instance.data.template Get< const T& >();
 		}
 
-		template<CanReflect T, CanReflect Obj>
-		void SetValue(Obj& obj, const T& value)
+		template < CanReflect Obj >
+		Instance GetValue( const Obj& obj ) const
 		{
-			using Traits = TypeTraits<T>;
-
-			if (Traits::Name != mProperty->prop_type->name)
-				throw BadReflectionCastException(Traits::Name, mProperty->prop_type->name);
-
-			SetValue(obj, MakeInstance(value));
+			return mProperty->accessor( MakeInstance( obj ) );
 		}
 
-		template<CanReflect Obj>
-		void SetValue(Obj& obj, Instance value)
+		template < CanReflect T, CanReflect Obj >
+		void SetValue( Obj& obj, const T& value )
 		{
-			return mProperty->setter(MakeInstance(obj), std::move(value));
+			using Traits = TypeTraits< T >;
+
+			if ( Traits::Name != mProperty->prop_type->name )
+				throw BadReflectionCastException( Traits::Name, mProperty->prop_type->name );
+
+			SetValue( obj, MakeInstance( value ) );
+		}
+
+		template < CanReflect Obj >
+		void SetValue( Obj& obj, Instance value )
+		{
+			return mProperty->setter( MakeInstance( obj ), std::move( value ) );
 		}
 
 	private:
 		const PropertyInfo* mProperty;
 	};
-}
+} // namespace slc

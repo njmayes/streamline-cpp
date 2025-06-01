@@ -10,35 +10,43 @@ namespace slc {
 	{
 		float mouseX, mouseY;
 
-		MouseMovedEvent(float x, float y) : mouseX(x), mouseY(y) {}
+		MouseMovedEvent( float x, float y )
+			: mouseX( x ), mouseY( y )
+		{}
 
-		EVENT_DATA_TYPE(MouseMoved)
+		EVENT_DATA_TYPE( MouseMoved )
 	};
 
 	struct MouseScrolledEvent : public EventBase
 	{
 		float xOffset, yOffset;
 
-		MouseScrolledEvent(float x, float y) : xOffset(x), yOffset(y) {}
+		MouseScrolledEvent( float x, float y )
+			: xOffset( x ), yOffset( y )
+		{}
 
-		EVENT_DATA_TYPE(MouseScrolled)
+		EVENT_DATA_TYPE( MouseScrolled )
 	};
 
 	struct MouseButtonPressedEvent : public EventBase
 	{
 		MouseCode button;
 
-		MouseButtonPressedEvent(MouseCode mouse) : button(mouse) {}
+		MouseButtonPressedEvent( MouseCode mouse )
+			: button( mouse )
+		{}
 
-		EVENT_DATA_TYPE(MouseButtonPressed)
+		EVENT_DATA_TYPE( MouseButtonPressed )
 	};
 
 	struct MouseButtonReleasedEvent : public EventBase
 	{
 		MouseCode button;
 
-		MouseButtonReleasedEvent(MouseCode mouse) : button(mouse) {}
+		MouseButtonReleasedEvent( MouseCode mouse )
+			: button( mouse )
+		{}
 
-		EVENT_DATA_TYPE(MouseButtonReleased)
+		EVENT_DATA_TYPE( MouseButtonReleased )
 	};
-}
+} // namespace slc

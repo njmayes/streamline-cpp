@@ -6,11 +6,12 @@
 
 namespace slc {
 
-	namespace ConsoleAttributes
-	{
+	namespace ConsoleAttributes {
+
 		using Attribute = unsigned int;
 
-		enum : Attribute {
+		enum : Attribute
+		{
 			BlackForeground = 1,
 			RedForeground = 2,
 			GreenForeground = 4,
@@ -46,27 +47,27 @@ namespace slc {
 			DefaultBackground = BlackBackground,
 			Default = DefaultForeground | DefaultBackground,
 		};
-	}
+	} // namespace ConsoleAttributes
 
 	class ConsoleLogTarget : public ILogTarget
 	{
 	public:
-		ConsoleLogTarget(LogLevel level, std::map<LogLevel, ConsoleAttributes::Attribute> colours = {});
+		ConsoleLogTarget( LogLevel level, std::map< LogLevel, ConsoleAttributes::Attribute > colours = {} );
 
 	private:
 		void DoWriteTarget() override;
 		void DoPreFlush() override;
 		void DoFlush() override;
 
-		void PopulateBuffer(std::span<MessageEntry> data) override;
+		void PopulateBuffer( std::span< MessageEntry > data ) override;
 
-		void WriteColourCode(LogLevel level);
-		void WriteColourAttribute(ConsoleAttributes::Attribute colour);
-		void WriteStyleAttribute(ConsoleAttributes::Attribute style);
+		void WriteColourCode( LogLevel level );
+		void WriteColourAttribute( ConsoleAttributes::Attribute colour );
+		void WriteStyleAttribute( ConsoleAttributes::Attribute style );
 		void WriteResetColourCode();
 
 	private:
-		std::map<LogLevel, ConsoleAttributes::Attribute> mColours;
+		std::map< LogLevel, ConsoleAttributes::Attribute > mColours;
 		ConsoleAttributes::Attribute mCurrentAttribute{};
 	};
-}
+} // namespace slc

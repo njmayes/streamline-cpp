@@ -4,22 +4,21 @@
 
 namespace slc {
 
-	LogMemoryArena::LogMemoryArena(std::size_t size)
-		: mBuffer{ MakeUnique< char[] >(size) }
+	LogMemoryArena::LogMemoryArena( std::size_t size )
+		: mBuffer{ MakeUnique< char[] >( size ) }
 		, mCapacity{ size }
 	{
-
 	}
 
-	std::optional<MessageBuffer> LogMemoryArena::RequestBuffer(std::size_t size)
+	std::optional< MessageBuffer > LogMemoryArena::RequestBuffer( std::size_t size )
 	{
 		SLC_PROFILE_FUNCTION();
 
 		auto available = mCapacity - mUsed;
-		if (available < size)
+		if ( available < size )
 			return std::nullopt;
 
-		auto buffer = MessageBuffer(mBuffer.get() + mUsed, size);
+		auto buffer = MessageBuffer( mBuffer.get() + mUsed, size );
 		mUsed += size;
 		return buffer;
 	}
@@ -30,4 +29,4 @@ namespace slc {
 
 		mUsed = 0;
 	}
-}
+} // namespace slc

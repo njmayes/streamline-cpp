@@ -12,8 +12,8 @@ namespace slc {
 
 		operator float() const { return mTime; }
 
-		float getSeconds() const { return mTime; }
-		float getMilliseconds() const { return mTime * 1000.f; }
+		float GetSeconds() const { return mTime; }
+		float GetMilliseconds() const { return mTime * 1000.f; }
 
 	private:
 		float mTime;

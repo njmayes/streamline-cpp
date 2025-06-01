@@ -15,28 +15,30 @@ namespace slc {
 
 		virtual ~IAllocator() = default;
 
-		template<typename T,typename... Args>
-		T* Alloc(Args&&... args)
+		template < typename T, typename... Args >
+		T* Alloc( Args&&... args )
 		{
-			T* ptr = static_cast<T*>(AllocImpl(sizeof(T)));
-			new (ptr) T(std::forward<Args>(args)...);
+			T* ptr = static_cast< T* >( AllocImpl( sizeof( T ) ) );
+			new ( ptr ) T( std::forward< Args >( args )... );
 			return ptr;
 		}
 
-		template<typename T>
-		void Free(T* ptr)
+		template < typename T >
+		void Free( T* ptr )
 		{
 			ptr->~T();
-			FreeImpl(static_cast<void*>(ptr));
+			FreeImpl( static_cast< void* >( ptr ) );
 		}
 
-		virtual void Reset() {}
+		virtual void Reset()
+		{}
 
-		virtual void ForceReallocate() {}
+		virtual void ForceReallocate()
+		{}
 		virtual std::size_t MaxSize() const = 0;
 
 	protected:
-		virtual void* AllocImpl(size_t size) = 0;
-		virtual void FreeImpl(void* ptr = nullptr) = 0;
+		virtual void* AllocImpl( size_t size ) = 0;
+		virtual void FreeImpl( void* ptr = nullptr ) = 0;
 	};
-}
+} // namespace slc
