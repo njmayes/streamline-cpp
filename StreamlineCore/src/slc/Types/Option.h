@@ -2,11 +2,9 @@
 
 #include "Result.h"
 
-namespace slc
-{
+namespace slc {
 
-	namespace detail
-	{
+	namespace detail {
 		SLC_MAKE_SMART_ENUM( NoneEnum, None )
 	}
 
@@ -89,7 +87,7 @@ namespace slc
 		/// </summary>
 		template < typename Func >
 			requires IsFunc< Func, T >
-		constexpr T UnwrapOrElse( Func&& op ) noexcept( noexcept( op() ) && BaseType::IsNoExceptCopy && BaseType::IsNoExceptMove )
+		constexpr T UnwrapOrElse( Func&& op ) noexcept( std::is_nothrow_invocable_v< Func > && BaseType::IsNoExceptCopy && BaseType::IsNoExceptMove )
 		{
 			return UnwrapOrElse( std::forward< Func >( op ) );
 		}
@@ -98,13 +96,13 @@ namespace slc
 		Result< T, E > OkOr( E err ) noexcept( BaseType::IsNoExceptMove )
 		{
 			using ReturnType = Result< T, E >;
-			return this->IsOk() ? ReturnType( this->GetVal() ) : ReturnType( err );
+			return this->IsOk() ? ReturnType( this->GetValRef() ) : ReturnType( err );
 		}
 		template < IsEnum E >
 		Result< T, E > OkOrElse( IsFunc< E > auto&& err ) noexcept( BaseType::IsNoExceptMove )
 		{
 			using ReturnType = Result< T, E >;
-			return this->IsOk() ? ReturnType( this->GetVal() ) : ReturnType( err );
+			return this->IsOk() ? ReturnType( this->GetValRef() ) : ReturnType( err );
 		}
 
 		/// <summary>
@@ -112,7 +110,7 @@ namespace slc
 		/// </summary>
 		template < typename U, typename Func >
 			requires IsFunc< Func, U&&, T&& >
-		constexpr Option< U > Map( Func&& op ) noexcept( noexcept( op( std::declval< T&& >() ) ) && BaseType::IsNoExceptMove && BaseType::IsNoExceptMove )
+		constexpr Option< U > Map( Func&& op ) noexcept( std::is_nothrow_invocable_v< Func, T&& > && BaseType::IsNoExceptMove && BaseType::IsNoExceptMove )
 		{
 			return this->Map( std::forward< Func >( op ) );
 		}
@@ -129,11 +127,29 @@ namespace slc
 		/// <returns></returns>
 		template < typename U, typename Func >
 			requires IsFunc< Func, U&&, T&& >
-		constexpr U MapOr( U&& default_val, Func&& op ) noexcept( noexcept( op( std::declval< T&& >() ) ) && BaseType::IsNoExceptMove && BaseType::IsNoExceptMove )
+		constexpr U MapOr( U&& default_val, Func&& op ) noexcept( std::is_nothrow_invocable_v< Func, T&& > && BaseType::IsNoExceptMove && BaseType::IsNoExceptMove )
 		{
 			return this->MapOr( std::forward< U >( default_val ), std::forward< Func >( op ) );
 		}
 
+
+		/// <summary>
+		/// Returns the option if it contains a value, otherwise returns the provided option
+		/// </summary>
+		constexpr Option< T > const& Or( Option< T > const& or_option ) noexcept
+		{
+			return this->Or( or_option );
+		}
+
+		/// <summary>
+		/// Returns the option if it contains a value, otherwise returns the provided option
+		/// </summary>
+		template < typename Func >
+			requires IsFunc< Func, Option< T > >
+		constexpr Option< T > const& OrElse( Func&& func ) noexcept( std::is_nothrow_invocable_v< Func > )
+		{
+			return this->OrElse( std::forward< Func >( func ) );
+		}
 
 		template < typename... Cases >
 		void Match( Cases&&... cases )

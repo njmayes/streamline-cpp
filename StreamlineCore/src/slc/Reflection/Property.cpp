@@ -7,4 +7,4 @@ namespace slc {
 	{
 		return mProperty->prop_type;
 	}
-}
+} // namespace slc

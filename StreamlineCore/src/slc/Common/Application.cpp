@@ -5,29 +5,29 @@
 
 namespace slc {
 
-	Application::Application(Unique<ApplicationSpecification> spec)
-		: IEventListener(EventManager::ListenerType::App), mSpecification(std::move(spec))
+	Application::Application( Unique< ApplicationSpecification > spec )
+		: IEventListener( EventManager::ListenerType::App ), mSpecification( std::move( spec ) )
 	{
-		if (sInstance)
+		if ( sInstance )
 		{
-			ASSERT(false, "Application already exists");
+			ASSERT( false, "Application already exists" );
 			return;
 		}
 		sInstance = this;
 
-		if (!mSpecification->workingDir.empty())
-			std::filesystem::current_path(mSpecification->workingDir);
+		if ( !mSpecification->workingDir.empty() )
+			std::filesystem::current_path( mSpecification->workingDir );
 
-		mWindow = Window::Create(WindowProperties(mSpecification->name, mSpecification->resolution, mSpecification->fullscreen));
+		mWindow = Window::Create( WindowProperties( mSpecification->name, mSpecification->resolution, mSpecification->fullscreen ) );
 
-		mImGuiController = ImGuiController::Create(mWindow->GetNativeWindow());
+		mImGuiController = ImGuiController::Create( mWindow->GetNativeWindow() );
 
-		RegisterSystem<Renderer>();
+		RegisterSystem< Renderer >();
 	}
 
 	Application::~Application()
 	{
-		for (ApplicationLayer* layer : mLayerStack)
+		for ( ApplicationLayer* layer : mLayerStack )
 		{
 			layer->OnDetach();
 			delete layer;
@@ -36,56 +36,56 @@ namespace slc {
 		mImGuiController.reset();
 		mWindow.reset();
 
-		for (const auto& shutdownTask : mAppSystems | std::views::reverse)
+		for ( const auto& shutdownTask : mAppSystems | std::views::reverse )
 			shutdownTask();
 	}
 
-	void Application::OnEvent(Event& e)
+	void Application::OnEvent( Event& e )
 	{
-		e.Dispatch<WindowCloseEvent>(SLC_BIND_EVENT_FUNC(OnWindowClose));
-		e.Dispatch<WindowResizeEvent>(SLC_BIND_EVENT_FUNC(OnWindowResize));
+		e.Dispatch< WindowCloseEvent >( SLC_BIND_EVENT_FUNC( OnWindowClose ) );
+		e.Dispatch< WindowResizeEvent >( SLC_BIND_EVENT_FUNC( OnWindowResize ) );
 	}
 
-	bool Application::OnWindowClose(WindowCloseEvent& e)
+	bool Application::OnWindowClose( WindowCloseEvent& e )
 	{
 		Application::Close();
 		return true;
 	}
 
-	bool Application::OnWindowResize(WindowResizeEvent& e)
+	bool Application::OnWindowResize( WindowResizeEvent& e )
 	{
-		if (e.width == 0 || e.height == 0)
+		if ( e.width == 0 || e.height == 0 )
 		{
 			mState.minimised = true;
 			return false;
 		}
 
 		mState.minimised = false;
-		Renderer::SetViewport(e.width, e.height);
+		Renderer::SetViewport( e.width, e.height );
 		return false;
 	}
 
 	void Application::ExecuteQueuedJobs()
 	{
-		std::scoped_lock<std::mutex> lock(sInstance->mState.mainThreadQueueMutex);
+		std::scoped_lock< std::mutex > lock( sInstance->mState.mainThreadQueueMutex );
 
-		for (auto& func : sInstance->mState.mainThreadQueue)
+		for ( auto& func : sInstance->mState.mainThreadQueue )
 			func();
 
 		sInstance->mState.mainThreadQueue.clear();
 	}
 
-	void Application::Run(int argc, char** argv)
+	void Application::Run( int argc, char** argv )
 	{
-		Application* app = CreateApplication(argc, argv);
-		if (sInstance != app)
+		Application* app = CreateApplication( argc, argv );
+		if ( sInstance != app )
 		{
 			delete app;
-			ASSERT(false, "There was already an app instance, could not create a new one");
+			ASSERT( false, "There was already an app instance, could not create a new one" );
 			return;
 		}
 
-		while (sInstance->mState.running)
+		while ( sInstance->mState.running )
 		{
 			float time = Timestep::Now();
 			Timestep timestep = time - sInstance->mState.lastFrameTime;
@@ -98,12 +98,12 @@ namespace slc {
 			EventManager::Dispatch();
 
 			// Run update and render method for each frame
-			if (!sInstance->mState.minimised)
+			if ( !sInstance->mState.minimised )
 			{
-				for (auto* layer : sInstance->mLayerStack)
-					layer->OnUpdate(timestep);
+				for ( auto* layer : sInstance->mLayerStack )
+					layer->OnUpdate( timestep );
 
-				for (auto* layer : sInstance->mLayerStack)
+				for ( auto* layer : sInstance->mLayerStack )
 					layer->OnRender();
 			}
 
@@ -111,7 +111,7 @@ namespace slc {
 			sInstance->mImGuiController->StartFrame();
 
 			// Render each ImGui controls in each layer
-			for (ApplicationLayer* layer : sInstance->mLayerStack)
+			for ( ApplicationLayer* layer : sInstance->mLayerStack )
 				layer->OnOverlayRender();
 
 			// End ImGui rendering
@@ -126,17 +126,17 @@ namespace slc {
 
 	void Application::Close()
 	{
-		if (!sInstance->mState.blockExit) 
+		if ( !sInstance->mState.blockExit )
 			sInstance->mState.running = false;
 	}
 
-	void Application::BlockEsc(bool block)
+	void Application::BlockEsc( bool block )
 	{
 		sInstance->mState.blockExit = block;
 	}
 
-	void Application::BlockEvents(bool block)
+	void Application::BlockEvents( bool block )
 	{
-		sInstance->mImGuiController->BlockEvents(block);
+		sInstance->mImGuiController->BlockEvents( block );
 	}
-}
+} // namespace slc

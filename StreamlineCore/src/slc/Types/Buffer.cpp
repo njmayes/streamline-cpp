@@ -2,17 +2,17 @@
 
 namespace slc {
 
-	Buffer::Buffer(const Buffer& buffer)
+	Buffer::Buffer( const Buffer& buffer )
 	{
-		ASSERT(buffer.mData && buffer.mSize);
+		ASSERT( buffer.mData && buffer.mSize );
 
-		Allocate(buffer.mSize);
-		memcpy(mData, buffer.mData, buffer.mSize);
+		Allocate( buffer.mSize );
+		memcpy( mData, buffer.mData, buffer.mSize );
 	}
 
-	Buffer::Buffer(Buffer&& buffer) noexcept
+	Buffer::Buffer( Buffer&& buffer ) noexcept
 	{
-		if (&buffer == this)
+		if ( &buffer == this )
 			return;
 
 		mData = buffer.mData;
@@ -21,19 +21,19 @@ namespace slc {
 		mSize = buffer.mSize;
 	}
 
-	Buffer& Buffer::operator=(const Buffer& buffer)
+	Buffer& Buffer::operator=( const Buffer& buffer )
 	{
-		ASSERT(buffer.mData && buffer.mSize);
+		ASSERT( buffer.mData && buffer.mSize );
 
-		Allocate(buffer.mSize);
-		memcpy(mData, buffer.mData, buffer.mSize);
+		Allocate( buffer.mSize );
+		memcpy( mData, buffer.mData, buffer.mSize );
 
 		return *this;
 	}
 
-	Buffer& Buffer::operator=(Buffer&& buffer) noexcept
+	Buffer& Buffer::operator=( Buffer&& buffer ) noexcept
 	{
-		ASSERT(&buffer != this, "Cannot move assign an object to itself!");
+		ASSERT( &buffer != this, "Cannot move assign an object to itself!" );
 
 		mData = buffer.mData;
 		buffer.mData = nullptr;
@@ -43,45 +43,45 @@ namespace slc {
 		return *this;
 	}
 
-	Buffer Buffer::Copy(const void* data, size_t size)
+	Buffer Buffer::Copy( const void* data, size_t size )
 	{
 		return Buffer();
 	}
 
-	void Buffer::Allocate(size_t size)
+	void Buffer::Allocate( size_t size )
 	{
 		Release();
 
-		if (size == 0)
+		if ( size == 0 )
 			return;
 
-		mData = new Byte[size];
+		mData = new Byte[ size ];
 		mSize = size;
 	}
 
 	void Buffer::Release()
 	{
-		delete[](Byte*)mData;
+		delete[] mData;
 		mData = nullptr;
 		mSize = 0;
 	}
 
-	Buffer Buffer::CopyBytes(size_t size, size_t offset)
+	Buffer Buffer::CopyBytes( size_t size, size_t offset )
 	{
-		ASSERT(offset + size <= mSize, "Buffer overflow!");
-		return Buffer::Copy((Byte*)mData + offset, size);
+		ASSERT( offset + size <= mSize, "Buffer overflow!" );
+		return Buffer::Copy( mData + offset, size );
 	}
 
-	void Buffer::Resize(size_t newSize)
+	void Buffer::Resize( size_t newSize )
 	{
-		if (mSize == newSize)
+		if ( mSize == newSize )
 			return;
 
-		Byte* newData = new Byte[newSize];
-		memcpy(newData, mData, (newSize > mSize) ? mSize : newSize);
+		Byte* newData = new Byte[ newSize ];
+		memcpy( newData, mData, ( newSize > mSize ) ? mSize : newSize );
 		delete[] mData;
 
 		mData = newData;
 		mSize = newSize;
 	}
-}
+} // namespace slc

@@ -39,7 +39,7 @@ namespace slc {
 		unsigned GetWidth() const { return mData.width; }
 		unsigned GetHeight() const { return mData.height; }
 
-		Vector2 GetSize() const { return { mData.width, mData.height }; }
+		Vector2f GetSize() const { return { mData.width, mData.height }; }
 
 		void SetTitle(std::string_view title);
 

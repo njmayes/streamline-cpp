@@ -1,13 +1,18 @@
 #pragma once
 
-#include "slc/Common/Functional.h"
-
 #include "Enum.h"
 
-namespace slc
-{
+namespace slc {
 	template < typename T >
 	class Option;
+
+	template < typename T, IsSmartEnum E >
+	class Result;
+
+	template < typename Func, typename T >
+	concept ReturnsResult = requires( Func&& f, T&& val ) {
+		{ std::invoke( std::forward< Func >( f ), std::forward< T >( val ) ) } -> std::convertible_to< Result< typename decltype( std::invoke( std::forward< Func >( f ), std::forward< T >( val ) ) )::ValueType, typename decltype( std::invoke( std::forward< Func >( f ), std::forward< T >( val ) ) )::ErrorEnum > >;
+	};
 
 	template < typename T, IsSmartEnum E >
 	class Result
@@ -32,14 +37,14 @@ namespace slc
 		SLC_MAKE_SMART_ENUM( ResultEnum, ( Success, ResultType ) )
 
 		SCONSTEXPR auto Ok = ResultEnum::Success;
-		
+
 		using ErrorEnum = E;
-		
+
 		using StorageType = std::variant< ResultEnum, ErrorEnum >;
 
 	public:
 		explicit constexpr Result() = delete;
-		explicit constexpr Result( T&& result ) noexcept( noexcept( ResultType( std::forward< T >( std::declval< T >() ) ) ) )
+		explicit constexpr Result( T&& result ) noexcept( std::is_nothrow_constructible_v< ResultType, T&& > )
 			: mValue( ResultEnum( Ok, std::forward< T >( result ) ) ), mResult( true )
 		{}
 
@@ -107,7 +112,7 @@ namespace slc
 		/// </summary>
 		template < typename Func >
 			requires IsFunc< Func, T >
-		constexpr T UnwrapOrElse( Func&& op ) noexcept( noexcept( op() ) && IsNoExceptCopy && IsNoExceptMove )
+		constexpr T UnwrapOrElse( Func&& op ) noexcept( std::is_nothrow_invocable_v< Func > && IsNoExceptCopy && IsNoExceptMove )
 		{
 			return UnwrapOr( op() );
 		}
@@ -122,26 +127,37 @@ namespace slc
 		/// <summary>
 		/// Transforms Result&lt;T, E&gt; into Result&lt;R, E&gt; by applying the provided function to the contained value of Ok and leaving Err values unchanged
 		/// </summary>
-		template < typename U, typename Func >
-			requires IsFunc< Func, U&&, T&& >
-		constexpr Result< U, E > Map( Func&& op ) noexcept( noexcept( op( std::declval< T&& >() ) ) && Result< U, E >::IsNoExceptMove && IsNoExceptMove )
+		template < typename Func >
+			requires std::invocable< Func, T&& >
+		constexpr auto Map( Func&& op ) noexcept(
+			std::is_nothrow_invocable_v< Func, T&& > &&
+			Result< std::invoke_result_t< Func, T&& >, E >::IsNoExceptMove &&
+			IsNoExceptMove
+		)
 		{
-			if ( mResult )
-				return Result< U, E >( op( MoveVal() ) );
+			using U = std::invoke_result_t< Func, T&& >;
 
-			return Result< U, E >( GetError() );
+			if ( mResult )
+				return Result< U, E >( std::invoke( std::forward< Func >( op ), MoveVal() ) );
+			else
+				return Result< U, E >( GetError() );
 		}
 		/// <summary>
 		/// Transforms Result&lt;T, E&gt; into Result&lt;T, O&gt; by applying the provided function to the contained value of Err and leaving Ok values unchanged
 		/// </summary>
-		template < IsSmartEnum O, typename Func >
-			requires IsFunc< Func, O, E >
-		constexpr Result< T, O > MapError( Func&& op ) noexcept( noexcept( op( std::declval< E >() ) ) && IsNoExceptMove )
+		template < typename Func >
+			requires std::invocable< Func, E > and IsSmartEnum< std::invoke_result_t< Func, E > >
+		constexpr auto MapError( Func&& op ) noexcept(
+			std::is_nothrow_invocable_v< Func, E > &&
+			IsNoExceptMove
+		)
 		{
+			using O = std::invoke_result_t< Func, E >;
+
 			if ( mResult )
 				return Result< T, O >( MoveVal() );
-
-			return Result< T, O >( op( GetError() ) );
+			else
+				return Result< T, O >( std::invoke( std::forward< Func >( op ), GetError() ) );
 		}
 
 		/// <summary>
@@ -153,71 +169,54 @@ namespace slc
 		/// <param name="defaultVal"></param>
 		/// <param name="op"></param>
 		/// <returns></returns>
-		template < typename U, typename Func >
-			requires IsFunc< Func, U&&, T&& >
-		constexpr U MapOr( U&& defaultVal, Func&& op ) noexcept( noexcept( op( std::declval< T&& >() ) ) && Result< U, E >::IsNoExceptMove && IsNoExceptMove )
+		template < typename Func, typename Default >
+			requires std::invocable< Func, T&& >
+		constexpr auto MapOr( Default&& default_val, Func&& op ) noexcept(
+			std::is_nothrow_invocable_v< Func, T&& > &&
+			IsNoExceptMove
+		)
 		{
-			if ( mResult )
-				return op( MoveVal() );
+			using U = std::invoke_result_t< Func, T&& >;
 
-			return std::move( defaultVal );
+			if ( mResult )
+				return std::invoke( std::forward< Func >( op ), MoveVal() );
+			else
+				return static_cast< U >( std::forward< Default >( default_val ) );
 		}
 
 		/// <summary>
 		/// Applies the provided function to the contained value of Ok, or applies the provided default fallback function to the contained value of Err.
 		/// Both functions return U&amp;&amp; where U is a possibly new type.
 		/// </summary>
-		template < typename U, typename Func, typename ErrFunc >
-			requires IsFunc< Func, U&&, T&& > and IsFunc< ErrFunc, U&&, E >
-		constexpr U MapOrElse( Func&& op, ErrFunc&& err_op ) noexcept(
-			noexcept( op( std::declval< T&& >() ) ) &&
-			noexcept( err_op( std::declval< E >() ) ) &&
-			Result< U, E >::IsNoExceptMove &&
-			IsNoExceptMove )
+		template < typename Func, typename ErrFunc >
+			requires std::invocable< Func, T&& > && std::invocable< ErrFunc, E >
+		constexpr auto MapOrElse( Func&& op, ErrFunc&& err_op ) noexcept(
+			std::is_nothrow_invocable_v< Func, T&& > &&
+			std::is_nothrow_invocable_v< ErrFunc, E > &&
+			IsNoExceptMove
+		)
 		{
-			if ( mResult )
-				return op( MoveVal() );
+			using U = std::invoke_result_t< Func, T&& >;
+			static_assert( std::is_same_v< U, std::invoke_result_t< ErrFunc, E > >, "op and err_op must return the same type" );
 
-			return err_op( GetError() );
+			if ( mResult )
+				return std::invoke( std::forward< Func >( op ), MoveVal() );
+			else
+				return std::invoke( std::forward< ErrFunc >( err_op ), GetError() );
 		}
 
 		/// <summary>
 		/// Returns the result of the provided function, or the error result
 		/// </summary>
 		template < typename Func >
-			requires IsFunc< Func, Result< T, E > >
-		constexpr Result< T, E > operator|( Func&& next ) noexcept( noexcept( next() ) && IsNoExceptMove )
-		{
-			if ( mResult )
-				return next();
-
-			return Result< T, E >( GetError() );
-		}
-
-		/// <summary>
-		/// Returns the result of the provided function, or the error result
-		/// </summary>
-		template < typename Func >
-			requires IsFunc< Func, Result< T, E >, T&& >
-		constexpr Result< T, E > operator|( Func&& next ) noexcept( noexcept( next( std::declval< T&& >() ) ) && IsNoExceptMove )
+			requires ReturnsResult< Func, T >
+		constexpr auto AndThen( Func&& next ) noexcept( std::is_nothrow_invocable_v< Func, T&& > && IsNoExceptMove )
 		{
 			if ( mResult )
 				return next( MoveVal() );
 
-			return Result< T, E >( GetError() );
-		}
-
-		/// <summary>
-		/// Returns the result of the provided function, or the error result
-		/// </summary>
-		template < typename R, typename Func >
-			requires IsFunc< Func, Result< R, E >, T&& >
-		constexpr Result< R, E > AndThen( Func&& next ) noexcept( noexcept( next( std::declval< T&& >() ) ) && IsNoExceptMove )
-		{
-			if ( mResult )
-				return next( MoveVal() );
-
-			return Result< R, E >( GetError() );
+			using Ret = std::invoke_result_t< Func, T >;
+			return Ret( GetError() );
 		}
 
 		template < typename... Cases >
@@ -236,6 +235,31 @@ namespace slc
 				auto const& error = GetError();
 				error.Match( std::forward< Matcher >( matcher ) );
 			}
+		}
+
+
+		/// <summary>
+		/// Returns the option if it contains a value, otherwise returns the provided option
+		/// </summary>
+		constexpr Result< T, E > const& Or( Result< T, E > const& or_result ) noexcept
+		{
+			if ( mResult )
+				return *this;
+
+			return or_result;
+		}
+
+		/// <summary>
+		/// Returns the option if it contains a value, otherwise returns the provided option
+		/// </summary>
+		template < typename Func >
+			requires IsFunc< Func, Result< T, E > >
+		constexpr Result< T, E > const& OrElse( Func&& func ) noexcept( std::is_nothrow_invocable_v< Func > )
+		{
+			if ( mResult )
+				return *this;
+
+			return func();
 		}
 
 	protected:
@@ -288,37 +312,6 @@ namespace slc
 		StorageType mValue;
 	};
 
-	namespace detail
-	{
-
-		template < typename T, typename R, IsSmartEnum E, typename NextFunc, typename... Func >
-			requires IsFunc< NextFunc, Result< T, E >, R&& >
-		SCONSTEXPR Result< T, E > DoOperation( Result< R, E > first, NextFunc&& next )
-		{
-			using FuncReturnType = std::invoke_result_t< NextFunc, R&& >;
-			using ResultValueType = FuncReturnType::ResultType;
-
-			return first.AndThen< ResultValueType >( next );
-		}
-
-		template < typename T, typename R, IsSmartEnum E, typename NextFunc, typename... Func >
-			requires IsFunc< NextFunc, Result< T, E >, R&& >
-		SCONSTEXPR Result< T, E > DoOperation( Result< R, E > first, NextFunc&& next, Func&&... ops )
-		{
-			using FuncReturnType = std::invoke_result_t< NextFunc, R&& >;
-			using ResultValueType = FuncReturnType::ResultType;
-
-			return DoOperation< ResultValueType, T, E >( first.AndThen< ResultValueType >( next ), std::forward< Func >( ops )... );
-		}
-	} // namespace detail
-
-	template < typename T, typename R, IsSmartEnum E, typename... Func >
-	SCONSTEXPR Result< T, E > Do( Result< R, E > first, Func&&... ops )
-	{
-		return detail::DoOperation< T, R, E >( first, std::forward< Func >( ops )... );
-	}
-
-
 	template < typename T >
 	struct OkFunctor;
 
@@ -328,11 +321,6 @@ namespace slc
 	template < typename T, IsSmartEnum E >
 	struct OkFunctor< Result< T, E > >
 	{
-		constexpr Result< T, E > operator()( T&& result ) const noexcept( noexcept( T( std::forward< T >( std::declval< T >() ) ) ) )
-		{
-			return Result< T, E >( std::forward< T >( result ) );
-		}
-
 		template < typename... Args >
 		constexpr Result< T, E > operator()( Args&&... args ) const noexcept( Result< T, E >::IsNoExceptMove && Result< T, E >::template IsNoExceptNew< Args... > )
 		{

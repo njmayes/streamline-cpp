@@ -2,7 +2,7 @@
 
 #include "Application.h"
 
-int main(int argc, char** argv)
+int main( int argc, char** argv )
 {
-	slc::Application::Run(argc, argv);
+	slc::Application::Run( argc, argv );
 }

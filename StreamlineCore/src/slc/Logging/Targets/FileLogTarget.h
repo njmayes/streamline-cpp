@@ -9,7 +9,7 @@ namespace slc {
 	class FileLogTarget : public ILogTarget
 	{
 	public:
-		FileLogTarget(const std::string& filename, LogLevel level = LogLevel::Debug);
+		FileLogTarget( const std::string& filename, LogLevel level = LogLevel::Debug );
 
 	private:
 		void DoWriteTarget() override;
@@ -19,4 +19,4 @@ namespace slc {
 	private:
 		std::ofstream mFile;
 	};
-}
+} // namespace slc

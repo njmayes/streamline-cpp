@@ -6,6 +6,6 @@ namespace slc {
 
 	float slc::Timestep::Now()
 	{
-		return (float)glfwGetTime();
+		return ( float )glfwGetTime();
 	}
-}
+} // namespace slc

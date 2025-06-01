@@ -3,78 +3,90 @@
 #include "slc/Common/Base.h"
 
 namespace slc {
-
 	class Buffer
 	{
 	public:
 		Buffer() = default;
-		Buffer(std::nullptr_t) {}
-		Buffer(void* data, size_t size) : mData(data), mSize(size) {}
-		Buffer(size_t size) { Allocate(size); }
-
-		Buffer(const Buffer& buffer);
-		Buffer(Buffer&& buffer) noexcept;
-
-		virtual ~Buffer() { Release(); }
-
-		Buffer& operator=(const Buffer& buffer);
-		Buffer& operator=(Buffer&& buffer) noexcept;
-
-		static Buffer Copy(const void* data, size_t size);
-
-	public:
-		template<IsStandard T>
-		T& Read(size_t offset = 0) { return *(T*)((Byte*)mData + offset); }
-		template<IsStandard T>
-		const T& Read(size_t offset = 0) const { return *(T*)((Byte*)mData + offset); }
-
-		template<typename T>
-		T* As() const { return (T*)mData; }
-
-		template<IsStandard T>
-		void Set(const T& data, size_t offset = 0)
+		Buffer( std::nullptr_t )
+		{}
+		Buffer( Byte* data, size_t size )
+			: mData( data ), mSize( size )
+		{}
+		Buffer( size_t size )
 		{
-			constexpr size_t DataSize = sizeof(T);
-			if (offset + DataSize > mSize)
-				Resize(offset + DataSize);
-
-			memcpy((Byte*)mData + offset, &data, DataSize);
+			Allocate( size );
 		}
 
-		template<IsStandard T>
-		void Pop(T& data)
+		Buffer( const Buffer& buffer );
+		Buffer( Buffer&& buffer ) noexcept;
+
+		virtual ~Buffer()
 		{
-			constexpr size_t DataSize = sizeof(T);
-			data = std::move(Read<T>(mSize - DataSize));
-			Resize(mSize - DataSize);
+			Release();
 		}
 
-		Byte* Data(size_t offset = 0) { return (Byte*)mData + offset; }
-		const Byte* Data(size_t offset = 0) const { return (Byte*)mData + offset; }
+		Buffer& operator=( const Buffer& buffer );
+		Buffer& operator=( Buffer&& buffer ) noexcept;
 
-		template<IsStandard T>
-		Byte* Data(size_t offset = 0) { return (Byte*)mData + (sizeof(T) * offset); }
-		template<IsStandard T>
-		const Byte* Data(size_t offset = 0) const { return (Byte*)mData + (sizeof(T) * offset); }
+		static Buffer Copy( const void* data, size_t size );
 
-		size_t Size() const { return mSize; }
-		void Resize(size_t newSize);
+	public:
+		template < typename T, typename Self >
+		decltype( auto ) As( this Self&& self )
+		{
+			using ReturnType = std::conditional_t< std::is_const_v< Self >, const T*, T* >;
+			return reinterpret_cast< ReturnType >( std::forward< Self >( self ).mData );
+		}
 
-		Buffer CopyBytes(size_t size, size_t offset = 0);
+		template < IsStandard T >
+		void Set( const T& data, size_t offset = 0 )
+		{
+			constexpr size_t DataSize = sizeof( T );
+			if ( offset + DataSize > mSize )
+				Resize( offset + DataSize );
+
+			memcpy( mData + offset, &data, DataSize );
+		}
+
+		Byte* Data( size_t offset = 0 )
+		{
+			return mData + offset;
+		}
+		const Byte* Data( size_t offset = 0 ) const
+		{
+			return mData + offset;
+		}
+
+		size_t Size() const
+		{
+			return mSize;
+		}
+		void Resize( size_t newSize );
+
+		Buffer CopyBytes( size_t size, size_t offset = 0 );
 
 
 	public:
-		operator bool() const { return mData != nullptr; }
+		operator bool() const
+		{
+			return mData != nullptr;
+		}
 
-		Byte& operator[](size_t index) { return ((Byte*)mData)[index]; }
-		const Byte& operator[](size_t index) const { return ((Byte*)mData)[index]; }
+		Byte& operator[]( size_t index )
+		{
+			return mData[ index ];
+		}
+		Byte operator[]( size_t index ) const
+		{
+			return mData[ index ];
+		}
 
 	protected:
-		void Allocate(size_t size);
+		void Allocate( size_t size );
 		void Release();
 
 	protected:
-		void* mData = nullptr;
+		Byte* mData = nullptr;
 		size_t mSize = 0;
 	};
-}
+} // namespace slc

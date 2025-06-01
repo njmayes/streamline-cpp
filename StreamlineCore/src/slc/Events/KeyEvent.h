@@ -11,26 +11,32 @@ namespace slc {
 		KeyCode keyCode;
 		bool repeat;
 
-		KeyPressedEvent(KeyCode key, bool repeated) : keyCode(key), repeat(repeated) {}
+		KeyPressedEvent( KeyCode key, bool repeated )
+			: keyCode( key ), repeat( repeated )
+		{}
 
-		EVENT_DATA_TYPE(KeyPressed)
+		EVENT_DATA_TYPE( KeyPressed )
 	};
 
 	struct KeyReleasedEvent : public EventBase
 	{
 		KeyCode keyCode;
 
-		KeyReleasedEvent(KeyCode key) : keyCode(key) {}
+		KeyReleasedEvent( KeyCode key )
+			: keyCode( key )
+		{}
 
-		EVENT_DATA_TYPE(KeyReleased)
+		EVENT_DATA_TYPE( KeyReleased )
 	};
 
 	struct KeyTypedEvent : public EventBase
 	{
 		KeyCode keyCode;
 
-		KeyTypedEvent(KeyCode key) : keyCode(key) {}
+		KeyTypedEvent( KeyCode key )
+			: keyCode( key )
+		{}
 
-		EVENT_DATA_TYPE(KeyTyped)
+		EVENT_DATA_TYPE( KeyTyped )
 	};
-}
+} // namespace slc

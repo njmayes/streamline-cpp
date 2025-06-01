@@ -10,7 +10,7 @@ namespace slc::Input {
 	bool IsKeyPressed(KeyCode keycode);
 	bool IsMouseButtonPressed(MouseCode button);
 
-	Vector2 GetMousePosition();
+	Vector2f GetMousePosition();
 	float GetMouseX();
 	float GetMouseY();
 }

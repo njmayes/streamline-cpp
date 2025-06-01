@@ -8,21 +8,30 @@ namespace slc {
 	class PixelBuffer : public IRenderable
 	{
 	public:
-		PixelBuffer(int width, int height);
+		PixelBuffer( int width, int height );
 		~PixelBuffer();
 
 		void Lock();
 		void Unlock();
 
-		uint32_t GetTextureID() const override { return mTexture->GetTextureID(); }
+		uint32_t GetTextureID() const override
+		{
+			return mTexture->GetTextureID();
+		}
 
-		Pixel& At(size_t x, size_t y);
-		const Pixel& At(size_t x, size_t y) const;
+		Pixel& At( size_t x, size_t y );
+		const Pixel& At( size_t x, size_t y ) const;
 
-		Pixel* Get(size_t offset = 0) { return mPixels + offset; }
-		const Pixel* Get(size_t offset = 0) const { return mPixels + offset; }
-		void Set(const Pixel& colour);
-		void Set(const Pixel& colour, size_t size, size_t offset);
+		Pixel* Get( size_t offset = 0 )
+		{
+			return mPixels + offset;
+		}
+		const Pixel* Get( size_t offset = 0 ) const
+		{
+			return mPixels + offset;
+		}
+		void Set( const Pixel& colour );
+		void Set( const Pixel& colour, size_t size, size_t offset );
 
 	private:
 		uint32_t mRendererID = 0;
@@ -31,7 +40,7 @@ namespace slc {
 
 		bool mLocked = false;
 
-		Ref<Texture2D> mTexture = nullptr;
+		Ref< Texture2D > mTexture = nullptr;
 		Pixel* mPixels = nullptr;
 	};
-}
+} // namespace slc
