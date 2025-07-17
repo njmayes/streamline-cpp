@@ -2,18 +2,42 @@
 
 #include <iostream>
 
-namespace slc
-{
-	SLC_MAKE_SMART_ENUM( Error, InvalidChar, ( InvalidRandom, int ));
+namespace slc {
+	enum class Error
+	{
+		InvalidChar,
+		InvalidRandom,
+	};
+	using SmartError = slc::SmartEnum<
+		Error,
+		slc::Case< Error::InvalidChar >,
+		slc::Case< Error::InvalidRandom, int > >;
 
-	SLC_MAKE_SMART_ENUM( Failure, RandomFail );
+	enum class Failure
+	{
+		RandomFail,
+	};
+	using SmartFailure = slc::SmartEnum<
+		Failure,
+		slc::Case< Failure::RandomFail > >;
 
-	using FooResult = Result< int, Error >;
-	using BarResult = Result< float, Error >;
-	using BazResult = Result< int, Failure >;
+	using FooResult = Result< int, SmartError >;
+	using BarResult = Result< float, SmartError >;
+	using BazResult = Result< int, SmartFailure >;
 	// Demo Types and Functions
 
-	SLC_MAKE_SMART_ENUM( InputError, ( InvalidChar, char ), InvalidState, ( InvalidFormatString, std::string ) )
+	enum class InputError
+	{
+		InvalidChar,
+		InvalidState,
+		InvalidFormatString,
+	};
+
+	using SmartInputError = slc::SmartEnum<
+		InputError,
+		slc::Case< InputError::InvalidChar, char >,
+		slc::Case< InputError::InvalidState >,
+		slc::Case< InputError::InvalidFormatString, std::string > >;
 
 	using IntInputResult = Result< int, InputError >;
 	using StringInputResult = Result< std::string, InputError >;
@@ -67,13 +91,11 @@ struct SerialisationTest
 	SLC_JSON_SERIALISE( SerialisationTest, a, b );
 };
 
-SLC_MAKE_SMART_ENUM( TestEnum, OutOfBounds, ( Unexpected, std::string ) );
-
 FooResult GetInput()
 {
 	int input;
 	if ( !( std::cin >> input ) )
-		return Err< FooResult >( Error::InvalidChar );
+		return Err< FooResult >( SmartError::Make< Error::InvalidChar >() );
 
 	return Ok< FooResult >( input );
 }
@@ -81,12 +103,12 @@ FooResult GetInput()
 FooResult GetRandom()
 {
 	srand( time( NULL ) );
-	int val = rand() % 2;
+	int value = rand() % 5;
 
-	if ( val == 0 )
+	if ( value == 0 )
 		return Ok< FooResult >( 1000 );
 
-	return Err< FooResult >( Error::InvalidRandom, val );
+	return Err< FooResult >( SmartError::Make< Error::InvalidRandom >( value ) );
 }
 
 FooResult GetRandomTwo( int value )
@@ -94,65 +116,87 @@ FooResult GetRandomTwo( int value )
 	if ( value % 2 == 0 )
 		return Ok< FooResult >( 500 );
 
-	return Err< FooResult >( Error::InvalidRandom, value );
+	return Err< FooResult >( SmartError::Make< Error::InvalidRandom >( value ) );
 }
 
-BarResult CheckRandom( int val )
+BarResult CheckRandom( int value )
 {
-	if ( val % 2 == 0 )
+	if ( value % 2 == 0 )
 		return Ok< BarResult >( 3.14159 );
 
-	return Err< BarResult >( Error::InvalidRandom, val );
+	return Err< BarResult >( SmartError::Make< Error::InvalidRandom >( value ) );
 }
+
+enum class ErrorEnum
+{
+	OutOfBounds,
+	Unexpected
+};
+
+using SmartErrorEnum = slc::SmartEnum<
+	ErrorEnum,
+	slc::Case< ErrorEnum::OutOfBounds >,
+	slc::Case< ErrorEnum::Unexpected, std::string > >;
+
 
 int main( int argc, char* argv[] )
 {
-	TestEnum test = TestEnum::OutOfBounds;
-
-	test.Match(
-		MatchCase< TestEnum::OutOfBounds >( [] { std::cout << "OutOfBounds\n"; } ),
-		DefaultCase( [] { std::cout << "Default case\n"; } )
+	SmartErrorEnum asasfa = SmartErrorEnum::Make< ErrorEnum::Unexpected >( "Actual value" );
+	auto test = asasfa.Match(
+		slc::MatchCase< ErrorEnum::OutOfBounds >( [] { std::cout << "OutOfBounds\n"; return 2; } ),
+		slc::MatchCase< ErrorEnum::Unexpected >( []( std::string const& value ) { std::cout << "Unexpected: " << value << "\n"; return 2; } )
 	);
 
 
-	test = TestEnum( TestEnum::Unexpected, "Unexpected" );
+	auto result = test;
 
-	test.Match(
-		MatchCase< TestEnum::OutOfBounds >( [] { std::cout << "OutOfBounds\n"; } ),
-		MatchCase< TestEnum::Unexpected >( []( std::string const& value ) { std::cout << std::format( "Unexpected: {}\n", value ); } )
-	);
+	// ErrorEnum test = ErrorEnum::OutOfBounds;
+
+	//// test.Match(
+	////	MatchCase< TestEnum::OutOfBounds >( [] { std::cout << "OutOfBounds\n"; } ),
+	////	DefaultCase( [] { std::cout << "Default case\n"; } )
+	////);
+
+
+	////test = ErrorEnum( ErrorEnum::Unexpected, "Unexpected" );
+
+	// test.Match(
+	//	MatchCase< ErrorEnum::OutOfBounds >( [] { std::cout << "OutOfBounds\n"; } ),
+	//	MatchCase< ErrorEnum::Unexpected >( []( std::string const& value ) { std::cout << std::format( "Unexpected: {}\n", value ); } )
+	//);
 
 
 	auto a = GetRandom().AndThen( CheckRandom );
 
 	FooResult b = a.Map( []( float val ) { return ( int )val; } )
-					  .MapError( []( Error error ) -> Failure { return Failure::RandomFail; } )
-					  .MapError( []( Failure f ) -> Error { return Error::InvalidRandom; } );
+					  .MapError( []( SmartError error ) -> SmartFailure { return SmartFailure::Make< Failure::RandomFail >(); } )
+					  .MapError( []( SmartFailure f ) -> SmartError { return SmartError::Make< Error::InvalidRandom >( 24 ); } );
 
 
 	b.Match(
 		MatchCase< FooResult::Ok >( []( int value ) { std::cout << "User entered value of " << value << "\n"; } ),
-		MatchCase< Error::InvalidChar >( [] { "Invalid character entered\n"; } ),
+		MatchCase< Error::InvalidChar >( [] { std::cout << "Invalid character entered\n"; } ),
+		MatchCase< Error::InvalidRandom >( [] ( int value ) { std::cout << "Invalid random value\n"; } ),
 		DefaultCase( [] { std::cout << "Default case\n"; } )
 	);
 
-	auto bVal = b.UnwrapOrDefault();
+	 auto bVal = b.UnwrapOrDefault();
 
-	auto c = GetRandom()
+	 auto c = GetRandom()
 				 .AndThen( CheckRandom )
 				 .MapOr( "Error", []( float val ) { return std::to_string( val ); } );
 
 
-	auto d = GetRandom()
+	 auto d = GetRandom()
 				 .AndThen( GetRandomTwo )
 				 .OrElse( GetRandom );
 
 
-	d.Match(
+	 d.Match(
 		MatchCase< FooResult::Ok >( []( int value ) { std::cout << "User entered value of " << value << "\n"; } ),
 		MatchCase< Error::InvalidRandom >( []( int value ) { std::cout << "RNG not satisfied\n"; } ),
 		DefaultCase( [] { std::cout << "Default case\n"; } )
 	);
 
-	auto dVal = d.UnwrapOrElse( []() { return 0; } );
+	 auto dVal = d.UnwrapOrElse( []() { return 0; } );
 }
