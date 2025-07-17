@@ -22,4 +22,6 @@
 #include "slc/Types/Enum.h"
 #include "slc/Types/Option.h"
 #include "slc/Types/Result.h"
+#include "slc/Types/Timer.h"
+#include "slc/Types/ScopedTimer.h"
 #include "slc/Types/UUID.h"

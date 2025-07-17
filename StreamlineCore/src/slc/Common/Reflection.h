@@ -85,7 +85,7 @@ namespace slc {
 		template < IsEnum T >
 		inline static constexpr std::string_view ToString( T enumVal )
 		{
-			SASSERT( MAGIC_ENUM_SUPPORTED, "Compiler does not support magic enums! Define your own conversions!" );
+			static_assert( MAGIC_ENUM_SUPPORTED, "Compiler does not support magic enums! Define your own conversions!" );
 
 			return magic_enum::enum_name( enumVal );
 		}
@@ -93,7 +93,7 @@ namespace slc {
 		template < IsEnum T >
 		inline static constexpr std::optional< T > FromString( std::string_view enumStr )
 		{
-			SASSERT( MAGIC_ENUM_SUPPORTED, "Compiler does not support magic enums! Define your own conversions!" );
+			static_assert( MAGIC_ENUM_SUPPORTED, "Compiler does not support magic enums! Define your own conversions!" );
 
 			auto enumVal = magic_enum::enum_cast< T >( enumStr );
 			if ( enumVal.has_value() )

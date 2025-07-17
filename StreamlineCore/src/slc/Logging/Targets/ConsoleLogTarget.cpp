@@ -10,7 +10,7 @@
 
 #ifdef SLC_PLATFORM_WINDOWS
 #include "Windows.h"
-#elif defined( SLC_PLATFORM_WINDOWS )
+#elif defined( SLC_PLATFORM_LINUX )
 #include <unistd.h>
 #endif
 
@@ -167,11 +167,11 @@ namespace slc {
 		mBuffer[ mToWrite ] = '[';
 		mToWrite++;
 
-		WriteStyleAttribute( next_colour & ConsoleAttributes::StyleMask );
-
+		auto style = next_colour & ConsoleAttributes::StyleMask ? next_colour & ConsoleAttributes::StyleMask : ConsoleAttributes::DefaultStyle;
 		auto foreground = next_colour & ConsoleAttributes::ForegroundMask ? next_colour & ConsoleAttributes::ForegroundMask : ConsoleAttributes::DefaultForeground;
 		auto background = next_colour & ConsoleAttributes::BackgroundMask ? next_colour & ConsoleAttributes::BackgroundMask : ConsoleAttributes::DefaultBackground;
-		;
+
+		WriteStyleAttribute( style >> 16 );
 
 		mBuffer[ mToWrite ] = '3';
 		mToWrite++;
@@ -184,7 +184,7 @@ namespace slc {
 		mBuffer[ mToWrite ] = '4';
 		mToWrite++;
 
-		WriteColourAttribute( ( background ) >> 8 );
+		WriteColourAttribute( background >> 8 );
 
 		mBuffer[ mToWrite ] = 'm';
 		mToWrite++;
@@ -194,6 +194,7 @@ namespace slc {
 	{
 		// Number of zero bits to right of 1 is the colour code
 		// E.g. White... = 128 = 0b10000000 = 7 zeros -> '7'
+		// Add '0' to get the character representation
 
 		auto colour_value = static_cast< char >( std::countr_zero( colour ) ) + '0';
 		mBuffer[ mToWrite ] = colour_value;
@@ -202,15 +203,13 @@ namespace slc {
 
 	void ConsoleLogTarget::WriteStyleAttribute( ConsoleAttributes::Attribute style )
 	{
-		if ( not( style & ConsoleAttributes::StyleMask ) )
+		if ( not style )
 			return;
-
-		auto style_bits = ( style & ConsoleAttributes::StyleMask ) >> 16;
 
 		for ( char i = 0; i < 6; i++ )
 		{
 			auto bit_to_check = 1 << i;
-			if ( style_bits & bit_to_check )
+			if ( style & bit_to_check )
 			{
 				auto style_value = ( i + 1 ) + '0';
 				mBuffer[ mToWrite ] = style_value;

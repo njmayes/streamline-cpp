@@ -26,10 +26,9 @@
 
 #define SLC_EXTRACT_TYPE_SECOND( a, b ) b
 
-#define SLC_MATCH_CASE( enum_case )                                            \
-	case std::to_underlying( Enum::enum_case ):                                \
-		DispatchCase< Enum::enum_case >( std::forward< Matcher >( matcher ) ); \
-		break;
+#define SLC_MATCH_CASE( enum_case )             \
+	case std::to_underlying( Enum::enum_case ): \
+		return DispatchCase< Enum::enum_case >( std::forward< Matcher >( matcher ) );
 
 
 #define SLC_MAKE_STATIC_ENUM( enum_case ) \
@@ -74,6 +73,7 @@ namespace slc {
 				return func( std::forward< Args >( args )... );
 			}
 		};
+
 
 		template < typename... Fs >
 		struct Overload : Fs...
@@ -134,161 +134,174 @@ namespace slc {
 	}
 } // namespace slc
 
-#define SLC_MAKE_SMART_ENUM( name, ... )                                                                                                          \
-	struct detail_##name                                                                                                                          \
-	{                                                                                                                                             \
-		template < typename T >                                                                                                                   \
-		class name##_RustEnum;                                                                                                                    \
-                                                                                                                                                  \
-		template < typename... Ts >                                                                                                               \
-			requires ::slc::detail::ValidEnumTypes< Ts... >                                                                                       \
-		class name##_RustEnum< ::slc::TypeList< Ts... > > : public ::slc::detail::SmartEnum_Base                                                  \
-		{                                                                                                                                         \
-		private:                                                                                                                                  \
-			enum class Enum : std::size_t                                                                                                         \
-			{                                                                                                                                     \
-				SLC_FOR_EACH_SEP( SLC_EXTRACT_IDENT, SLC_COMMA, __VA_ARGS__ )                                                                     \
-			};                                                                                                                                    \
-                                                                                                                                                  \
-                                                                                                                                                  \
-		public:                                                                                                                                   \
-			SLC_FOR_EACH( SLC_MAKE_STATIC_ENUM, SLC_FOR_EACH_SEP( SLC_EXTRACT_IDENT, SLC_COMMA, __VA_ARGS__ ) )                                   \
-                                                                                                                                                  \
-		private:                                                                                                                                  \
-			using ValueTypes = ::slc::TypeList< Ts... >;                                                                                          \
-			using Self = name##_RustEnum< ValueTypes >;                                                                                           \
-			using ValueStorageType = ValueTypes::VariantType;                                                                                     \
-                                                                                                                                                  \
-			template < Enum Element >                                                                                                             \
-			using ValueTypeAt = typename ValueTypes::template Type< ::slc::detail::EnumTag< Element >::Index >;                                   \
-                                                                                                                                                  \
-			template < Enum Element >                                                                                                             \
-			SCONSTEXPR bool HasType = !( std::same_as< ValueTypeAt< Element >, std::monostate > );                                                \
-                                                                                                                                                  \
-			template < typename R >                                                                                                               \
-			SCONSTEXPR bool ContainsType = ValueTypes::template Contains< R >;                                                                    \
-                                                                                                                                                  \
-			template < typename F, Enum Element >                                                                                                 \
-			SCONSTEVAL bool ComputeHasMatchFunc()                                                                                                 \
-			{                                                                                                                                     \
-				if constexpr ( HasType< Element > )                                                                                               \
-					return std::invocable< F, ::slc::detail::EnumTag< Element >, const ValueTypeAt< Element >& >;                                 \
-				else                                                                                                                              \
-					return std::invocable< F, ::slc::detail::EnumTag< Element > >;                                                                \
-			}                                                                                                                                     \
-                                                                                                                                                  \
-			template < typename F, Enum Element >                                                                                                 \
-			static consteval bool ComputeHasDefaultMatchFuncWithArg()                                                                             \
-			{                                                                                                                                     \
-				using DefaultHandler = typename ::slc::detail::ExtractDefaultHandler< F >::type;                                                  \
-				if constexpr ( !std::is_void_v< DefaultHandler > )                                                                                \
-				{                                                                                                                                 \
-					using Callable = decltype( std::declval< DefaultHandler >().func );                                                           \
-					return std::invocable< Callable, const ValueTypeAt< Element >& >;                                                             \
-				}                                                                                                                                 \
-				else                                                                                                                              \
-				{                                                                                                                                 \
-					return false;                                                                                                                 \
-				}                                                                                                                                 \
-			}                                                                                                                                     \
-			template < typename F, Enum Element >                                                                                                 \
-			static consteval bool ComputeHasDefaultMatchFuncNoArg()                                                                               \
-			{                                                                                                                                     \
-				using DefaultHandler = typename ::slc::detail::ExtractDefaultHandler< F >::type;                                                  \
-				if constexpr ( !std::is_void_v< DefaultHandler > )                                                                                \
-				{                                                                                                                                 \
-					using Callable = decltype( std::declval< DefaultHandler >().func );                                                           \
-					return std::invocable< Callable >;                                                                                            \
-				}                                                                                                                                 \
-				else                                                                                                                              \
-				{                                                                                                                                 \
-					return false;                                                                                                                 \
-				}                                                                                                                                 \
-			}                                                                                                                                     \
-                                                                                                                                                  \
-			template < typename F, Enum Element >                                                                                                 \
-			SCONSTEXPR bool HasMatchFunc = ComputeHasMatchFunc< F, Element >();                                                                   \
-                                                                                                                                                  \
-			template < typename F, Enum Element >                                                                                                 \
-			SCONSTEXPR bool HasDefaultMatchFuncWithArg = ComputeHasDefaultMatchFuncWithArg< F, Element >();                                       \
-			template < typename F, Enum Element >                                                                                                 \
-			SCONSTEXPR bool HasDefaultMatchFuncNoArg = ComputeHasDefaultMatchFuncNoArg< F, Element >();                                           \
-                                                                                                                                                  \
-		public:                                                                                                                                   \
-			constexpr name##_RustEnum() = default;                                                                                                \
-			constexpr name##_RustEnum( name##_RustEnum const& ) = default;                                                                        \
-			constexpr name##_RustEnum( name##_RustEnum&& ) = default;                                                                             \
-			name##_RustEnum& operator=( name##_RustEnum const& other )                                                                            \
-			{                                                                                                                                     \
-				mValueData = other.mValueData;                                                                                                    \
-				return *this;                                                                                                                     \
-			}                                                                                                                                     \
-			name##_RustEnum& operator=( name##_RustEnum&& other ) noexcept                                                                        \
-			{                                                                                                                                     \
-				mValueData = std::move( other.mValueData );                                                                                       \
-				return *this;                                                                                                                     \
-			}                                                                                                                                     \
-			~name##_RustEnum() = default;                                                                                                         \
-                                                                                                                                                  \
-			template < Enum Element, typename... Args >                                                                                           \
-			constexpr name##_RustEnum( ::slc::detail::EnumTag< Element >, Args&&... args )                                                        \
-				: mValueData( std::in_place_index_t< ::slc::detail::EnumTag< Element >::Index >{}, std::forward< Args >( args )... )              \
-			{                                                                                                                                     \
-			}                                                                                                                                     \
-                                                                                                                                                  \
-			template < typename... Cases >                                                                                                        \
-			void Match( Cases&&... cases ) const                                                                                                  \
-			{                                                                                                                                     \
-				auto matcher = ::slc::detail::Overload{ std::forward< Cases >( cases )... };                                                      \
-				using Matcher = decltype( matcher );                                                                                              \
-                                                                                                                                                  \
-				switch ( mValueData.index() )                                                                                                     \
-				{                                                                                                                                 \
-					SLC_FOR_EACH( SLC_MATCH_CASE, SLC_FOR_EACH_SEP( SLC_EXTRACT_IDENT, SLC_COMMA, __VA_ARGS__ ) )                                 \
-				}                                                                                                                                 \
-			}                                                                                                                                     \
-                                                                                                                                                  \
-			template < Enum Element, typename Self >                                                                                              \
-			decltype( auto ) Unwrap( this Self&& self, ::slc::detail::EnumTag< Element > )                                                        \
-			{                                                                                                                                     \
-				return *std::get_if< ::slc::detail::EnumTag< Element >::Index >( std::addressof( std::forward< Self >( self ).mValueData ) );     \
-			}                                                                                                                                     \
-                                                                                                                                                  \
-		private:                                                                                                                                  \
-			template < Enum Element, typename Matcher >                                                                                           \
-			void DispatchCase( Matcher&& matcher ) const                                                                                          \
-			{                                                                                                                                     \
-				if constexpr ( HasMatchFunc< Matcher, Element > )                                                                                 \
-				{                                                                                                                                 \
-					if constexpr ( HasType< Element > )                                                                                           \
-					{                                                                                                                             \
-						std::forward< Matcher >( matcher )( ::slc::detail::EnumTag< Element >{}, Unwrap( ::slc::detail::EnumTag< Element >{} ) ); \
-					}                                                                                                                             \
-					else                                                                                                                          \
-					{                                                                                                                             \
-						std::forward< Matcher >( matcher )( ::slc::detail::EnumTag< Element >{} );                                                \
-					}                                                                                                                             \
-				}                                                                                                                                 \
-				else if constexpr ( HasDefaultMatchFuncWithArg< Matcher, Element > )                                                              \
-				{                                                                                                                                 \
-					std::forward< Matcher >( matcher )( std::monostate{}, Unwrap( ::slc::detail::EnumTag< Element >{} ) );                        \
-				}                                                                                                                                 \
-				else if constexpr ( HasDefaultMatchFuncNoArg< Matcher, Element > )                                                                \
-				{                                                                                                                                 \
-					std::forward< Matcher >( matcher )( std::monostate{} );                                                                       \
-				}                                                                                                                                 \
-				else                                                                                                                              \
-				{                                                                                                                                 \
-					static_assert( false, "Must provide a match case for all cases" );                                                            \
-				}                                                                                                                                 \
-			}                                                                                                                                     \
-                                                                                                                                                  \
-		private:                                                                                                                                  \
-			ValueStorageType mValueData;                                                                                                          \
-		};                                                                                                                                        \
-                                                                                                                                                  \
-		using Impl = name##_RustEnum< ::slc::TypeList< SLC_FOR_EACH_SEP( SLC_EXTRACT_TYPE, SLC_COMMA, __VA_ARGS__ ) > >;                          \
-	};                                                                                                                                            \
+#define SLC_MAKE_SMART_ENUM( name, ... )                                                                                                                 \
+	struct detail_##name                                                                                                                                 \
+	{                                                                                                                                                    \
+		template < typename T >                                                                                                                          \
+		class name##_SmartEnum;                                                                                                                          \
+                                                                                                                                                         \
+		template < typename... Ts >                                                                                                                      \
+			requires ::slc::detail::ValidEnumTypes< Ts... >                                                                                              \
+		class name##_SmartEnum< ::slc::TypeList< Ts... > > : public ::slc::detail::SmartEnum_Base                                                        \
+		{                                                                                                                                                \
+		private:                                                                                                                                         \
+			enum class Enum : std::size_t                                                                                                                \
+			{                                                                                                                                            \
+				SLC_FOR_EACH_SEP( SLC_EXTRACT_IDENT, SLC_COMMA, __VA_ARGS__ )                                                                            \
+			};                                                                                                                                           \
+                                                                                                                                                         \
+                                                                                                                                                         \
+		public:                                                                                                                                          \
+			SLC_FOR_EACH( SLC_MAKE_STATIC_ENUM, SLC_FOR_EACH_SEP( SLC_EXTRACT_IDENT, SLC_COMMA, __VA_ARGS__ ) )                                          \
+                                                                                                                                                         \
+		private:                                                                                                                                         \
+			using ValueTypes = ::slc::TypeList< Ts... >;                                                                                                 \
+			using Self = name##_SmartEnum< ValueTypes >;                                                                                                 \
+			using ValueStorageType = ValueTypes::VariantType;                                                                                            \
+                                                                                                                                                         \
+			template < Enum Element >                                                                                                                    \
+			using ValueTypeAt = typename ValueTypes::template Type< ::slc::detail::EnumTag< Element >::Index >;                                          \
+                                                                                                                                                         \
+			template < Enum Element >                                                                                                                    \
+			SCONSTEXPR bool HasType = !( std::same_as< ValueTypeAt< Element >, std::monostate > );                                                       \
+                                                                                                                                                         \
+			template < typename R >                                                                                                                      \
+			SCONSTEXPR bool ContainsType = ValueTypes::template Contains< R >;                                                                           \
+                                                                                                                                                         \
+			template < typename F, Enum Element >                                                                                                        \
+			SCONSTEVAL bool ComputeHasMatchFunc()                                                                                                        \
+			{                                                                                                                                            \
+				if constexpr ( HasType< Element > )                                                                                                      \
+					return std::invocable< F, ::slc::detail::EnumTag< Element >, const ValueTypeAt< Element >& >;                                        \
+				else                                                                                                                                     \
+					return std::invocable< F, ::slc::detail::EnumTag< Element > >;                                                                       \
+			}                                                                                                                                            \
+                                                                                                                                                         \
+			template < typename F, Enum Element >                                                                                                        \
+			static consteval bool ComputeHasDefaultMatchFuncWithArg()                                                                                    \
+			{                                                                                                                                            \
+				using DefaultHandler = typename ::slc::detail::ExtractDefaultHandler< F >::type;                                                         \
+				if constexpr ( !std::is_void_v< DefaultHandler > )                                                                                       \
+				{                                                                                                                                        \
+					using Callable = decltype( std::declval< DefaultHandler >().func );                                                                  \
+					return std::invocable< Callable, const ValueTypeAt< Element >& >;                                                                    \
+				}                                                                                                                                        \
+				else                                                                                                                                     \
+				{                                                                                                                                        \
+					return false;                                                                                                                        \
+				}                                                                                                                                        \
+			}                                                                                                                                            \
+			template < typename F, Enum Element >                                                                                                        \
+			static consteval bool ComputeHasDefaultMatchFuncNoArg()                                                                                      \
+			{                                                                                                                                            \
+				using DefaultHandler = typename ::slc::detail::ExtractDefaultHandler< F >::type;                                                         \
+				if constexpr ( !std::is_void_v< DefaultHandler > )                                                                                       \
+				{                                                                                                                                        \
+					using Callable = decltype( std::declval< DefaultHandler >().func );                                                                  \
+					return std::invocable< Callable >;                                                                                                   \
+				}                                                                                                                                        \
+				else                                                                                                                                     \
+				{                                                                                                                                        \
+					return false;                                                                                                                        \
+				}                                                                                                                                        \
+			}                                                                                                                                            \
+                                                                                                                                                         \
+			template < typename F, Enum Element >                                                                                                        \
+			SCONSTEXPR bool HasMatchFunc = ComputeHasMatchFunc< F, Element >();                                                                          \
+                                                                                                                                                         \
+			template < typename F, Enum Element >                                                                                                        \
+			SCONSTEXPR bool HasDefaultMatchFuncWithArg = ComputeHasDefaultMatchFuncWithArg< F, Element >();                                              \
+			template < typename F, Enum Element >                                                                                                        \
+			SCONSTEXPR bool HasDefaultMatchFuncNoArg = ComputeHasDefaultMatchFuncNoArg< F, Element >();                                                  \
+                                                                                                                                                         \
+		public:                                                                                                                                          \
+			constexpr name##_SmartEnum() = default;                                                                                                      \
+			constexpr name##_SmartEnum( name##_SmartEnum const& ) = default;                                                                             \
+			constexpr name##_SmartEnum( name##_SmartEnum&& ) = default;                                                                                  \
+			name##_SmartEnum& operator=( name##_SmartEnum const& other )                                                                                 \
+			{                                                                                                                                            \
+				mValueData = other.mValueData;                                                                                                           \
+				return *this;                                                                                                                            \
+			}                                                                                                                                            \
+			name##_SmartEnum& operator=( name##_SmartEnum&& other ) noexcept                                                                             \
+			{                                                                                                                                            \
+				mValueData = std::move( other.mValueData );                                                                                              \
+				return *this;                                                                                                                            \
+			}                                                                                                                                            \
+			~name##_SmartEnum() = default;                                                                                                               \
+                                                                                                                                                         \
+			template < Enum Element, typename... Args >                                                                                                  \
+			constexpr name##_SmartEnum( ::slc::detail::EnumTag< Element >, Args&&... args )                                                              \
+				: mValueData( std::in_place_index_t< ::slc::detail::EnumTag< Element >::Index >{}, std::forward< Args >( args )... )                     \
+			{                                                                                                                                            \
+			}                                                                                                                                            \
+                                                                                                                                                         \
+			template < typename... Cases >                                                                                                               \
+			decltype( auto ) Match( Cases&&... cases ) const                                                                                             \
+			{                                                                                                                                            \
+				auto matcher = ::slc::detail::Overload{ std::forward< Cases >( cases )... };                                                             \
+				using Matcher = decltype( matcher );                                                                                                     \
+                                                                                                                                                         \
+				switch ( mValueData.index() )                                                                                                            \
+				{                                                                                                                                        \
+					SLC_FOR_EACH( SLC_MATCH_CASE, SLC_FOR_EACH_SEP( SLC_EXTRACT_IDENT, SLC_COMMA, __VA_ARGS__ ) )                                        \
+				}                                                                                                                                        \
+			}                                                                                                                                            \
+                                                                                                                                                         \
+			template < Enum Element, typename Self >                                                                                                     \
+			decltype( auto ) Unwrap( this Self&& self, ::slc::detail::EnumTag< Element > )                                                               \
+			{                                                                                                                                            \
+				return *std::get_if< ::slc::detail::EnumTag< Element >::Index >( std::addressof( std::forward< Self >( self ).mValueData ) );            \
+			}                                                                                                                                            \
+                                                                                                                                                         \
+		private:                                                                                                                                         \
+			template < Enum Element, typename Matcher >                                                                                                  \
+			decltype( auto ) DispatchCase( Matcher&& matcher ) const                                                                                     \
+			{                                                                                                                                            \
+				if constexpr ( HasMatchFunc< Matcher, Element > )                                                                                        \
+				{                                                                                                                                        \
+					if constexpr ( HasType< Element > )                                                                                                  \
+					{                                                                                                                                    \
+						return std::forward< Matcher >( matcher )( ::slc::detail::EnumTag< Element >{}, Unwrap( ::slc::detail::EnumTag< Element >{} ) ); \
+					}                                                                                                                                    \
+					else                                                                                                                                 \
+					{                                                                                                                                    \
+						return std::forward< Matcher >( matcher )( ::slc::detail::EnumTag< Element >{} );                                                \
+					}                                                                                                                                    \
+				}                                                                                                                                        \
+				else if constexpr ( HasDefaultMatchFuncWithArg< Matcher, Element > )                                                                     \
+				{                                                                                                                                        \
+					return std::forward< Matcher >( matcher )( std::monostate{}, Unwrap( ::slc::detail::EnumTag< Element >{} ) );                        \
+				}                                                                                                                                        \
+				else if constexpr ( HasDefaultMatchFuncNoArg< Matcher, Element > )                                                                       \
+				{                                                                                                                                        \
+					return std::forward< Matcher >( matcher )( std::monostate{} );                                                                       \
+				}                                                                                                                                        \
+				else                                                                                                                                     \
+				{                                                                                                                                        \
+					static_assert( false, "Must provide a match case for all cases" );                                                                   \
+				}                                                                                                                                        \
+			}                                                                                                                                            \
+                                                                                                                                                         \
+			template < typename Handler >                                                                                                                \
+			using HandlerReturnType = typename FunctionTraits< decltype( &decltype( std::declval< Handler >().func )::operator() ) >::ReturnType;        \
+                                                                                                                                                         \
+			template < typename F, typename... Fs >                                                                                                      \
+			static consteval bool AllMatchCasesValid()                                                                                                   \
+			{                                                                                                                                            \
+				if constexpr ( sizeof...( Fs ) == 0 )                                                                                                    \
+					return true;                                                                                                                         \
+                                                                                                                                                         \
+				using FirstReturn = HandlerReturnType< F >;                                                                                              \
+				return ( ... && std::is_same_v< HandlerReturnType< Fs >, FirstReturn > );                                                                \
+			}                                                                                                                                            \
+                                                                                                                                                         \
+		private:                                                                                                                                         \
+			ValueStorageType mValueData;                                                                                                                 \
+		};                                                                                                                                               \
+                                                                                                                                                         \
+		using Impl = name##_SmartEnum< ::slc::TypeList< SLC_FOR_EACH_SEP( SLC_EXTRACT_TYPE, SLC_COMMA, __VA_ARGS__ ) > >;                                \
+	};                                                                                                                                                   \
 	using name = detail_##name::Impl;
 
 /*
