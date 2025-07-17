@@ -11,7 +11,7 @@ namespace slc {
 	{
 	public:
 		Shader( std::string_view filepath );
-		Shader( std::string_view name, std::string_view vertexSrc, std::string_view fragmentSrc );
+		Shader( std::string_view name, std::string_view vertex_src, std::string_view fragment_src );
 		~Shader();
 
 		void Bind() const;
@@ -33,10 +33,10 @@ namespace slc {
 		int GetUniformLocation( std::string_view name ) const;
 
 		std::unordered_map< GLenum, std::string > PreProcess( std::string_view source );
-		void CompileOrGetVulkanBinaries( const std::unordered_map< GLenum, std::string >& shaderSources );
+		void CompileOrGetVulkanBinaries( const std::unordered_map< GLenum, std::string >& shader_sources );
 		void CompileOrGetOpenGLBinaries();
 		void CreateProgram();
-		void Reflect( GLenum stage, const std::vector< uint32_t >& shaderData );
+		void Reflect( GLenum stage, const std::vector< uint32_t >& shader_data );
 
 	private:
 		uint32_t mRendererID;

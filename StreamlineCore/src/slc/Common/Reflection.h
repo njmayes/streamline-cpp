@@ -141,7 +141,7 @@ namespace slc {
 		using VariantType = std::variant< Ts... >;
 
 		template < typename R >
-		static constexpr bool Contains = std::disjunction< std::is_same< R, Ts >... >::value;
+		static constexpr bool Contains = std::disjunction_v< std::is_same< R, Ts >... >;
 
 		template < typename R >
 		static constexpr size_t Index = detail::IndexFunction< 0, R, TupleType >();

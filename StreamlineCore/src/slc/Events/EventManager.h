@@ -32,10 +32,10 @@ namespace slc {
 		static void Post( TArgs&&... args )
 		{
 			// Get event model instance from allocator. Event will be constructed in place inside model.
-			EventModel< TEvent >& eventModel = sState.modelAllocator.NewModel< TEvent >( std::forward< TArgs >( args )... );
+			EventModel< TEvent >& event_model = sState.model_allocator.NewModel< TEvent >( std::forward< TArgs >( args )... );
 
 			// Add event to queue
-			sState.eventQueue.emplace_back( eventModel );
+			sState.event_queue.emplace_back( event_model );
 		}
 
 		static void Dispatch();
@@ -43,15 +43,15 @@ namespace slc {
 	private:
 		struct EventManagerState
 		{
-			std::vector< Event > eventQueue;
-			EventModelAllocator modelAllocator;
+			std::vector< Event > event_queue;
+			EventModelAllocator model_allocator;
 
-			IEventListener* appListener = nullptr;
-			IEventListener* imGuiListener = nullptr;
-			std::vector< IEventListener* > genericListeners;
+			IEventListener* app_listener = nullptr;
+			IEventListener* imgui_listener = nullptr;
+			std::vector< IEventListener* > generic_listeners;
 
-			std::vector< IEventListener* > newListeners;
-			std::vector< IEventListener* > oldListeners;
+			std::vector< IEventListener* > new_listeners;
+			std::vector< IEventListener* > old_listeners;
 		};
 
 		inline static EventManagerState sState;

@@ -38,25 +38,25 @@ namespace slc {
 		mWidth = width;
 		mHeight = height;
 
-		GLenum internalFormat = 0, dataFormat = 0;
+		GLenum internal_format = 0, data_format = 0;
 		if ( channels == 4 )
 		{
-			internalFormat = GL_RGBA8;
-			dataFormat = GL_RGBA;
+			internal_format = GL_RGBA8;
+			data_format = GL_RGBA;
 		}
 		else if ( channels == 3 )
 		{
-			internalFormat = GL_RGB8;
-			dataFormat = GL_RGB;
+			internal_format = GL_RGB8;
+			data_format = GL_RGB;
 		}
 
-		mInternalFormat = internalFormat;
-		mDataFormat = dataFormat;
+		mInternalFormat = internal_format;
+		mDataFormat = data_format;
 
-		ASSERT( internalFormat & dataFormat, "Format not supported!" );
+		ASSERT( internal_format & data_format, "Format not supported!" );
 
 		glCreateTextures( GL_TEXTURE_2D, 1, &mRendererID );
-		glTextureStorage2D( mRendererID, 1, internalFormat, mWidth, mHeight );
+		glTextureStorage2D( mRendererID, 1, internal_format, mWidth, mHeight );
 
 		glTextureParameteri( mRendererID, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 		glTextureParameteri( mRendererID, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
@@ -64,7 +64,7 @@ namespace slc {
 		glTextureParameteri( mRendererID, GL_TEXTURE_WRAP_S, GL_REPEAT );
 		glTextureParameteri( mRendererID, GL_TEXTURE_WRAP_T, GL_REPEAT );
 
-		glTextureSubImage2D( mRendererID, 0, 0, 0, mWidth, mHeight, dataFormat, GL_UNSIGNED_BYTE, data );
+		glTextureSubImage2D( mRendererID, 0, 0, 0, mWidth, mHeight, data_format, GL_UNSIGNED_BYTE, data );
 
 		stbi_image_free( data );
 	}

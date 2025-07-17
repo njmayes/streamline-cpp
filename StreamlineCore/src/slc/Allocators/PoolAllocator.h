@@ -92,7 +92,7 @@ namespace slc {
 
 			ASSERT( mHead > mMemBlock );
 			size_t offset = mHead - mMemBlock;
-			size_t tmpSize = mMaxSize;
+			size_t tmp_size = mMaxSize;
 
 			mMaxSize *= SCALE_FACTOR;
 
@@ -100,7 +100,7 @@ namespace slc {
 			mMemBlock = static_cast< Block* >( memory );
 			mHead = mMemBlock + offset;
 
-			std::memcpy( mMemBlock, tmp, tmpSize );
+			std::memcpy( mMemBlock, tmp, tmp_size );
 			::operator delete( tmp );
 
 
