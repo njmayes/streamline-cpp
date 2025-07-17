@@ -5,8 +5,6 @@
 namespace slc {
 
 	namespace detail {
-		template < typename... Ts >
-		concept ValidEnumTypes = ( ( not std::is_pointer_v< Ts > and std::same_as< std::remove_cvref_t< Ts >, Ts > ) and ... );
 
 		template < auto E >
 			requires std::is_scoped_enum_v< decltype( E ) >
@@ -89,7 +87,7 @@ namespace slc {
 	}
 
 	template < typename F >
-	detail::EnumDefaultMatchCaseHandler< F > DefaultCase( F&& f )
+	detail::EnumDefaultMatchCaseHandler< F > MatchDefault( F&& f )
 	{
 		return detail::EnumDefaultMatchCaseHandler< F >{ std::forward< F >( f ) };
 	}
@@ -143,19 +141,56 @@ namespace slc {
 	class SmartEnum
 	{
 	private:
-		static_assert( ( ... and detail::EnumCase< Cases > ), "All types must be Case<E, Underlying> specializations" );
+		static consteval bool AssertAllCasesUniqueAndValid()
+		{
+			static constexpr bool AllValidCases = ( ... and detail::EnumCase< Cases > );
+			if constexpr ( not AllValidCases )
+			{
+				static_assert( false, "All types must be Case<E, Underlying> specializations" );
+				return false;
+			}
+
+			static constexpr auto CaseValues = { Cases::Value... };
+			static constexpr auto EnumValues = magic_enum::enum_values< Enum >();
+
+			constexpr auto missing_enum_case = []( auto const& element ) { return std::ranges::count( CaseValues, element ) == 0; };
+			if constexpr ( std::ranges::any_of( EnumValues, missing_enum_case ) )
+			{
+				static_assert( false, "SmartEnum must provide case for every enum element" );
+				return false;
+			}
+
+			static constexpr auto not_unique_case = []( auto const& element ) { return std::ranges::count( CaseValues, element ) > 1; };
+			if constexpr ( std::ranges::any_of( EnumValues, not_unique_case ) )
+			{
+				static_assert( false, "SmartEnum must provide only one case for each enum element" );
+				return false;
+			}
+
+			return true;
+		}
+
+		static_assert( AssertAllCasesUniqueAndValid(), "SmartEnum cases do not satisfy conditions" );
 
 		using CaseTypes = TypeList< Cases... >;
 		using ValueTypes = TypeList< typename Cases::Type... >;
 
 		using StorageType = ValueTypes::VariantType;
 
-	private:
+		static constexpr auto EnumElements = std::array< Enum, sizeof...( Cases ) >{ Cases::Value... };
+
+		template < Enum Element >
+		static consteval auto FindEnumIndex()
+		{
+			auto it = std::find( EnumElements.begin(), EnumElements.end(), Element );
+			return std::distance( EnumElements.begin(), it );
+		}
+
 		template < size_t I >
 		using CaseTypeAt = typename CaseTypes::template Type< I >;
 
 		template < Enum Element >
-		static constexpr auto CaseIndex = magic_enum::enum_index( Element ).value();
+		static constexpr auto CaseIndex = FindEnumIndex< Element >();
 
 		template < Enum Element >
 		using ValueTypeAt = typename ValueTypes::template Type< CaseIndex< Element > >;
@@ -272,19 +307,17 @@ namespace slc {
 		}
 
 		template < typename Matcher, std::size_t... Is >
-		static constexpr auto TryComputeDispatchReturnType( std::index_sequence< Is... > )
+		static consteval auto TryComputeDispatchReturnType( std::index_sequence< Is... > )
 		{
-			using SimulatedTypes = std::tuple<
-				decltype( SimulateDispatchEntry< Is, Matcher >()( std::declval< Matcher >(), std::declval< StorageType >() ) )... >;
+			static constexpr bool HandlersHaveCommonType =
+				HasCommonType< decltype( SimulateDispatchEntry< Is, Matcher >()( std::declval< Matcher >(), std::declval< StorageType >() ) )... >;
 
-			using RawReturnTypes = std::tuple_element_t< 0, SimulatedTypes >; // just for error messages if needed
+			static_assert( HandlersHaveCommonType, "Match case handlers must return the same (or implicitly convertible) type for all cases." );
 
-			static_assert(
-				HasCommonType< decltype( SimulateDispatchEntry< Is, Matcher >()( std::declval< Matcher >(), std::declval< StorageType >() ) )... >,
-				"Match case handlers must return the same (or implicitly convertible) type for all cases."
-			);
-
-			return ComputeDispatchReturnType< Matcher >( std::index_sequence< Is... >{} );
+			if constexpr ( not HandlersHaveCommonType )
+				return std::type_identity< void >{};
+			else
+				return ComputeDispatchReturnType< Matcher >( std::index_sequence< Is... >{} );
 		}
 
 		template < std::size_t I, typename Matcher, typename ReturnType >
@@ -334,10 +367,10 @@ namespace slc {
 	public:
 		// If return types of Handlers... are ReturnType..., then return type of Match is std::common_type_t< ReturnType... >
 		template < typename... Handlers >
-		decltype( auto ) Match( Handlers&&... handlers ) const
+		constexpr decltype( auto ) Match( Handlers&&... handlers ) const
 		{
-			auto matcher = slc::detail::Overload{ std::forward< Handlers >( handlers )... };
-			const auto table = MakeDispatchTable< decltype( matcher ) >( std::index_sequence_for< Cases... >{} );
+			auto matcher = detail::Overload{ std::forward< Handlers >( handlers )... };
+			auto table = MakeDispatchTable< decltype( matcher ) >( std::index_sequence_for< Cases... >{} );
 
 			return table[ mValueData.index() ]( matcher, mValueData );
 		}
@@ -348,11 +381,17 @@ namespace slc {
 		{
 			return SmartEnum( detail::EnumTag< Element >{}, std::forward< Args >( args )... );
 		}
-		
+
 		template < Enum Element, typename Self >
-		decltype( auto ) Unwrap( this Self&& self )
+		constexpr decltype( auto ) GetValue( this Self&& self )
 		{
-			return *std::get_if< ::slc::detail::EnumTag< Element >::Index >( std::addressof( std::forward< Self >( self ).mValueData ) );
+			static_assert( HasType< Element >, "Element type must not be empty to unwrap" );
+			return *std::get_if< detail::EnumTag< Element >::Index >( std::addressof( std::forward< Self >( self ).mValueData ) );
+		}
+
+		constexpr Enum GetEnum() const
+		{
+			return EnumElements[ mValueData.index() ];
 		}
 
 	private:
@@ -365,14 +404,14 @@ namespace slc {
 		StorageType mValueData;
 	};
 
-	
+
 	namespace detail {
 
 		template < typename T >
 		struct IsSmartEnumDetail : std::false_type
 		{};
 
-		template < IsEnum Enum, typename... Cases  >
+		template < IsEnum Enum, typename... Cases >
 		struct IsSmartEnumDetail< SmartEnum< Enum, Cases... > > : std::true_type
 		{};
 

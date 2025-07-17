@@ -293,11 +293,11 @@ namespace slc {
 		/// <returns></returns>
 		constexpr RefType GetValRef() noexcept
 		{
-			return mValue.Unwrap< Ok >();
+			return mValue.GetValue< Ok >();
 		}
 		constexpr const RefType GetValRef() const noexcept
 		{
-			return mValue.Unwrap< Ok >();
+			return mValue.GetValue< Ok >();
 		}
 
 		/// <summary>
@@ -306,7 +306,7 @@ namespace slc {
 		/// <returns></returns>
 		constexpr E const& GetError() const noexcept
 		{
-			return mValue.Unwrap< Err >();
+			return mValue.GetValue< Err >();
 		}
 
 	private:

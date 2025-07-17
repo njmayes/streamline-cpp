@@ -43,6 +43,12 @@ project "StreamlineCore"
         "glfw",
         "imgui",
 	}
+
+    filter "action:vs*"
+		buildoptions 
+		{
+			"/Zc:preprocessor"
+		}
 	
     filter "system:windows"
         kind "StaticLib"
@@ -51,10 +57,6 @@ project "StreamlineCore"
         {
             "opengl32.lib",
         }
-		buildoptions 
-		{
-			"/Zc:preprocessor"
-		}
 		
 	filter "system:linux"
         kind "SharedLib"
