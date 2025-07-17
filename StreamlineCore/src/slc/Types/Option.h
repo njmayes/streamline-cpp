@@ -4,21 +4,15 @@
 
 namespace slc {
 
-	namespace detail {
-		SLC_MAKE_SMART_ENUM( NoneEnum, None )
-	}
-
 	template < typename T >
-	class Option : private Result< T, detail::NoneEnum >
+	class Option : private Result< T, std::monostate >
 	{
-	public:
-		SCONSTEXPR detail::NoneEnum None = detail::NoneEnum::None;
-
 	private:
-		using BaseType = Result< T, detail::NoneEnum >;
+		using BaseType = Result< T, std::monostate >;
 
 	public:
-		SCONSTEXPR auto Some = BaseType::Success;
+		SCONSTEXPR auto Some = BaseType::Ok;
+		SCONSTEXPR auto None = BaseType::Err;
 
 	public:
 		constexpr bool IsSome() const noexcept

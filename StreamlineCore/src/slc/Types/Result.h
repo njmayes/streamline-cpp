@@ -6,15 +6,15 @@ namespace slc {
 	template < typename T >
 	class Option;
 
-	template < typename T, IsSmartEnum E >
+	template < typename T, typename E >
 	class Result;
 
 	template < typename Func, typename T >
 	concept ReturnsResult = requires( Func&& f, T&& val ) {
-		{ std::invoke( std::forward< Func >( f ), std::forward< T >( val ) ) } -> std::convertible_to< Result< typename decltype( std::invoke( std::forward< Func >( f ), std::forward< T >( val ) ) )::ValueType, typename decltype( std::invoke( std::forward< Func >( f ), std::forward< T >( val ) ) )::ErrorEnum > >;
+		{ std::invoke( std::forward< Func >( f ), std::forward< T >( val ) ) } -> std::convertible_to< Result< typename decltype( std::invoke( std::forward< Func >( f ), std::forward< T >( val ) ) )::ValueType, typename decltype( std::invoke( std::forward< Func >( f ), std::forward< T >( val ) ) )::ErrorType > >;
 	};
 
-	template < typename T, IsSmartEnum E >
+	template < typename T, typename E >
 	class Result
 	{
 	public:
@@ -34,22 +34,28 @@ namespace slc {
 		SCONSTEXPR bool IsNoExceptMove = std::is_nothrow_move_constructible_v< T > && std::is_nothrow_move_assignable_v< T >;
 		SCONSTEXPR bool IsNoExceptCopy = std::is_nothrow_copy_constructible_v< T > && std::is_nothrow_copy_assignable_v< T >;
 
-		SLC_MAKE_SMART_ENUM( ResultEnum, ( Success, ResultType ) )
+		using ErrorType = E;
+
+		static constexpr bool IsErrorTypeSmartEnum = detail::IsSmartEnum< ErrorType >;
+
+		enum class ResultEnum
+		{
+			Success,
+			Failure
+		};
+		using StorageType = SmartEnum< ResultEnum, Case< ResultEnum::Success, ResultType >, Case< ResultEnum::Failure, ErrorType > >;
 
 		SCONSTEXPR auto Ok = ResultEnum::Success;
-
-		using ErrorEnum = E;
-
-		using StorageType = std::variant< ResultEnum, ErrorEnum >;
+		SCONSTEXPR auto Err = ResultEnum::Failure;
 
 	public:
 		explicit constexpr Result() = delete;
 		explicit constexpr Result( T&& result ) noexcept( std::is_nothrow_constructible_v< ResultType, T&& > )
-			: mValue( ResultEnum( Ok, std::forward< T >( result ) ) ), mResult( true )
+			: mValue( StorageType::Make< Ok >( std::forward< T >( result ) ) ), mResult( true )
 		{}
 
 		explicit constexpr Result( E error ) noexcept
-			: mValue( error ), mResult( false )
+			: mValue( StorageType::Make< Err >( error ) ), mResult( false )
 		{}
 		virtual ~Result() = default;
 
@@ -146,7 +152,7 @@ namespace slc {
 		/// Transforms Result&lt;T, E&gt; into Result&lt;T, O&gt; by applying the provided function to the contained value of Err and leaving Ok values unchanged
 		/// </summary>
 		template < typename Func >
-			requires std::invocable< Func, E > and IsSmartEnum< std::invoke_result_t< Func, E > >
+			requires std::invocable< Func, E >
 		constexpr auto MapError( Func&& op ) noexcept(
 			std::is_nothrow_invocable_v< Func, E > &&
 			IsNoExceptMove
@@ -220,20 +226,26 @@ namespace slc {
 		}
 
 		template < typename... Cases >
-		void Match( Cases&&... cases )
+		decltype( auto ) Match( Cases&&... cases )
 		{
 			auto matcher = ::slc::detail::Overload{ std::forward< Cases >( cases )... };
 			using Matcher = decltype( matcher );
 
 			if ( mResult )
 			{
-				auto const& success = GetSuccessEnum();
-				success.Match( std::forward< Matcher >( matcher ) );
+				return matcher( detail::EnumTag< Ok >{}, GetValRef() );
 			}
 			else
 			{
-				auto const& error = GetError();
-				error.Match( std::forward< Matcher >( matcher ) );
+				if constexpr ( IsErrorTypeSmartEnum )
+				{
+					auto const& error = GetError();
+					return error.Match( std::forward< Matcher >( matcher ) );
+				}
+				else
+				{
+					return matcher( detail::EnumTag< Err >{}, GetError() );
+				}
 			}
 		}
 
@@ -281,21 +293,11 @@ namespace slc {
 		/// <returns></returns>
 		constexpr RefType GetValRef() noexcept
 		{
-			return GetSuccessEnum().Unwrap( Ok );
+			return mValue.Unwrap< Ok >();
 		}
 		constexpr const RefType GetValRef() const noexcept
 		{
-			return GetSuccessEnum().Unwrap( Ok );
-		}
-
-		constexpr ResultEnum& GetSuccessEnum() noexcept
-		{
-			return *std::get_if< ResultEnum >( &mValue );
-		}
-
-		constexpr ResultEnum const& GetSuccessEnum() const noexcept
-		{
-			return *std::get_if< ResultEnum >( &mValue );
+			return mValue.Unwrap< Ok >();
 		}
 
 		/// <summary>
@@ -304,7 +306,7 @@ namespace slc {
 		/// <returns></returns>
 		constexpr E const& GetError() const noexcept
 		{
-			return *std::get_if< ErrorEnum >( &mValue );
+			return mValue.Unwrap< Err >();
 		}
 
 	private:
@@ -318,7 +320,7 @@ namespace slc {
 	template < typename T >
 	struct ErrorFunctor;
 
-	template < typename T, IsSmartEnum E >
+	template < typename T, typename E >
 	struct OkFunctor< Result< T, E > >
 	{
 		template < typename... Args >
@@ -329,7 +331,7 @@ namespace slc {
 		}
 	};
 
-	template < typename T, IsSmartEnum E >
+	template < typename T, typename E >
 	struct ErrorFunctor< Result< T, E > >
 	{
 		constexpr Result< T, E > operator()( E error ) const noexcept
