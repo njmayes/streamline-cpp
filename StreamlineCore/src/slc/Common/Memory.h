@@ -17,7 +17,7 @@ namespace slc {
 	}
 
 
-	// Shared Pointer
+	// Shared Pointer (Intrusive)
 
 	class RefCounted;
 
@@ -67,8 +67,7 @@ namespace slc {
 			static void RemoveFromReferenceTracker( void* data );
 
 		private:
-			using RefSet = std::unordered_set< void* >;
-			inline static RefSet sRefSet;
+			inline static std::unordered_set< void* > sRefSet;
 
 			template < RefCountable T >
 			friend class Ref;

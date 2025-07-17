@@ -45,7 +45,9 @@ namespace slc {
 
 			DefaultForeground = WhiteForeground,
 			DefaultBackground = BlackBackground,
-			Default = DefaultForeground | DefaultBackground,
+			DefaultStyle = 0,
+
+			Default = DefaultForeground | DefaultBackground | DefaultStyle,
 		};
 	} // namespace ConsoleAttributes
 

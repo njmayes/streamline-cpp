@@ -17,7 +17,7 @@
 	#define ASSERT(x, ...) assert(x)
 #else
 	#if SLC_HAS_ATTRIBUTE(assume)
-		#define ASSERT(...) [[assume(x)]]
+		#define ASSERT(x, ...) [[assume(x)]]
 	#else
 		#if defined(SLC_COMPILER_MSVC)
 			#define ASSERT(x, ...)  __assume(x)
@@ -31,6 +31,18 @@
 	#endif // __has_cpp_attribute(assume)
 #endif
 
+#if defined(SLC_COMPILER_MSVC)
+	#define SLC_INLINE __forceinline
+	#define SLC_RESTRICT __restrict
+#elif defined(SLC_COMPILER_GCC)	
+	#define SLC_INLINE [[gnu::always_inline]] 
+	#define SLC_RESTRICT __restrict
+#elif defined(SLC_COMPILER_CLANG)	
+	#define SLC_INLINE [[clang::always_inline]] 
+	#define SLC_RESTRICT __restrict
+#else
+	#define SLC_INLINE
+#endif
 
 #define SLC_STRINGIFY( L )  #L 
 #define SLC_MAKE_STRING( x ) SLC_STRINGIFY(x)

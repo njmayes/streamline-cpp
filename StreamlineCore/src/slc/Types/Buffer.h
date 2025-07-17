@@ -38,6 +38,13 @@ namespace slc {
 			return reinterpret_cast< ReturnType >( std::forward< Self >( self ).mData );
 		}
 
+		template < typename T, typename Self >
+		decltype( auto ) Read( this Self&& self, std::size_t offset )
+		{
+			using ReturnType = std::conditional_t< std::is_const_v< Self >, const T&, T& >;
+			return *reinterpret_cast< ReturnType >( std::forward< Self >( self ).mData + offset );
+		}
+
 		template < IsStandard T >
 		void Set( const T& data, size_t offset = 0 )
 		{
@@ -45,7 +52,21 @@ namespace slc {
 			if ( offset + DataSize > mSize )
 				Resize( offset + DataSize );
 
-			memcpy( mData + offset, &data, DataSize );
+			std::memcpy( mData + offset, &data, DataSize );
+		}
+
+		template < IsStandard T >
+		void Push( const T& data )
+		{
+			Set( data, mSize );
+		}
+
+		template < IsStandard T >
+		void Pop( T& data )
+		{
+			constexpr std::size_t DataSize = sizeof( T );
+			data = std::move( Read< T >( mSize - DataSize ) );
+			Resize( mSize - DataSize );
 		}
 
 		Byte* Data( size_t offset = 0 )
