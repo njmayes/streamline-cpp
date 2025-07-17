@@ -9,18 +9,18 @@ namespace slc {
 		sRenderData = MakeUnique< Renderer2DData >();
 
 		{ // Quads
-			sRenderData->quadVertexArray = Ref< VertexArray >::Create();
+			sRenderData->quad_vertex_array = Ref< VertexArray >::Create();
 
-			sRenderData->quadVertexBuffer = Ref< VertexBuffer >::Create( Renderer2DData::MaxVertices * ( uint32_t )sizeof( QuadVertex ) );
-			sRenderData->quadVertexBuffer->SetLayout( { { ShaderDataType::Float3, "aPosition" },
+			sRenderData->quad_vertex_buffer = Ref< VertexBuffer >::Create( Renderer2DData::MaxVertices * ( uint32_t )sizeof( QuadVertex ) );
+			sRenderData->quad_vertex_buffer->SetLayout( { { ShaderDataType::Float3, "aPosition" },
 														{ ShaderDataType::Float4, "aColour" },
 														{ ShaderDataType::Float2, "aTexCoord" },
 														{ ShaderDataType::Float, "aTexIndex" },
 														{ ShaderDataType::Float, "aTilingFactor" } } );
 
-			sRenderData->quadVertexArray->AddVertexBuffer( sRenderData->quadVertexBuffer );
+			sRenderData->quad_vertex_array->AddVertexBuffer( sRenderData->quad_vertex_buffer );
 
-			sRenderData->quadVertexBufferBase = new QuadVertex[ Renderer2DData::MaxVertices ];
+			sRenderData->quad_vertex_buffer_base = new QuadVertex[ Renderer2DData::MaxVertices ];
 
 			uint32_t* quadIndices = new uint32_t[ Renderer2DData::MaxIndices ];
 
@@ -39,59 +39,59 @@ namespace slc {
 			}
 
 			Ref< IndexBuffer > quadIB = Ref< IndexBuffer >::Create( quadIndices, Renderer2DData::MaxIndices );
-			sRenderData->quadVertexArray->SetIndexBuffer( quadIB );
+			sRenderData->quad_vertex_array->SetIndexBuffer( quadIB );
 			delete[] quadIndices;
 
-			sRenderData->quadShader = Ref< Shader >::Create( "resources/shaders/Renderer2DQuad.glsl" );
+			sRenderData->quad_shader = Ref< Shader >::Create( "resources/shaders/Renderer2DQuad.glsl" );
 		}
 
 		// Circles
 		{
-			sRenderData->circleVertexArray = Ref< VertexArray >::Create();
+			sRenderData->circle_vertex_array = Ref< VertexArray >::Create();
 
-			sRenderData->circleVertexBuffer = Ref< VertexBuffer >::Create( sRenderData->MaxVertices * ( uint32_t )sizeof( QuadVertex ) );
-			sRenderData->circleVertexBuffer->SetLayout( { { ShaderDataType::Float3, "aWorldPosition" },
+			sRenderData->circle_vertex_buffer = Ref< VertexBuffer >::Create( sRenderData->MaxVertices * ( uint32_t )sizeof( QuadVertex ) );
+			sRenderData->circle_vertex_buffer->SetLayout( { { ShaderDataType::Float3, "aWorldPosition" },
 														  { ShaderDataType::Float, "aThickness" },
 														  { ShaderDataType::Float2, "aLocalPosition" },
 														  { ShaderDataType::Float4, "aColour" } } );
 
-			sRenderData->circleVertexArray->AddVertexBuffer( sRenderData->circleVertexBuffer );
+			sRenderData->circle_vertex_array->AddVertexBuffer( sRenderData->circle_vertex_buffer );
 
-			sRenderData->circleVertexBufferBase = new CircleVertex[ sRenderData->MaxVertices ];
-			sRenderData->circleVertexArray->SetIndexBuffer( sRenderData->quadVertexArray->GetIndexBuffer() ); // Reuse quad index buffer
+			sRenderData->circle_vertex_buffer_base = new CircleVertex[ sRenderData->MaxVertices ];
+			sRenderData->circle_vertex_array->SetIndexBuffer( sRenderData->quad_vertex_array->GetIndexBuffer() ); // Reuse quad index buffer
 
-			sRenderData->circleShader = Ref< Shader >::Create( "resources/shaders/Renderer2DCircle.glsl" );
+			sRenderData->circle_shader = Ref< Shader >::Create( "resources/shaders/Renderer2DCircle.glsl" );
 		}
 
 		// Lines
 		{
-			sRenderData->lineVertexArray = Ref< VertexArray >::Create();
+			sRenderData->line_vertex_array = Ref< VertexArray >::Create();
 
-			sRenderData->lineVertexBuffer = Ref< VertexBuffer >::Create( sRenderData->MaxVertices * ( uint32_t )sizeof( QuadVertex ) );
-			sRenderData->lineVertexBuffer->SetLayout( { { ShaderDataType::Float3, "aPosition" },
+			sRenderData->line_vertex_buffer = Ref< VertexBuffer >::Create( sRenderData->MaxVertices * ( uint32_t )sizeof( QuadVertex ) );
+			sRenderData->line_vertex_buffer->SetLayout( { { ShaderDataType::Float3, "aPosition" },
 														{ ShaderDataType::Float4, "aColour" } } );
 
-			sRenderData->lineVertexArray->AddVertexBuffer( sRenderData->lineVertexBuffer );
-			sRenderData->lineVertexBufferBase = new LineVertex[ sRenderData->MaxVertices ];
+			sRenderData->line_vertex_array->AddVertexBuffer( sRenderData->line_vertex_buffer );
+			sRenderData->line_vertex_buffer_base = new LineVertex[ sRenderData->MaxVertices ];
 
-			sRenderData->lineShader = Ref< Shader >::Create( "resources/shaders/Renderer2DLine.glsl" );
+			sRenderData->line_shader = Ref< Shader >::Create( "resources/shaders/Renderer2DLine.glsl" );
 		}
 
 		// White Texture
-		sRenderData->whiteTexture = Ref< Texture2D >::Create( 1, 1 );
+		sRenderData->white_texture = Ref< Texture2D >::Create( 1, 1 );
 		uint32_t whiteTextureData = 0xffffffff;
-		sRenderData->whiteTexture->SetData( &whiteTextureData, sizeof( uint32_t ) );
+		sRenderData->white_texture->SetData( &whiteTextureData, sizeof( uint32_t ) );
 
-		sRenderData->textureSlots[ 0 ] = sRenderData->whiteTexture;
+		sRenderData->texture_slots[ 0 ] = sRenderData->white_texture;
 
-		sRenderData->cameraUniformBuffer = Ref< UniformBuffer >::Create( ( uint32_t )sizeof( Renderer2DData::CameraData ), 0 );
+		sRenderData->camera_uniform_buffer = Ref< UniformBuffer >::Create( ( uint32_t )sizeof( Renderer2DData::CameraData ), 0 );
 	}
 
 	void Renderer2D::Shutdown()
 	{
-		delete[] sRenderData->quadVertexBufferBase;
-		delete[] sRenderData->circleVertexBufferBase;
-		delete[] sRenderData->lineVertexBufferBase;
+		delete[] sRenderData->quad_vertex_buffer_base;
+		delete[] sRenderData->circle_vertex_buffer_base;
+		delete[] sRenderData->line_vertex_buffer_base;
 
 		sRenderData.reset();
 	}
@@ -103,8 +103,8 @@ namespace slc {
 
 	void Renderer2D::BeginState( const Matrix4f& cameraTransform )
 	{
-		sRenderData->cameraMatrix = cameraTransform;
-		sRenderData->cameraUniformBuffer->SetData( &sRenderData->cameraMatrix, sizeof( Renderer2DData::CameraData ) );
+		sRenderData->camera_matrix = cameraTransform;
+		sRenderData->camera_uniform_buffer->SetData( &sRenderData->camera_matrix, sizeof( Renderer2DData::CameraData ) );
 
 		StartBatch();
 	}
@@ -121,11 +121,11 @@ namespace slc {
 		DrawQuad( transform, colour );
 	}
 
-	void Renderer2D::DrawQuad( const Vector2f& position, const Vector2f& size, const Ref< IRenderable >& texture, float tilingFactor, const Vector4f& tintColour )
+	void Renderer2D::DrawQuad( const Vector2f& position, const Vector2f& size, const Ref< IRenderable >& texture, float tiling_factor, const Vector4f& tint_colour )
 	{
 		Matrix4f transform = glm::translate( Matrix4f( 1.0f ), { position, 0.0f } ) * glm::scale( Matrix4f( 1.0f ), { size.x, size.y, 1.0f } );
 
-		DrawQuad( transform, texture, tilingFactor, tintColour );
+		DrawQuad( transform, texture, tiling_factor, tint_colour );
 	}
 
 	void Renderer2D::DrawRotatedQuad( const Vector2f& position, const Vector2f& size, float rotation, const Vector4f& colour )
@@ -135,90 +135,90 @@ namespace slc {
 		DrawQuad( transform, colour );
 	}
 
-	void Renderer2D::DrawRotatedQuad( const Vector2f& position, const Vector2f& size, float rotation, const Ref< IRenderable >& texture, float tilingFactor, const Vector4f& tintColour )
+	void Renderer2D::DrawRotatedQuad( const Vector2f& position, const Vector2f& size, float rotation, const Ref< IRenderable >& texture, float tiling_factor, const Vector4f& tint_colour )
 	{
 		Matrix4f transform = glm::translate( Matrix4f( 1.0f ), { position, 0.0f } ) * glm::rotate( Matrix4f( 1.0f ), rotation, { 0.0f, 0.0f, 1.0f } ) * glm::scale( Matrix4f( 1.0f ), { size.x, size.y, 1.0f } );
 
-		DrawQuad( transform, texture, tilingFactor, tintColour );
+		DrawQuad( transform, texture, tiling_factor, tint_colour );
 	}
 
 	void Renderer2D::DrawQuad( const Matrix4f& transform, const Vector4f& colour )
 	{
-		constexpr size_t quadVertexCount = 4;
-		constexpr Vector2f textureCoords[ 4 ] = { { 0.0f, 0.0f }, { 1.0f, 0.0f }, { 1.0f, 1.0f }, { 0.0f, 1.0f } };
-		constexpr float textureIndex = 0.0f; // White Texture
-		constexpr float tilingFactor = 1.0f;
+		constexpr size_t quad_vertex_count = 4;
+		constexpr Vector2f texture_coords[ 4 ] = { { 0.0f, 0.0f }, { 1.0f, 0.0f }, { 1.0f, 1.0f }, { 0.0f, 1.0f } };
+		constexpr float texture_index = 0.0f; // White Texture
+		constexpr float tiling_factor = 1.0f;
 
-		if ( sRenderData->quadIndexCount >= Renderer2DData::MaxIndices )
+		if ( sRenderData->quad_index_count >= Renderer2DData::MaxIndices )
 			NextBatch();
 
-		for ( size_t i = 0; i < quadVertexCount; i++ )
+		for ( size_t i = 0; i < quad_vertex_count; i++ )
 		{
-			sRenderData->quadVertexBufferPtr->position = transform * Renderer2DData::QuadVertexPositions[ i ];
-			sRenderData->quadVertexBufferPtr->colour = colour;
-			sRenderData->quadVertexBufferPtr->texCoord = textureCoords[ i ];
-			sRenderData->quadVertexBufferPtr->texIndex = textureIndex;
-			sRenderData->quadVertexBufferPtr->tilingFactor = tilingFactor;
-			sRenderData->quadVertexBufferPtr++;
+			sRenderData->quad_vertex_buffer_ptr->position = transform * Renderer2DData::QuadVertexPositions[ i ];
+			sRenderData->quad_vertex_buffer_ptr->colour = colour;
+			sRenderData->quad_vertex_buffer_ptr->texCoord = texture_coords[ i ];
+			sRenderData->quad_vertex_buffer_ptr->texture_index = texture_index;
+			sRenderData->quad_vertex_buffer_ptr->tiling_factor = tiling_factor;
+			sRenderData->quad_vertex_buffer_ptr++;
 		}
 
-		sRenderData->quadIndexCount += 6;
-		sRenderData->stats.quadCount++;
+		sRenderData->quad_index_count += 6;
+		sRenderData->stats.quad_count++;
 	}
 
-	void Renderer2D::DrawQuad( const Matrix4f& transform, const Ref< IRenderable >& textureSlot, float tilingFactor, const Vector4f& tintColour )
+	void Renderer2D::DrawQuad( const Matrix4f& transform, const Ref< IRenderable >& textureSlot, float tiling_factor, const Vector4f& tint_colour )
 	{
-		constexpr size_t quadVertexCount = 4;
-		const Vector2f* textureCoords = textureSlot->GetTextureCoords();
+		constexpr size_t quad_vertex_count = 4;
+		const Vector2f* texture_coords = textureSlot->GetTextureCoords();
 
-		if ( sRenderData->quadIndexCount >= Renderer2DData::MaxIndices )
+		if ( sRenderData->quad_index_count >= Renderer2DData::MaxIndices )
 			NextBatch();
 
-		float textureIndex = 0.0f;
-		for ( uint32_t i = 1; i < sRenderData->textureSlotIndex; i++ )
+		float texture_index = 0.0f;
+		for ( uint32_t i = 1; i < sRenderData->texture_slot_index; i++ )
 		{
-			if ( *sRenderData->textureSlots[ i ] == *textureSlot )
+			if ( *sRenderData->texture_slots[ i ] == *textureSlot )
 			{
-				textureIndex = ( float )i;
+				texture_index = ( float )i;
 				break;
 			}
 		}
 
-		if ( textureIndex == 0.0f )
+		if ( texture_index == 0.0f )
 		{
-			if ( sRenderData->textureSlotIndex >= Renderer2DData::MaxTextureSlots )
+			if ( sRenderData->texture_slot_index >= Renderer2DData::MaxTextureSlots )
 				NextBatch();
 
-			textureIndex = ( float )sRenderData->textureSlotIndex;
-			sRenderData->textureSlots[ sRenderData->textureSlotIndex ] = textureSlot;
-			sRenderData->textureSlotIndex++;
+			texture_index = ( float )sRenderData->texture_slot_index;
+			sRenderData->texture_slots[ sRenderData->texture_slot_index ] = textureSlot;
+			sRenderData->texture_slot_index++;
 		}
 
-		for ( size_t i = 0; i < quadVertexCount; i++ )
+		for ( size_t i = 0; i < quad_vertex_count; i++ )
 		{
-			sRenderData->quadVertexBufferPtr->position = transform * Renderer2DData::QuadVertexPositions[ i ];
-			sRenderData->quadVertexBufferPtr->colour = tintColour;
-			sRenderData->quadVertexBufferPtr->texCoord = textureCoords[ i ];
-			sRenderData->quadVertexBufferPtr->texIndex = textureIndex;
-			sRenderData->quadVertexBufferPtr->tilingFactor = tilingFactor;
-			sRenderData->quadVertexBufferPtr++;
+			sRenderData->quad_vertex_buffer_ptr->position = transform * Renderer2DData::QuadVertexPositions[ i ];
+			sRenderData->quad_vertex_buffer_ptr->colour = tint_colour;
+			sRenderData->quad_vertex_buffer_ptr->texCoord = texture_coords[ i ];
+			sRenderData->quad_vertex_buffer_ptr->texture_index = texture_index;
+			sRenderData->quad_vertex_buffer_ptr->tiling_factor = tiling_factor;
+			sRenderData->quad_vertex_buffer_ptr++;
 		}
 
-		sRenderData->quadIndexCount += 6;
-		sRenderData->stats.quadCount++;
+		sRenderData->quad_index_count += 6;
+		sRenderData->stats.quad_count++;
 	}
 
 	void Renderer2D::DrawLine( const Vector3f& p0, const Vector3f& p1, const Vector4f& colour )
 	{
-		sRenderData->lineVertexBufferPtr->position = p0;
-		sRenderData->lineVertexBufferPtr->colour = colour;
-		sRenderData->lineVertexBufferPtr++;
+		sRenderData->line_vertex_buffer_ptr->position = p0;
+		sRenderData->line_vertex_buffer_ptr->colour = colour;
+		sRenderData->line_vertex_buffer_ptr++;
 
-		sRenderData->lineVertexBufferPtr->position = p1;
-		sRenderData->lineVertexBufferPtr->colour = colour;
-		sRenderData->lineVertexBufferPtr++;
+		sRenderData->line_vertex_buffer_ptr->position = p1;
+		sRenderData->line_vertex_buffer_ptr->colour = colour;
+		sRenderData->line_vertex_buffer_ptr++;
 
-		sRenderData->lineVertexCount += 2;
+		sRenderData->line_vertex_count += 2;
 	}
 
 	void Renderer2D::DrawRect( const Vector2f& position, const Vector2f& size, const Vector4f& colour )
@@ -230,86 +230,86 @@ namespace slc {
 
 	void Renderer2D::DrawRect( const Matrix4f& transform, const Vector4f& colour )
 	{
-		Vector3f lineVertices[ 4 ];
+		Vector3f line_vertices[ 4 ];
 		for ( size_t i = 0; i < 4; i++ )
-			lineVertices[ i ] = transform * Renderer2DData::QuadVertexPositions[ i ];
+			line_vertices[ i ] = transform * Renderer2DData::QuadVertexPositions[ i ];
 
-		DrawLine( lineVertices[ 0 ], lineVertices[ 1 ], colour );
-		DrawLine( lineVertices[ 1 ], lineVertices[ 2 ], colour );
-		DrawLine( lineVertices[ 2 ], lineVertices[ 3 ], colour );
-		DrawLine( lineVertices[ 3 ], lineVertices[ 0 ], colour );
+		DrawLine( line_vertices[ 0 ], line_vertices[ 1 ], colour );
+		DrawLine( line_vertices[ 1 ], line_vertices[ 2 ], colour );
+		DrawLine( line_vertices[ 2 ], line_vertices[ 3 ], colour );
+		DrawLine( line_vertices[ 3 ], line_vertices[ 0 ], colour );
 	}
 
 	void Renderer2D::DrawCircle( const Matrix4f& transform, const Vector4f& colour, float thickness )
 	{
-		if ( sRenderData->circleIndexCount >= Renderer2DData::MaxIndices )
+		if ( sRenderData->circle_index_count >= Renderer2DData::MaxIndices )
 			NextBatch();
 
 		for ( size_t i = 0; i < 4; i++ )
 		{
-			sRenderData->circleVertexBufferPtr->worldPosition = transform * Renderer2DData::QuadVertexPositions[ i ];
-			sRenderData->circleVertexBufferPtr->thickness = thickness;
-			sRenderData->circleVertexBufferPtr->localPosition = Renderer2DData::QuadVertexPositions[ i ] * 2.0f;
-			sRenderData->circleVertexBufferPtr->colour = colour;
-			sRenderData->circleVertexBufferPtr++;
+			sRenderData->circle_vertex_buffer_ptr->world_position = transform * Renderer2DData::QuadVertexPositions[ i ];
+			sRenderData->circle_vertex_buffer_ptr->thickness = thickness;
+			sRenderData->circle_vertex_buffer_ptr->local_position = Renderer2DData::QuadVertexPositions[ i ] * 2.0f;
+			sRenderData->circle_vertex_buffer_ptr->colour = colour;
+			sRenderData->circle_vertex_buffer_ptr++;
 		}
 
-		sRenderData->circleIndexCount += 6;
+		sRenderData->circle_index_count += 6;
 
-		sRenderData->stats.quadCount++;
+		sRenderData->stats.quad_count++;
 	}
 
 	void Renderer2D::StartBatch()
 	{
-		sRenderData->quadIndexCount = 0;
-		sRenderData->quadVertexBufferPtr = sRenderData->quadVertexBufferBase;
+		sRenderData->quad_index_count = 0;
+		sRenderData->quad_vertex_buffer_ptr = sRenderData->quad_vertex_buffer_base;
 
-		sRenderData->circleIndexCount = 0;
-		sRenderData->circleVertexBufferPtr = sRenderData->circleVertexBufferBase;
+		sRenderData->circle_index_count = 0;
+		sRenderData->circle_vertex_buffer_ptr = sRenderData->circle_vertex_buffer_base;
 
-		sRenderData->lineVertexCount = 0;
-		sRenderData->lineVertexBufferPtr = sRenderData->lineVertexBufferBase;
+		sRenderData->line_vertex_count = 0;
+		sRenderData->line_vertex_buffer_ptr = sRenderData->line_vertex_buffer_base;
 
-		sRenderData->textureSlotIndex = 1;
+		sRenderData->texture_slot_index = 1;
 	}
 
 	void Renderer2D::Flush()
 	{
 		// Quads
-		if ( sRenderData->quadIndexCount )
+		if ( sRenderData->quad_index_count )
 		{
-			uint32_t quadDataSize = ( uint32_t )( ( uint8_t* )sRenderData->quadVertexBufferPtr - ( uint8_t* )sRenderData->quadVertexBufferBase );
-			sRenderData->quadVertexBuffer->SetData( sRenderData->quadVertexBufferBase, quadDataSize );
+			uint32_t quad_data_size = ( uint32_t )( ( uint8_t* )sRenderData->quad_vertex_buffer_ptr - ( uint8_t* )sRenderData->quad_vertex_buffer_base );
+			sRenderData->quad_vertex_buffer->SetData( sRenderData->quad_vertex_buffer_base, quad_data_size );
 
-			for ( uint32_t i = 0; i < sRenderData->textureSlotIndex; i++ )
-				sRenderData->textureSlots[ i ]->BindTexture( i );
+			for ( uint32_t i = 0; i < sRenderData->texture_slot_index; i++ )
+				sRenderData->texture_slots[ i ]->BindTexture( i );
 
-			sRenderData->quadShader->Bind();
-			Renderer::DrawIndexed( sRenderData->quadVertexArray, sRenderData->quadIndexCount );
-			sRenderData->stats.drawCalls++;
+			sRenderData->quad_shader->Bind();
+			Renderer::DrawIndexed( sRenderData->quad_vertex_array, sRenderData->quad_index_count );
+			sRenderData->stats.draw_calls++;
 		}
 
 		// Circles
-		if ( sRenderData->circleIndexCount )
+		if ( sRenderData->circle_index_count )
 		{
-			uint32_t circleDataSize = ( uint32_t )( ( uint8_t* )sRenderData->circleVertexBufferPtr - ( uint8_t* )sRenderData->circleVertexBufferBase );
-			sRenderData->circleVertexBuffer->SetData( sRenderData->circleVertexBufferBase, circleDataSize );
+			uint32_t circle_data_size = ( uint32_t )( ( uint8_t* )sRenderData->circle_vertex_buffer_ptr - ( uint8_t* )sRenderData->circle_vertex_buffer_base );
+			sRenderData->circle_vertex_buffer->SetData( sRenderData->circle_vertex_buffer_base, circle_data_size );
 
-			sRenderData->circleShader->Bind();
-			Renderer::DrawIndexed( sRenderData->circleVertexArray, sRenderData->circleIndexCount );
-			sRenderData->stats.drawCalls++;
+			sRenderData->circle_shader->Bind();
+			Renderer::DrawIndexed( sRenderData->circle_vertex_array, sRenderData->circle_index_count );
+			sRenderData->stats.draw_calls++;
 		}
 
 		// Lines
-		if ( sRenderData->lineVertexCount )
+		if ( sRenderData->line_vertex_count )
 		{
-			uint32_t lineDataSize = ( uint32_t )( ( uint8_t* )sRenderData->lineVertexBufferPtr - ( uint8_t* )sRenderData->lineVertexBufferBase );
-			sRenderData->lineVertexBuffer->SetData( sRenderData->lineVertexBufferBase, lineDataSize );
+			uint32_t line_data_size = ( uint32_t )( ( uint8_t* )sRenderData->line_vertex_buffer_ptr - ( uint8_t* )sRenderData->line_vertex_buffer_base );
+			sRenderData->line_vertex_buffer->SetData( sRenderData->line_vertex_buffer_base, line_data_size );
 
-			sRenderData->lineShader->Bind();
-			Renderer::SetLineWidth( sRenderData->lineWidth );
-			Renderer::DrawLines( sRenderData->lineVertexArray, sRenderData->lineVertexCount );
-			sRenderData->stats.drawCalls++;
+			sRenderData->line_shader->Bind();
+			Renderer::SetLineWidth( sRenderData->line_width );
+			Renderer::DrawLines( sRenderData->line_vertex_array, sRenderData->line_vertex_count );
+			sRenderData->stats.draw_calls++;
 		}
 	}
 

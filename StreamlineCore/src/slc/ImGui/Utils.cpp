@@ -69,11 +69,11 @@ namespace slc {
 	void Utils::SetButtonDefaults()
 	{
 		auto& colours = ImGui::GetStyle().Colors;
-		const auto& buttonHovered = colours[ ImGuiCol_ButtonHovered ];
-		const auto& buttonActive = colours[ ImGuiCol_ButtonActive ];
+		const auto& button_hovered = colours[ ImGuiCol_ButtonHovered ];
+		const auto& button_active = colours[ ImGuiCol_ButtonActive ];
 
-		ImGui::PushStyleColor( ImGuiCol_ButtonHovered, ImVec4( buttonHovered.x, buttonHovered.y, buttonHovered.z, 0.5f ) );
-		ImGui::PushStyleColor( ImGuiCol_ButtonActive, ImVec4( buttonActive.x, buttonActive.y, buttonActive.z, 0.5f ) );
+		ImGui::PushStyleColor( ImGuiCol_ButtonHovered, ImVec4( button_hovered.x, button_hovered.y, button_hovered.z, 0.5f ) );
+		ImGui::PushStyleColor( ImGuiCol_ButtonActive, ImVec4( button_active.x, button_active.y, button_active.z, 0.5f ) );
 	}
 
 	ImVec2 Utils::GetMainWindowCentreInternal()

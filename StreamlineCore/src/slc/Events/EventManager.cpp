@@ -9,32 +9,32 @@ namespace slc {
 	void EventManager::Dispatch()
 	{
 		// Add any new listeners queued to start listening.
-		sState.genericListeners.insert( sState.genericListeners.end(), sState.newListeners.begin(), sState.newListeners.end() );
-		sState.newListeners.clear();
+		sState.generic_listeners.insert( sState.generic_listeners.end(), sState.new_listeners.begin(), sState.new_listeners.end() );
+		sState.new_listeners.clear();
 
 		// Remove any listeners queued to remove.
-		std::erase_if( sState.genericListeners, [ & ]( const IEventListener* listener ) { return std::ranges::contains( sState.oldListeners, listener ); } );
-		sState.oldListeners.clear();
+		std::erase_if( sState.generic_listeners, [ & ]( const IEventListener* listener ) { return std::ranges::contains( sState.old_listeners, listener ); } );
+		sState.old_listeners.clear();
 
 		// Distribute events in the queue
-		for ( Event& e : sState.eventQueue )
+		for ( Event& e : sState.event_queue )
 		{
 			// Handle app events first
-			if ( sState.appListener->Accept( e ) )
-				sState.appListener->OnEvent( e );
+			if ( sState.app_listener->Accept( e ) )
+				sState.app_listener->OnEvent( e );
 
 			// Handle imgui events next
-			if ( sState.imGuiListener->Accept( e ) )
-				sState.imGuiListener->OnEvent( e );
+			if ( sState.imgui_listener->Accept( e ) )
+				sState.imgui_listener->OnEvent( e );
 
 			// Handle any generic listeners that accept this event type.
-			for ( IEventListener* listener : sState.genericListeners | std::views::filter( [ & ]( IEventListener* listener ) { return listener->Accept( e ); } ) )
+			for ( IEventListener* listener : sState.generic_listeners | std::views::filter( [ & ]( IEventListener* listener ) { return listener->Accept( e ); } ) )
 				listener->OnEvent( e );
 		}
 
 		// Clear down event queue and reset event model allocators.
-		sState.eventQueue.clear();
-		sState.modelAllocator.Flush();
+		sState.event_queue.clear();
+		sState.model_allocator.Flush();
 	}
 
 	void EventManager::RegisterListener( IEventListener* listener, ListenerType type )
@@ -44,17 +44,17 @@ namespace slc {
 			case ListenerType::Generic:
 			{
 				// Some events may create a new listener while we're iterating through the listeners, so postpone addition till start of new frame.
-				sState.newListeners.emplace_back( listener );
+				sState.new_listeners.emplace_back( listener );
 				break;
 			}
 			case ListenerType::App:
 			{
-				sState.appListener = listener;
+				sState.app_listener = listener;
 				break;
 			}
 			case ListenerType::ImGui:
 			{
-				sState.imGuiListener = listener;
+				sState.imgui_listener = listener;
 				break;
 			}
 		}
@@ -66,17 +66,17 @@ namespace slc {
 		{
 			case ListenerType::Generic:
 			{
-				sState.oldListeners.emplace_back( listener );
+				sState.old_listeners.emplace_back( listener );
 				break;
 			}
 			case ListenerType::App:
 			{
-				sState.appListener = nullptr;
+				sState.app_listener = nullptr;
 				break;
 			}
 			case ListenerType::ImGui:
 			{
-				sState.imGuiListener = nullptr;
+				sState.imgui_listener = nullptr;
 				break;
 			}
 		}

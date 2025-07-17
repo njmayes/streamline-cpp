@@ -6,39 +6,42 @@
 
 namespace slc::Environment {
 
-	void SetVar( std::string_view envName, std::string_view envVal )
+	bool SetVar( std::string_view env_name, std::string_view env_val )
 	{
 #ifdef SLC_PLATFORM_WINDOWS
-		int error = _putenv_s( envName.data(), envVal.data() );
+		int error = _putenv_s( env_name.data(), env_val.data() );
 #elif defined( SLC_PLATFORM_LINUX )
-		int error = setenv( envName.data(), envVal.data(), 1 );
+		int error = setenv( env_name.data(), env_val.data(), 1 );
 #else
 		int error = -1;
 #endif
 		if ( error )
 		{
-			Log::Error( "Could not set the environment variable!" );
+			Log::Error( "Could not set the environment variable \"{}\"", env_name );
+			return false;
 		}
+
+		return true;
 	}
 
-	std::string GetVar( std::string_view envName )
+	std::optional< std::string > GetVar( std::string_view env_name )
 	{
 		errno_t error;
 		std::size_t required_size = 0;
-		error = getenv_s( &required_size, nullptr, 0, envName.data() );
+		error = getenv_s( &required_size, nullptr, 0, env_name.data() );
 
 		if ( error )
 		{
-			Log::Error( "Could not get the environment variable" );
+			Log::Error( "Could not get the environment variable \"{}\"", env_name );
 			return {};
 		}
 
-		std::string result( '\0', required_size );
-		error = getenv_s( &required_size, result.data(), result.size(), envName.data() );
+		std::string result( required_size, '\0' );
+		error = getenv_s( &required_size, result.data(), result.size(), env_name.data() );
 
 		if ( error )
 		{
-			Log::Error( "Could not get the environment variable" );
+			Log::Error( "Could not get the environment variable \"{}\"", env_name );
 			return {};
 		}
 

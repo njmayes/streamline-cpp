@@ -81,13 +81,13 @@ namespace slc {
 		{
 			Byte* tmp = mMemBlock;
 			ptrdiff_t offset = mHead - mMemBlock;
-			size_t tmpSize = mMaxSize;
+			size_t tmp_size = mMaxSize;
 
 			mMaxSize *= SCALE_FACTOR;
 			mMemBlock = static_cast< Byte* >( ::operator new( mMaxSize ) );
 			mHead = mMemBlock + offset;
 
-			memcpy( mMemBlock, tmp, tmpSize );
+			memcpy( mMemBlock, tmp, tmp_size );
 			::operator delete( tmp );
 		}
 

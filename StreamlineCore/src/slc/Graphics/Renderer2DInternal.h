@@ -18,15 +18,15 @@ namespace slc {
 		Vector4f colour;
 		Vector2f texCoord;
 
-		float texIndex;
-		float tilingFactor;
+		float texture_index;
+		float tiling_factor;
 	};
 
 	struct CircleVertex
 	{
-		Vector3f worldPosition;
+		Vector3f world_position;
 		float thickness;
-		Vector2f localPosition;
+		Vector2f local_position;
 		Vector4f colour;
 	};
 
@@ -38,16 +38,16 @@ namespace slc {
 
 	struct RenderStatistics
 	{
-		uint32_t drawCalls = 0;
-		uint32_t quadCount = 0;
+		uint32_t draw_calls = 0;
+		uint32_t quad_count = 0;
 
 		uint32_t getTotalVertexCount() const
 		{
-			return quadCount * 4;
+			return quad_count * 4;
 		}
 		uint32_t getTotalIndexCount() const
 		{
-			return quadCount * 6;
+			return quad_count * 6;
 		}
 	};
 
@@ -65,44 +65,44 @@ namespace slc {
 		};
 
 
-		Ref< VertexArray > quadVertexArray;
-		Ref< VertexBuffer > quadVertexBuffer;
-		Ref< Shader > quadShader;
+		Ref< VertexArray > quad_vertex_array;
+		Ref< VertexBuffer > quad_vertex_buffer;
+		Ref< Shader > quad_shader;
 
-		uint32_t quadIndexCount = 0;
-		QuadVertex* quadVertexBufferBase = nullptr;
-		QuadVertex* quadVertexBufferPtr = nullptr;
-
-
-		Ref< VertexArray > circleVertexArray;
-		Ref< VertexBuffer > circleVertexBuffer;
-		Ref< Shader > circleShader;
-
-		uint32_t circleIndexCount = 0;
-		CircleVertex* circleVertexBufferBase = nullptr;
-		CircleVertex* circleVertexBufferPtr = nullptr;
+		uint32_t quad_index_count = 0;
+		QuadVertex* quad_vertex_buffer_base = nullptr;
+		QuadVertex* quad_vertex_buffer_ptr = nullptr;
 
 
-		Ref< VertexArray > lineVertexArray;
-		Ref< VertexBuffer > lineVertexBuffer;
-		Ref< Shader > lineShader;
+		Ref< VertexArray > circle_vertex_array;
+		Ref< VertexBuffer > circle_vertex_buffer;
+		Ref< Shader > circle_shader;
 
-		uint32_t lineVertexCount = 0;
-		LineVertex* lineVertexBufferBase = nullptr;
-		LineVertex* lineVertexBufferPtr = nullptr;
-
-		float lineWidth = 2.0f;
+		uint32_t circle_index_count = 0;
+		CircleVertex* circle_vertex_buffer_base = nullptr;
+		CircleVertex* circle_vertex_buffer_ptr = nullptr;
 
 
-		Ref< Texture2D > whiteTexture;
-		std::array< Ref< IRenderable >, MaxTextureSlots > textureSlots;
-		uint32_t textureSlotIndex;
+		Ref< VertexArray > line_vertex_array;
+		Ref< VertexBuffer > line_vertex_buffer;
+		Ref< Shader > line_shader;
+
+		uint32_t line_vertex_count = 0;
+		LineVertex* line_vertex_buffer_base = nullptr;
+		LineVertex* line_vertex_buffer_ptr = nullptr;
+
+		float line_width = 2.0f;
+
+
+		Ref< Texture2D > white_texture;
+		std::array< Ref< IRenderable >, MaxTextureSlots > texture_slots;
+		uint32_t texture_slot_index;
 
 
 		RenderStatistics stats;
 
 		using CameraData = Matrix4f;
-		CameraData cameraMatrix;
-		Ref< UniformBuffer > cameraUniformBuffer;
+		CameraData camera_matrix;
+		Ref< UniformBuffer > camera_uniform_buffer;
 	};
 } // namespace slc

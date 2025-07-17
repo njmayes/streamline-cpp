@@ -50,7 +50,7 @@ namespace slc {
 	void Widgets::BeginDockspace()
 	{
 		static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
-		static bool dockspaceOpen = true;
+		static bool dockspace_open = true;
 		static bool opt_fullscreen_persistant = true;
 		bool opt_fullscreen = opt_fullscreen_persistant;
 
@@ -71,7 +71,7 @@ namespace slc {
 			window_flags |= ImGuiWindowFlags_NoBackground;
 
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-		ImGui::Begin("DockSpace Demo", &dockspaceOpen, window_flags);
+		ImGui::Begin("DockSpace Demo", &dockspace_open, window_flags);
 		ImGui::PopStyleVar();
 
 		if (opt_fullscreen)
@@ -80,7 +80,7 @@ namespace slc {
 		// DockSpace
 		ImGuiIO& io = ImGui::GetIO();
 		ImGuiStyle& style = ImGui::GetStyle();
-		float minWinSizeX = style.WindowMinSize.x;
+		float min_win_size_x = style.WindowMinSize.x;
 		style.WindowMinSize.x = 370.0f;
 
 		if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
@@ -89,7 +89,7 @@ namespace slc {
 			ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
 		}
 
-		style.WindowMinSize.x = minWinSizeX;
+		style.WindowMinSize.x = min_win_size_x;
 	}
 
 	void Widgets::EndDockspace()
@@ -257,16 +257,16 @@ namespace slc {
 
 	void Widgets::StringEdit(std::string_view label, std::string& field)
 	{
-		StaticString<256> stringEditBuffer(field);
-		if (ImGui::InputText(label.data(), stringEditBuffer.Data(), stringEditBuffer.Length()))
-			field = stringEditBuffer.ToString();
+		StaticString<256> string_edit_buffer(field);
+		if (ImGui::InputText(label.data(), string_edit_buffer.Data(), string_edit_buffer.Length()))
+			field = string_edit_buffer.ToString();
 	}
 
 	void Widgets::PathEdit(std::string_view label, fs::path& field)
 	{
-		StaticString<512> pathEditBuffer(field.string());
-		if (ImGui::InputText(label.data(), pathEditBuffer.Data(), pathEditBuffer.Length()))
-			field = pathEditBuffer.ToString();
+		StaticString<512> path_edit_buffer(field.string());
+		if (ImGui::InputText(label.data(), path_edit_buffer.Data(), path_edit_buffer.Length()))
+			field = path_edit_buffer.ToString();
 	}
 
 	bool Widgets::BeginDragDropSourceInternal()
@@ -312,7 +312,7 @@ namespace slc {
 	void Widgets::Vector2EditInternalRef(std::string_view label, ImVec2& values, float resetVal, float colWidth)
 	{
 		ImGuiIO& io = ImGui::GetIO();
-		auto boldFont = io.Fonts->Fonts[0];
+		auto bold_font = io.Fonts->Fonts[0];
 
 		ImGui::PushID(label.data());
 
@@ -324,14 +324,14 @@ namespace slc {
 		ImGui::PushMultiItemsWidths(2, ImGui::CalcItemWidth());
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{ 0, 0 });
 
-		float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
-		ImVec2 buttonSize = { lineHeight + 3.0f, lineHeight };
+		float line_height = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
+		ImVec2 button_size = { line_height + 3.0f, line_height };
 
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.8f, 0.1f, 0.15f, 1.0f });
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.9f, 0.2f, 0.2f, 1.0f });
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.8f, 0.1f, 0.15f, 1.0f });
-		ImGui::PushFont(boldFont);
-		if (ImGui::Button("X", buttonSize))
+		ImGui::PushFont(bold_font);
+		if (ImGui::Button("X", button_size))
 			values.x = resetVal;
 		ImGui::PopFont();
 		ImGui::PopStyleColor(3);
@@ -344,8 +344,8 @@ namespace slc {
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.2f, 0.7f, 0.2f, 1.0f });
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.3f, 0.8f, 0.3f, 1.0f });
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.2f, 0.7f, 0.2f, 1.0f });
-		ImGui::PushFont(boldFont);
-		if (ImGui::Button("Y", buttonSize))
+		ImGui::PushFont(bold_font);
+		if (ImGui::Button("Y", button_size))
 			values.y = resetVal;
 		ImGui::PopFont();
 		ImGui::PopStyleColor(3);
@@ -364,7 +364,7 @@ namespace slc {
 	void Widgets::Vector3EditInternalRef(std::string_view label, ImVec3& values, float resetVal, float colWidth)
 	{
 		ImGuiIO& io = ImGui::GetIO();
-		auto boldFont = io.Fonts->Fonts[0];
+		auto bold_font = io.Fonts->Fonts[0];
 
 		ImGui::PushID(label.data());
 
@@ -376,14 +376,14 @@ namespace slc {
 		ImGui::PushMultiItemsWidths(3, ImGui::CalcItemWidth());
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{ 0, 0 });
 
-		float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
-		ImVec2 buttonSize = { lineHeight + 3.0f, lineHeight };
+		float line_height = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
+		ImVec2 button_size = { line_height + 3.0f, line_height };
 
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.8f, 0.1f, 0.15f, 1.0f });
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.9f, 0.2f, 0.2f, 1.0f });
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.8f, 0.1f, 0.15f, 1.0f });
-		ImGui::PushFont(boldFont);
-		if (ImGui::Button("X", buttonSize))
+		ImGui::PushFont(bold_font);
+		if (ImGui::Button("X", button_size))
 			values.x = resetVal;
 		ImGui::PopFont();
 		ImGui::PopStyleColor(3);
@@ -396,8 +396,8 @@ namespace slc {
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.2f, 0.7f, 0.2f, 1.0f });
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.3f, 0.8f, 0.3f, 1.0f });
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.2f, 0.7f, 0.2f, 1.0f });
-		ImGui::PushFont(boldFont);
-		if (ImGui::Button("Y", buttonSize))
+		ImGui::PushFont(bold_font);
+		if (ImGui::Button("Y", button_size))
 			values.y = resetVal;
 		ImGui::PopFont();
 		ImGui::PopStyleColor(3);
@@ -410,8 +410,8 @@ namespace slc {
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.1f, 0.25f, 0.8f, 1.0f });
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.2f, 0.35f, 0.9f, 1.0f });
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.1f, 0.25f, 0.8f, 1.0f });
-		ImGui::PushFont(boldFont);
-		if (ImGui::Button("Z", buttonSize))
+		ImGui::PushFont(bold_font);
+		if (ImGui::Button("Z", button_size))
 			values.z = resetVal;
 		ImGui::PopFont();
 		ImGui::PopStyleColor(3);
@@ -430,7 +430,7 @@ namespace slc {
 	void Widgets::Vector4EditInternalRef(std::string_view label, ImVec4& values, float resetVal, float colWidth)
 	{
 		ImGuiIO& io = ImGui::GetIO();
-		auto boldFont = io.Fonts->Fonts[0];
+		auto bold_font = io.Fonts->Fonts[0];
 
 		ImGui::PushID(label.data());
 
@@ -442,14 +442,14 @@ namespace slc {
 		ImGui::PushMultiItemsWidths(4, ImGui::CalcItemWidth());
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{ 0, 0 });
 
-		float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
-		ImVec2 buttonSize = { lineHeight + 3.0f, lineHeight };
+		float line_height = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
+		ImVec2 button_size = { line_height + 3.0f, line_height };
 
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.8f, 0.1f, 0.15f, 1.0f });
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.9f, 0.2f, 0.2f, 1.0f });
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.8f, 0.1f, 0.15f, 1.0f });
-		ImGui::PushFont(boldFont);
-		if (ImGui::Button("X", buttonSize))
+		ImGui::PushFont(bold_font);
+		if (ImGui::Button("X", button_size))
 			values.x = resetVal;
 		ImGui::PopFont();
 		ImGui::PopStyleColor(3);
@@ -462,8 +462,8 @@ namespace slc {
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.2f, 0.7f, 0.2f, 1.0f });
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.3f, 0.8f, 0.3f, 1.0f });
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.2f, 0.7f, 0.2f, 1.0f });
-		ImGui::PushFont(boldFont);
-		if (ImGui::Button("Y", buttonSize))
+		ImGui::PushFont(bold_font);
+		if (ImGui::Button("Y", button_size))
 			values.y = resetVal;
 		ImGui::PopFont();
 		ImGui::PopStyleColor(3);
@@ -476,8 +476,8 @@ namespace slc {
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.1f, 0.25f, 0.8f, 1.0f });
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.2f, 0.35f, 0.9f, 1.0f });
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.1f, 0.25f, 0.8f, 1.0f });
-		ImGui::PushFont(boldFont);
-		if (ImGui::Button("Z", buttonSize))
+		ImGui::PushFont(bold_font);
+		if (ImGui::Button("Z", button_size))
 			values.z = resetVal;
 		ImGui::PopFont();
 		ImGui::PopStyleColor(3);
@@ -490,8 +490,8 @@ namespace slc {
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.1f, 0.25f, 0.8f, 1.0f });
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.2f, 0.35f, 0.9f, 1.0f });
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.1f, 0.25f, 0.8f, 1.0f });
-		ImGui::PushFont(boldFont);
-		if (ImGui::Button("W", buttonSize))
+		ImGui::PushFont(bold_font);
+		if (ImGui::Button("W", button_size))
 			values.w = resetVal;
 		ImGui::PopFont();
 		ImGui::PopStyleColor(3);
@@ -510,7 +510,7 @@ namespace slc {
 	ImVec2 Widgets::Vector2EditInternal(std::string_view label, ImVec2 values, float resetVal, float colWidth)
 	{
 		ImGuiIO& io = ImGui::GetIO();
-		auto boldFont = io.Fonts->Fonts[0];
+		auto bold_font = io.Fonts->Fonts[0];
 
 		ImGui::PushID(label.data());
 
@@ -522,14 +522,14 @@ namespace slc {
 		ImGui::PushMultiItemsWidths(2, ImGui::CalcItemWidth());
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{ 0, 0 });
 
-		float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
-		ImVec2 buttonSize = { lineHeight + 3.0f, lineHeight };
+		float line_height = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
+		ImVec2 button_size = { line_height + 3.0f, line_height };
 
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.8f, 0.1f, 0.15f, 1.0f });
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.9f, 0.2f, 0.2f, 1.0f });
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.8f, 0.1f, 0.15f, 1.0f });
-		ImGui::PushFont(boldFont);
-		if (ImGui::Button("X", buttonSize))
+		ImGui::PushFont(bold_font);
+		if (ImGui::Button("X", button_size))
 			values.x = resetVal;
 		ImGui::PopFont();
 		ImGui::PopStyleColor(3);
@@ -542,8 +542,8 @@ namespace slc {
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.2f, 0.7f, 0.2f, 1.0f });
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.3f, 0.8f, 0.3f, 1.0f });
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.2f, 0.7f, 0.2f, 1.0f });
-		ImGui::PushFont(boldFont);
-		if (ImGui::Button("Y", buttonSize))
+		ImGui::PushFont(bold_font);
+		if (ImGui::Button("Y", button_size))
 			values.y = resetVal;
 		ImGui::PopFont();
 		ImGui::PopStyleColor(3);
@@ -564,7 +564,7 @@ namespace slc {
 	ImVec3 Widgets::Vector3EditInternal(std::string_view label, ImVec3 values, float resetVal, float colWidth)
 	{
 		ImGuiIO& io = ImGui::GetIO();
-		auto boldFont = io.Fonts->Fonts[0];
+		auto bold_font = io.Fonts->Fonts[0];
 
 		ImGui::PushID(label.data());
 
@@ -576,14 +576,14 @@ namespace slc {
 		ImGui::PushMultiItemsWidths(3, ImGui::CalcItemWidth());
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{ 0, 0 });
 
-		float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
-		ImVec2 buttonSize = { lineHeight + 3.0f, lineHeight };
+		float line_height = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
+		ImVec2 button_size = { line_height + 3.0f, line_height };
 
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.8f, 0.1f, 0.15f, 1.0f });
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.9f, 0.2f, 0.2f, 1.0f });
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.8f, 0.1f, 0.15f, 1.0f });
-		ImGui::PushFont(boldFont);
-		if (ImGui::Button("X", buttonSize))
+		ImGui::PushFont(bold_font);
+		if (ImGui::Button("X", button_size))
 			values.x = resetVal;
 		ImGui::PopFont();
 		ImGui::PopStyleColor(3);
@@ -596,8 +596,8 @@ namespace slc {
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.2f, 0.7f, 0.2f, 1.0f });
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.3f, 0.8f, 0.3f, 1.0f });
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.2f, 0.7f, 0.2f, 1.0f });
-		ImGui::PushFont(boldFont);
-		if (ImGui::Button("Y", buttonSize))
+		ImGui::PushFont(bold_font);
+		if (ImGui::Button("Y", button_size))
 			values.y = resetVal;
 		ImGui::PopFont();
 		ImGui::PopStyleColor(3);
@@ -610,8 +610,8 @@ namespace slc {
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.1f, 0.25f, 0.8f, 1.0f });
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.2f, 0.35f, 0.9f, 1.0f });
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.1f, 0.25f, 0.8f, 1.0f });
-		ImGui::PushFont(boldFont);
-		if (ImGui::Button("Z", buttonSize))
+		ImGui::PushFont(bold_font);
+		if (ImGui::Button("Z", button_size))
 			values.z = resetVal;
 		ImGui::PopFont();
 		ImGui::PopStyleColor(3);
@@ -632,7 +632,7 @@ namespace slc {
 	ImVec4 Widgets::Vector4EditInternal(std::string_view label, ImVec4 values, float resetVal, float colWidth)
 	{
 		ImGuiIO& io = ImGui::GetIO();
-		auto boldFont = io.Fonts->Fonts[0];
+		auto bold_font = io.Fonts->Fonts[0];
 
 		ImGui::PushID(label.data());
 
@@ -644,14 +644,14 @@ namespace slc {
 		ImGui::PushMultiItemsWidths(4, ImGui::CalcItemWidth());
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{ 0, 0 });
 
-		float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
-		ImVec2 buttonSize = { lineHeight + 3.0f, lineHeight };
+		float line_height = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
+		ImVec2 button_size = { line_height + 3.0f, line_height };
 
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.8f, 0.1f, 0.15f, 1.0f });
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.9f, 0.2f, 0.2f, 1.0f });
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.8f, 0.1f, 0.15f, 1.0f });
-		ImGui::PushFont(boldFont);
-		if (ImGui::Button("X", buttonSize))
+		ImGui::PushFont(bold_font);
+		if (ImGui::Button("X", button_size))
 			values.x = resetVal;
 		ImGui::PopFont();
 		ImGui::PopStyleColor(3);
@@ -664,8 +664,8 @@ namespace slc {
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.2f, 0.7f, 0.2f, 1.0f });
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.3f, 0.8f, 0.3f, 1.0f });
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.2f, 0.7f, 0.2f, 1.0f });
-		ImGui::PushFont(boldFont);
-		if (ImGui::Button("Y", buttonSize))
+		ImGui::PushFont(bold_font);
+		if (ImGui::Button("Y", button_size))
 			values.y = resetVal;
 		ImGui::PopFont();
 		ImGui::PopStyleColor(3);
@@ -678,8 +678,8 @@ namespace slc {
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.1f, 0.25f, 0.8f, 1.0f });
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.2f, 0.35f, 0.9f, 1.0f });
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.1f, 0.25f, 0.8f, 1.0f });
-		ImGui::PushFont(boldFont);
-		if (ImGui::Button("Z", buttonSize))
+		ImGui::PushFont(bold_font);
+		if (ImGui::Button("Z", button_size))
 			values.z = resetVal;
 		ImGui::PopFont();
 		ImGui::PopStyleColor(3);
@@ -692,8 +692,8 @@ namespace slc {
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.1f, 0.25f, 0.8f, 1.0f });
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.2f, 0.35f, 0.9f, 1.0f });
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.1f, 0.25f, 0.8f, 1.0f });
-		ImGui::PushFont(boldFont);
-		if (ImGui::Button("W", buttonSize))
+		ImGui::PushFont(bold_font);
+		if (ImGui::Button("W", button_size))
 			values.w = resetVal;
 		ImGui::PopFont();
 		ImGui::PopStyleColor(3);
@@ -756,16 +756,16 @@ namespace slc {
 
 	bool Widgets::ComboboxEntry(std::string_view preview, const IComboEntry* entry)
 	{
-		bool selectionChange = false;
+		bool selection_change = false;
 
-		bool isSelected = entry->key == preview;
-		if (ImGui::Selectable(entry->key.data(), isSelected))
-			selectionChange = true;
+		bool is_selected = entry->key == preview;
+		if (ImGui::Selectable(entry->key.data(), is_selected))
+			selection_change = true;
 
-		if (isSelected)
+		if (is_selected)
 			ImGui::SetItemDefaultFocus();
 
-		return selectionChange;
+		return selection_change;
 	}
 
 	void Widgets::EndCombo()
