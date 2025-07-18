@@ -8,10 +8,10 @@ namespace slc {
 	// Unique Pointer
 
 	template < typename T >
-	using Unique = std::unique_ptr< T >;
+	using Box = std::unique_ptr< T >;
 
 	template < typename T, typename... Args >
-	inline static constexpr Unique< T > MakeUnique( Args&&... args )
+	inline static constexpr Box< T > MakeBox( Args&&... args )
 	{
 		return std::make_unique< T >( std::forward< Args >( args )... );
 	}

@@ -6,9 +6,9 @@
 
 #include <glm/gtc/type_ptr.hpp>
 
-// #include <shaderc/shaderc.hpp>
-// #include <spirv_cross/spirv_cross.hpp>
-// #include <spirv_cross/spirv_glsl.hpp>
+#include <shaderc/shaderc.hpp>
+#include <spirv_cross/spirv_cross.hpp>
+#include <spirv_cross/spirv_glsl.hpp>
 
 #include "slc/IO/Filesystem.h"
 #include "slc/Logging/Log.h"
@@ -327,13 +327,13 @@ namespace slc {
 		Log::Trace( "Uniform buffers:" );
 		for ( const auto& resource : resources.uniform_buffers )
 		{
-			const auto& buffer_type = compiler.get_type( resource.base_type_id );
-			size_t buffer_size = compiler.get_declared_struct_size( buffer_type );
+			const auto& bufferType = compiler.get_type( resource.base_type_id );
+			size_t bufferSize = compiler.get_declared_struct_size( bufferType );
 			uint32_t binding = compiler.get_decoration( resource.id, spv::DecorationBinding );
-			size_t memberCount = buffer_type.member_types.size();
+			size_t memberCount = bufferType.member_types.size();
 
 			Log::Trace( "  {0}", resource.name );
-			Log::Trace( "    Size = {0}", buffer_size );
+			Log::Trace( "    Size = {0}", bufferSize );
 			Log::Trace( "    Binding = {0}", binding );
 			Log::Trace( "    Members = {0}", memberCount );
 		}

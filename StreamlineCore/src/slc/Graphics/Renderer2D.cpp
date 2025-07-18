@@ -6,7 +6,7 @@ namespace slc {
 
 	void Renderer2D::Init()
 	{
-		sRenderData = MakeUnique< Renderer2DData >();
+		sRenderData = MakeBox< Renderer2DData >();
 
 		{ // Quads
 			sRenderData->quad_vertex_array = Ref< VertexArray >::Create();

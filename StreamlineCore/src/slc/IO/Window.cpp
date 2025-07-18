@@ -15,9 +15,9 @@ namespace slc {
 		Log::Error("GLFW Error ({0}): {1}", error, description);
 	}
 
-	Unique<Window> Window::Create(const WindowProperties& props)
+	Box<Window> Window::Create(const WindowProperties& props)
 	{
-		return MakeUnique<Window>(props);
+		return MakeBox<Window>(props);
 	}
 
 	Window::Window(const WindowProperties& props)

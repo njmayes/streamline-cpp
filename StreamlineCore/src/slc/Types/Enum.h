@@ -2,83 +2,9 @@
 
 #include "slc/Common/Base.h"
 
+#include "Detail/Enum.h"
+
 namespace slc {
-
-	namespace detail {
-
-		template < auto E >
-			requires std::is_scoped_enum_v< decltype( E ) >
-		struct EnumTag : std::integral_constant< decltype( E ), E >
-		{
-			SCONSTEXPR auto Index = std::to_underlying( E );
-		};
-
-		template < auto E, typename F >
-		struct EnumMatchCaseHandler
-		{
-			F func;
-
-			template < typename... Args >
-			auto operator()( EnumTag< E >, Args&&... args ) const
-			{
-				return func( std::forward< Args >( args )... );
-			}
-		};
-
-		template < typename F >
-		struct EnumDefaultMatchCaseHandler
-		{
-			F func;
-
-			template < typename... Args >
-			auto operator()( std::monostate, Args&&... args ) const
-			{
-				return func( std::forward< Args >( args )... );
-			}
-		};
-
-
-		template < typename... Fs >
-		struct Overload : Fs...
-		{
-			using Fs::operator()...;
-		};
-
-
-		template < typename T >
-		struct IsDefaultMatchCaseHandler : std::false_type
-		{};
-
-		template < typename F >
-		struct IsDefaultMatchCaseHandler< EnumDefaultMatchCaseHandler< F > > : std::true_type
-		{};
-
-		template < typename... Ts >
-		struct FindDefaultHandlerHelper
-		{
-			using type = void; // Sentinel indicating "not found"
-		};
-
-		template < typename T, typename... Rest >
-		struct FindDefaultHandlerHelper< T, Rest... >
-		{
-			using type = std::conditional_t<
-				IsDefaultMatchCaseHandler< T >::value,
-				T,
-				typename FindDefaultHandlerHelper< Rest... >::type >;
-		};
-
-
-		template < typename T >
-		struct ExtractDefaultHandler;
-
-		template < template < typename... > class OverloadT, typename... Cases >
-		struct ExtractDefaultHandler< OverloadT< Cases... > >
-		{
-			using type = typename FindDefaultHandlerHelper< Cases... >::type;
-		};
-
-	} // namespace detail
 
 	template < auto E, typename F >
 	detail::EnumMatchCaseHandler< E, F > MatchCase( F&& f )
@@ -92,16 +18,43 @@ namespace slc {
 		return detail::EnumDefaultMatchCaseHandler< F >{ std::forward< F >( f ) };
 	}
 
-	template < auto E, typename Underlying = std::monostate >
+	template < auto Enum, typename Underlying = std::monostate >
+		requires std::is_enum_v< decltype( Enum ) >
 	struct Case
 	{
-		static constexpr auto Tag = detail::EnumTag< E >{};
-		static constexpr auto Value = E;
+		static constexpr auto Tag = detail::EnumTag< Enum >{};
+		static constexpr auto Value = Enum;
 		using Type = Underlying;
 	};
 
-	namespace detail {
+	/*	Usage example:
 
+		enum class TestEnum
+		{
+			OutOfBounds,
+			Unexpected,
+			Other
+		};
+
+		using SmartTestEnum = slc::SmartEnum< TestEnum,
+			slc::Case< TestEnum::OutOfBounds >,
+			slc::Case< TestEnum::Unexpected, std::string_view >,
+			slc::Case< TestEnum::Other >
+		>;
+
+		SmartTestEnum foo = SmartTestEnum::Make< TestEnum::Unexpected >( "Actual value" );
+
+		auto bar = asasfa.Match(
+			slc::MatchCase< ErrorEnum::OutOfBounds >( [] { return "OutOfBounds"; } ),
+			slc::MatchCase< ErrorEnum::Unexpected >( []( std::string_view value ) { return value; } ),
+			slc::MatchDefault( [] { return "Default"; }
+		);
+	*/
+
+	template < IsEnum Enum, typename... Cases >
+	class SmartEnum
+	{
+	private:
 		template < typename T >
 		struct IsCase : std::false_type
 		{};
@@ -110,40 +63,9 @@ namespace slc {
 		struct IsCase< Case< E, U > > : std::true_type
 		{};
 
-		template < typename T >
-		concept EnumCase = IsCase< T >::value;
-
-	} // namespace detail
-
-
-	/*	Usage example:
-
-		enum class TestEnum
-		{
-			OutOfBounds,
-			Unexpected
-		};
-
-		using SmartTestEnum = slc::SmartEnum< TestEnum,
-			slc::Case< TestEnum::OutOfBounds >,
-			slc::Case< TestEnum::Unexpected, std::string_view >
-		>;
-
-		SmartTestEnum foo = SmartTestEnum::Make< TestEnum::Unexpected >( "Actual value" );
-
-		auto bar = asasfa.Match(
-			slc::MatchCase< ErrorEnum::OutOfBounds >( [] { return "OutOfBounds"; } ),
-			slc::MatchCase< ErrorEnum::Unexpected >( []( std::string_view value ) { return value; } )
-		);
-	*/
-
-	template < IsEnum Enum, typename... Cases >
-	class SmartEnum
-	{
-	private:
 		static consteval bool AssertAllCasesUniqueAndValid()
 		{
-			static constexpr bool AllValidCases = ( ... and detail::EnumCase< Cases > );
+			static constexpr bool AllValidCases = ( ... and IsCase< Cases >::value );
 			if constexpr ( not AllValidCases )
 			{
 				static_assert( false, "All types must be Case<E, Underlying> specializations" );

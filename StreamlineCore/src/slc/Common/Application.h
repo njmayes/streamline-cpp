@@ -69,7 +69,7 @@ namespace slc {
 		LISTENING_EVENTS( EventType::WindowClose, EventType::WindowResize )
 
 	public:
-		Application( Unique< ApplicationSpecification > spec );
+		Application( Box< ApplicationSpecification > spec );
 		~Application();
 
 		void OnEvent( Event& e ) override;
@@ -133,7 +133,7 @@ namespace slc {
 			requires std::derived_from< T, ApplicationSpecification >
 		static void SetSpec( const T& spec )
 		{
-			sInstance->mSpecification = MakeUnique< T >( spec );
+			sInstance->mSpecification = MakeBox< T >( spec );
 		}
 
 		template < IsAction Func >
@@ -167,12 +167,12 @@ namespace slc {
 		static void Run( int argc, char** argv );
 
 	protected:
-		Unique< ApplicationSpecification > mSpecification;
+		Box< ApplicationSpecification > mSpecification;
 
 	private:
 		ApplicationState mState;
-		Unique< Window > mWindow;
-		Unique< ImGuiController > mImGuiController;
+		Box< Window > mWindow;
+		Box< ImGuiController > mImGuiController;
 		LayerStack mLayerStack;
 		ApplicationSystems mAppSystems;
 

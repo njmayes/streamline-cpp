@@ -5,7 +5,7 @@
 namespace slc {
 
 	LogMemoryArena::LogMemoryArena( std::size_t size )
-		: mBuffer{ MakeUnique< char[] >( size ) }
+		: mBuffer{ MakeBox< char[] >( size ) }
 		, mCapacity{ size }
 	{
 	}
