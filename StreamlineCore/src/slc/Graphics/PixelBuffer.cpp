@@ -30,7 +30,7 @@ namespace slc {
 		void* data = glMapBuffer( GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY );
 
 		ASSERT( data, "Could not read data from pixel buffer!" );
-		mPixels = ( Pixel* )data;
+		mPixels = static_cast< Pixel* >( data );
 	}
 
 	void PixelBuffer::Unlock()
@@ -45,6 +45,11 @@ namespace slc {
 
 		glTextureSubImage2D( mTexture->GetTextureID(), 0, 0, 0, mWidth, mHeight, GL_RGBA, GL_UNSIGNED_BYTE, 0 );
 		glBindBuffer( GL_PIXEL_UNPACK_BUFFER, 0 );
+	}
+
+	uint32_t PixelBuffer::GetTextureID() const
+	{
+		return mTexture->GetTextureID();
 	}
 
 	Pixel& PixelBuffer::At( size_t x, size_t y )

@@ -14,9 +14,9 @@ namespace slc {
 		virtual void Init();
 		virtual void SwapBuffers();
 
-		static Unique< GraphicsContext > Create( void* window )
+		static Box< GraphicsContext > Create( void* window )
 		{
-			return MakeUnique< GraphicsContext >( ( GLFWwindow* )window );
+			return MakeBox< GraphicsContext >( ( GLFWwindow* )window );
 		}
 
 	private:

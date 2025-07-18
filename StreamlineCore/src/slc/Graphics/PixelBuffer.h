@@ -14,10 +14,7 @@ namespace slc {
 		void Lock();
 		void Unlock();
 
-		uint32_t GetTextureID() const override
-		{
-			return mTexture->GetTextureID();
-		}
+		uint32_t GetTextureID() const override;
 
 		Pixel& At( size_t x, size_t y );
 		const Pixel& At( size_t x, size_t y ) const;

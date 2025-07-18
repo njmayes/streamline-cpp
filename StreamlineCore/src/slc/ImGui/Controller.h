@@ -22,9 +22,9 @@ namespace slc {
 		void EndFrame() const;
 
 		template < typename... Args >
-		static Unique< ImGuiController > Create( Args&&... args )
+		static Box< ImGuiController > Create( Args&&... args )
 		{
-			return MakeUnique< ImGuiController >( std::forward< Args >( args )... );
+			return MakeBox< ImGuiController >( std::forward< Args >( args )... );
 		}
 
 	public:
