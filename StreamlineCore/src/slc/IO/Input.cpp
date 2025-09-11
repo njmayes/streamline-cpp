@@ -4,28 +4,28 @@
 
 #include "slc/Common/Application.h"
 
-namespace slc::Input {
+namespace slc::input {
 
-	bool IsKeyPressed(KeyCode keycode)
+	bool IsKeyPressed( KeyCode keycode )
 	{
-		auto* window = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
-		auto state = glfwGetKey(window, static_cast<int32_t>(keycode));
+		auto* window = static_cast< GLFWwindow* >( Application::Get().GetWindow().GetNativeWindow() );
+		auto state = glfwGetKey( window, static_cast< int32_t >( keycode ) );
 		return state == GLFW_PRESS;
 	}
 
-	bool IsMouseButtonPressed(MouseCode button)
+	bool IsMouseButtonPressed( MouseCode button )
 	{
-		auto* window = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
-		auto state = glfwGetMouseButton(window, static_cast<int32_t>(button));
+		auto* window = static_cast< GLFWwindow* >( Application::Get().GetWindow().GetNativeWindow() );
+		auto state = glfwGetMouseButton( window, static_cast< int32_t >( button ) );
 		return state == GLFW_PRESS;
 	}
 
 	Vector2f GetMousePosition()
 	{
-		auto* window = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
+		auto* window = static_cast< GLFWwindow* >( Application::Get().GetWindow().GetNativeWindow() );
 		double xpos, ypos;
-		glfwGetCursorPos(window, &xpos, &ypos);
-		return { static_cast<float>(xpos), static_cast<float>(ypos) };
+		glfwGetCursorPos( window, &xpos, &ypos );
+		return { static_cast< float >( xpos ), static_cast< float >( ypos ) };
 	}
 
 	float GetMouseX()
@@ -37,4 +37,4 @@ namespace slc::Input {
 	{
 		return GetMousePosition().y;
 	}
-}
+} // namespace slc::input

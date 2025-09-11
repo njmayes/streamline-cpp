@@ -1,5 +1,8 @@
 #include "streamline.h"
 
+#include "ChatRoom.h"
+#include "ChatClient.h"
+
 #include <iostream>
 
 namespace slc {
@@ -131,6 +134,64 @@ using SmartErrorEnum = SmartEnum<
 
 #define TEST(y) int y = 0;
 SLC_FOR_EACH( TEST, x )
+
+
+void NetServerTest( int argc, char* argv[] )
+{
+	try
+	{
+		if ( argc < 2 )
+		{
+			std::cerr << "Usage: chat_server <port> [<port> ...]\n";
+			return;
+		}
+
+		ChatRoom room;
+
+		for ( int i = 1; i < argc; ++i )
+		{
+			unsigned short port = std::atoi( argv[ i ] );
+			room.AddPort( port );
+		}
+
+		room.Run();
+	}
+	catch ( std::exception& e )
+	{
+		std::cerr << "Exception: " << e.what() << "\n";
+	}
+
+	return;
+}
+
+void NetClientTest( int argc, char* argv[] )
+{
+	try
+	{
+		if ( argc < 2 )
+		{
+			std::cerr << "Usage: chat_server <port> [<port> ...]\n";
+			return;
+		}
+
+		ChatClient client;
+
+		for ( int i = 1; i < argc; ++i )
+		{
+			unsigned short port = std::atoi( argv[ i ] );
+			client.AddPort( port );
+		}
+
+		client.Run();
+	}
+	catch ( std::exception& e )
+	{
+		std::cerr << "Exception: " << e.what() << "\n";
+	}
+
+	return;
+}
+
 
 int main( int argc, char* argv[] )
 {

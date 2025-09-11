@@ -420,8 +420,8 @@ namespace slc {
 		static void EndCombo();
 
 	private:
-		inline static UI::MenuBar sCurrentMenuBar;
-		inline static UI::PopUp sCurrentPopup;
-		inline static UI::PopUpContext sCurrentPopupCtx;
+		inline static ui::MenuBar sCurrentMenuBar;
+		inline static ui::PopUp sCurrentPopup;
+		inline static ui::PopUpContext sCurrentPopupCtx;
 	};
 } // namespace slc

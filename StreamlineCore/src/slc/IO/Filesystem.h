@@ -4,7 +4,7 @@
 
 namespace fs = std::filesystem;
 
-namespace slc::FileUtils {
+namespace slc::file {
 
 	Buffer ReadToBuffer(const fs::path& filepath);
 	std::string ReadToString(const fs::path& filepath);

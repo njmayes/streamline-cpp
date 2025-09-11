@@ -6,7 +6,7 @@
 
 #include <portable-file-dialogs.h>
 
-namespace slc::FileUtils {
+namespace slc::file {
 
 	Buffer ReadToBuffer( const fs::path& filepath )
 	{
@@ -15,7 +15,7 @@ namespace slc::FileUtils {
 		if ( !stream )
 		{
 			// Failed to open the file
-			Log::Warn( "Failed to open {}", filepath.string() );
+			log::Warn( "Failed to open {}", filepath.string() );
 			return nullptr;
 		}
 
@@ -26,7 +26,7 @@ namespace slc::FileUtils {
 		if ( size == 0 )
 		{
 			// File is empty
-			Log::Warn( "File {} was empty!", filepath.string() );
+			log::Warn( "File {} was empty!", filepath.string() );
 			return nullptr;
 		}
 
@@ -44,7 +44,7 @@ namespace slc::FileUtils {
 		if ( !stream )
 		{
 			// Failed to open the file
-			Log::Warn( "Failed to open {}", filepath.string() );
+			log::Warn( "Failed to open {}", filepath.string() );
 			return {};
 		}
 
@@ -55,7 +55,7 @@ namespace slc::FileUtils {
 		if ( size == 0 )
 		{
 			// File is empty
-			Log::Warn( "File {} was empty!", filepath.string() );
+			log::Warn( "File {} was empty!", filepath.string() );
 			return {};
 		}
 
@@ -74,7 +74,7 @@ namespace slc::FileUtils {
 		if ( !stream )
 		{
 			// Failed to open the file
-			Log::Warn( "Failed to open file {}", filepath.string() );
+			log::Warn( "Failed to open file {}", filepath.string() );
 			return;
 		}
 
@@ -91,7 +91,7 @@ namespace slc::FileUtils {
 		if ( !stream )
 		{
 			// Failed to open the file
-			Log::Warn( "Failed to open file {}", filepath.string() );
+			log::Warn( "Failed to open file {}", filepath.string() );
 			return;
 		}
 
@@ -107,7 +107,7 @@ namespace slc::FileUtils {
 		if ( !stream )
 		{
 			// Failed to open the file
-			Log::Warn( "Failed to create file {}", filepath.string() );
+			log::Warn( "Failed to create file {}", filepath.string() );
 			return;
 		}
 	}
@@ -126,7 +126,7 @@ namespace slc::FileUtils {
 	{
 		if ( !fs::exists( filepath ) )
 		{
-			Log::Warn( "File does not exist!" );
+			log::Warn( "File does not exist!" );
 			return;
 		}
 
@@ -137,7 +137,7 @@ namespace slc::FileUtils {
 	{
 		if ( !fs::exists( filepath ) )
 		{
-			Log::Warn( "Directory does not exist!" );
+			log::Warn( "Directory does not exist!" );
 			return;
 		}
 
@@ -162,4 +162,4 @@ namespace slc::FileUtils {
 	{
 		return pfd::save_file( "Save file as", ".", filter ).result();
 	}
-} // namespace slc::FileUtils
+} // namespace slc::file

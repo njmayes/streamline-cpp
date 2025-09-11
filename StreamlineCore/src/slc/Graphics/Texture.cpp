@@ -32,7 +32,7 @@ namespace slc {
 		data = stbi_load( path.data(), &width, &height, &channels, 0 );
 
 		if ( stbi_failure_reason() )
-			Log::Warn( "{0}", stbi_failure_reason() );
+			log::Warn( "{0}", stbi_failure_reason() );
 		ASSERT( data, "Failed to load image!" );
 
 		mWidth = width;

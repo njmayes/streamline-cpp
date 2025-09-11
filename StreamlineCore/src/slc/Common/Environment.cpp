@@ -4,7 +4,7 @@
 
 #include "slc/Logging/Log.h"
 
-namespace slc::Environment {
+namespace slc::env {
 
 	bool SetVar( std::string_view env_name, std::string_view env_val )
 	{
@@ -17,7 +17,7 @@ namespace slc::Environment {
 #endif
 		if ( error )
 		{
-			Log::Error( "Could not set the environment variable \"{}\"", env_name );
+			log::Error( "Could not set the environment variable \"{}\"", env_name );
 			return false;
 		}
 
@@ -32,7 +32,7 @@ namespace slc::Environment {
 
 		if ( error )
 		{
-			Log::Error( "Could not get the environment variable \"{}\"", env_name );
+			log::Error( "Could not get the environment variable \"{}\"", env_name );
 			return {};
 		}
 
@@ -41,10 +41,10 @@ namespace slc::Environment {
 
 		if ( error )
 		{
-			Log::Error( "Could not get the environment variable \"{}\"", env_name );
+			log::Error( "Could not get the environment variable \"{}\"", env_name );
 			return {};
 		}
 
 		return result;
 	}
-} // namespace slc::Environment
+} // namespace slc::env

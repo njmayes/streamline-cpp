@@ -4,6 +4,8 @@
 
 #include <cassert>
 
+#define SLC_VERSION "0.1.0"
+
 #define SLC_EXPAND_MACRO(x) x
 
 #ifdef __has_cpp_attribute

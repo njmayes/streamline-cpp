@@ -40,5 +40,18 @@ namespace slc {
 		return 1ull << bit;
 	}
 
+	inline std::size_t hash_combine( std::size_t seed )
+	{
+		return seed;
+	}
+
+	template < typename T, typename... Rest >
+	inline void HashCombine( std::size_t& seed, const T& v, Rest... rest )
+	{
+		std::hash< T > hasher;
+		seed ^= hasher( v ) + 0x9e3779b9 + ( seed << 6 ) + ( seed >> 2 );
+		HashCombine( seed, rest... );
+	}
+
 	namespace fs = std::filesystem;
 } // namespace slc

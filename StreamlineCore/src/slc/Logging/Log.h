@@ -2,7 +2,7 @@
 
 #include "Logger.h"
 
-namespace slc::Log {
+namespace slc::log {
 
 	/*
 	 *   Utility Functions
@@ -96,4 +96,4 @@ namespace slc::Log {
 		auto& logger = Logger::GetGlobalLogger();
 		logger.Log( LogLevel::Fatal, message, std::forward< Args >( args )... );
 	}
-} // namespace slc::Log
+} // namespace slc::log

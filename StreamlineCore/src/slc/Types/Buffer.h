@@ -3,94 +3,88 @@
 #include "slc/Common/Base.h"
 
 namespace slc {
+
+	// N.B. this class technically invokes undefined behaviour to read types out of the buffer, but this is generally safe for standard layout types on major compilers.
 	class Buffer
 	{
 	public:
 		Buffer() = default;
 		Buffer( std::nullptr_t )
 		{}
-		Buffer( Byte* data, size_t size )
-			: mData( data ), mSize( size )
-		{}
 		Buffer( size_t size )
 		{
-			Allocate( size );
+			mData.reserve( size );
 		}
-
-		Buffer( const Buffer& buffer );
-		Buffer( Buffer&& buffer ) noexcept;
-
-		virtual ~Buffer()
-		{
-			Release();
-		}
-
-		Buffer& operator=( const Buffer& buffer );
-		Buffer& operator=( Buffer&& buffer ) noexcept;
 
 		static Buffer Copy( const void* data, size_t size );
 
 	public:
-		template < typename T, typename Self >
+		template < IsStandard T, typename Self >
 		decltype( auto ) As( this Self&& self )
 		{
 			using ReturnType = std::conditional_t< std::is_const_v< Self >, const T*, T* >;
-			return reinterpret_cast< ReturnType >( std::forward< Self >( self ).mData );
+			return reinterpret_cast< ReturnType >( std::forward< Self >( self ).Data() );
 		}
 
-		template < typename T, typename Self >
+		template < IsStandard T, typename Self >
 		decltype( auto ) Read( this Self&& self, std::size_t offset )
 		{
 			using ReturnType = std::conditional_t< std::is_const_v< Self >, const T&, T& >;
-			return *reinterpret_cast< ReturnType >( std::forward< Self >( self ).mData + offset );
+			return *reinterpret_cast< ReturnType >( std::forward< Self >( self ).Data( offset ) );
 		}
 
 		template < IsStandard T >
 		void Set( const T& data, size_t offset = 0 )
 		{
-			constexpr size_t DataSize = sizeof( T );
-			if ( offset + DataSize > mSize )
-				Resize( offset + DataSize );
+			auto span = std::span< const T, 1 >{ std::addressof( data ), 1 };
+			auto bytes = std::as_bytes( span );
 
-			std::memcpy( mData + offset, &data, DataSize );
+			if ( offset + bytes.size() > mData.size() )
+				Resize( offset + bytes.size() );
+
+			std::memcpy( mData.data() + offset, bytes.data(), bytes.size() );
 		}
 
 		template < IsStandard T >
 		void Push( const T& data )
 		{
-			Set( data, mSize );
+			Set( data, mData.size() );
 		}
 
 		template < IsStandard T >
-		void Pop( T& data )
+		T Pop()
 		{
 			constexpr std::size_t DataSize = sizeof( T );
-			data = std::move( Read< T >( mSize - DataSize ) );
-			Resize( mSize - DataSize );
+			auto data = std::move( Read< T >( mData.size() - DataSize ) );
+			Resize( mData.size() - DataSize );
+			return data;
 		}
 
 		Byte* Data( size_t offset = 0 )
 		{
-			return mData + offset;
+			ASSERT( offset < mData.size() );
+			return mData.data() + offset;
 		}
 		const Byte* Data( size_t offset = 0 ) const
 		{
-			return mData + offset;
+			ASSERT( offset < mData.size() );
+			return mData.data() + offset;
 		}
 
 		size_t Size() const
 		{
-			return mSize;
+			return mData.size();
 		}
-		void Resize( size_t newSize );
+
+		void Reserve( size_t new_size );
+		void Resize( size_t new_size );
 
 		Buffer CopyBytes( size_t size, size_t offset = 0 );
-
 
 	public:
 		operator bool() const
 		{
-			return mData != nullptr;
+			return mData.data() != nullptr and mData.size() > 0;
 		}
 
 		Byte& operator[]( size_t index )
@@ -102,12 +96,7 @@ namespace slc {
 			return mData[ index ];
 		}
 
-	protected:
-		void Allocate( size_t size );
-		void Release();
-
-	protected:
-		Byte* mData = nullptr;
-		size_t mSize = 0;
+	private:
+		std::vector< Byte > mData;
 	};
 } // namespace slc

@@ -6,6 +6,7 @@ import platform
 from PremakeSetup import PremakeConfiguration as PremakeRequirements
 from ProjectSetup import ProjectConfiguration as ProjectConfig
 from VulkanSetup import VulkanConfiguration as VulkanRequirements
+from OpenSSLSetup import OpenSSLConfiguration as OpenSSLRequirements
 
 def main():
     os.chdir(f"{sys.path[0]}/../..") # Change working dir to repo root
@@ -13,6 +14,7 @@ def main():
     premakeInstalled = PremakeRequirements.Validate()
         
     VulkanRequirements.Validate()
+    OpenSSLRequirements.Validate()
 
     if (not projectConfigured):
         namespace = str(input("Enter the top level name for the repo...\n")).strip()
