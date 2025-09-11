@@ -6,6 +6,21 @@ namespace slc {
 
 	class IEventListener;
 
+	namespace detail {
+		struct EventManagerState
+		{
+			std::vector< Event > event_queue;
+			EventModelAllocator model_allocator;
+
+			IEventListener* app_listener = nullptr;
+			IEventListener* imgui_listener = nullptr;
+			std::vector< IEventListener* > generic_listeners;
+
+			std::vector< IEventListener* > new_listeners;
+			std::vector< IEventListener* > old_listeners;
+		};
+	}
+
 	/// <summary>
 	/// The interface by which events are queued and handled. Use the Post(...) method to submit an event
 	/// to be queued, which will then be handled at the start of the next frame in the Dispatch() method.
@@ -41,19 +56,6 @@ namespace slc {
 		static void Dispatch();
 
 	private:
-		struct EventManagerState
-		{
-			std::vector< Event > event_queue;
-			EventModelAllocator model_allocator;
-
-			IEventListener* app_listener = nullptr;
-			IEventListener* imgui_listener = nullptr;
-			std::vector< IEventListener* > generic_listeners;
-
-			std::vector< IEventListener* > new_listeners;
-			std::vector< IEventListener* > old_listeners;
-		};
-
-		inline static EventManagerState sState;
+		inline static detail::EventManagerState sState{};
 	};
 } // namespace slc

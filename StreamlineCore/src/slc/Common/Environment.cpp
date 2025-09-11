@@ -26,7 +26,8 @@ namespace slc::env {
 
 	std::optional< std::string > GetVar( std::string_view env_name )
 	{
-		errno_t error;
+#ifdef SLC_PLATFORM_WINDOWS
+		int error;
 		std::size_t required_size = 0;
 		error = getenv_s( &required_size, nullptr, 0, env_name.data() );
 
@@ -46,5 +47,11 @@ namespace slc::env {
 		}
 
 		return result;
+#elif defined( SLC_PLATFORM_LINUX )
+    	const char* val = std::getenv(env_name.data());
+		return val ? std::optional<std::string>{val} : std::nullopt;
+#else
+		return {}};
+#endif
 	}
 } // namespace slc::env

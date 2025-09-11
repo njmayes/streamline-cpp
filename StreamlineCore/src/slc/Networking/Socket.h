@@ -6,7 +6,7 @@
 
 namespace slc::net {
 
-	// A temporary object that wraps an asio SSL socket for passing to Connection that prevents the need for asio includes by app code.
+	// A temporary object that wraps an asio SSL socket for passing to Connection that prevents the need for asio dependency in app code.
 	class Socket
 	{
 	public:
@@ -20,7 +20,7 @@ namespace slc::net {
 		bool IsOpen() const;
 
 	private:
-		asio::ssl_stream& GetNativeSocket();
+		asio::ssl_stream&& GetNativeSocket();
 
 		friend class Connection;
 

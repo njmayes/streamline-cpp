@@ -36,10 +36,12 @@ namespace slc::net {
 
 		asio::awaitable< void > Connect(asio::ip::tcp::resolver resolver, std::string const& host, uint16_t port, std::function< void(Socket) > on_connect)
 		{
+			asio::io_context& ctx = static_cast<asio::io_context&>(resolver.get_executor().context());
 			auto endpoints = co_await resolver.async_resolve( host, std::to_string( port ), asio::use_awaitable );
-			asio::ip::tcp::socket tcp_socket{ resolver.get_executor().context() };
 
+			asio::ip::tcp::socket tcp_socket{ ctx };
 			co_await asio::async_connect( tcp_socket, endpoints, asio::use_awaitable );
+
 			asio::ssl::stream< asio::ip::tcp::socket > ssl_socket{ std::move( tcp_socket ), ssl_ctx };
 
 			Socket socket{ std::move( ssl_socket ) };

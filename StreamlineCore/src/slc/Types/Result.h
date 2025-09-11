@@ -51,11 +51,11 @@ namespace slc {
 	public:
 		explicit constexpr Result() = delete;
 		explicit constexpr Result( T&& result ) noexcept( std::is_nothrow_constructible_v< ResultType, T&& > )
-			: mValue( StorageType::Make< Ok >( std::forward< T >( result ) ) ), mResult( true )
+			: mValue( StorageType::template Make< Ok >( std::forward< T >( result ) ) ), mResult( true )
 		{}
 
 		explicit constexpr Result( E error ) noexcept
-			: mValue( StorageType::Make< Err >( error ) ), mResult( false )
+			: mValue( StorageType::template Make< Err >( error ) ), mResult( false )
 		{}
 		virtual ~Result() = default;
 
@@ -293,11 +293,11 @@ namespace slc {
 		/// <returns></returns>
 		constexpr RefType GetValRef() noexcept
 		{
-			return mValue.GetValue< Ok >();
+			return mValue.template GetValue< Ok >();
 		}
 		constexpr const RefType GetValRef() const noexcept
 		{
-			return mValue.GetValue< Ok >();
+			return mValue.template GetValue< Ok >();
 		}
 
 		/// <summary>
@@ -306,7 +306,7 @@ namespace slc {
 		/// <returns></returns>
 		constexpr E const& GetError() const noexcept
 		{
-			return mValue.GetValue< Err >();
+			return mValue.template GetValue< Err >();
 		}
 
 	private:

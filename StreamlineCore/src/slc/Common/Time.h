@@ -8,7 +8,7 @@ namespace slc {
 	{
 		std::tm bt{};
 #if defined( SLC_PLATFORM_LINUX )
-		localtime_r( &timer, &bt );
+		localtime_r( timer, &bt );
 #elif defined( SLC_PLATFORM_WINDOWS )
 		localtime_s( &bt, timer );
 #else

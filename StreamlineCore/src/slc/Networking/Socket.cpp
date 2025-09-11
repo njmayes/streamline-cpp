@@ -43,8 +43,8 @@ namespace slc::net {
 		return mImpl->socket.lowest_layer().is_open();
 	}
 
-	asio::ssl_stream& Socket::GetNativeSocket()
+	asio::ssl_stream&& Socket::GetNativeSocket()
 	{
-		return mImpl->socket;
+		return std::move( mImpl->socket );
 	}
 } // namespace slc::net

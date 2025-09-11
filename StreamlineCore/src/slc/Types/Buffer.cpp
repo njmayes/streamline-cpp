@@ -6,7 +6,8 @@ namespace slc {
 	{
 		auto span = std::span{ static_cast< const Byte* >( data ), size };
 		auto buffer = Buffer{};
-		buffer.mData.append_range( span );
+		buffer.Reserve(size);
+		std::ranges::copy(span, std::back_inserter(buffer.mData));
 		return buffer;
 	}
 

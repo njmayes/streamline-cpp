@@ -11,7 +11,9 @@
 #include <ranges>
 #include <map>
 #include <unordered_map>
+#include <utility>
 #include <cstddef>
+#include <cstring>
 
 namespace slc {
 

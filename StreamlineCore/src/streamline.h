@@ -3,8 +3,6 @@
 #include "slc/Common/Application.h"
 #include "slc/Common/Environment.h"
 
-#include "slc/Coroutine/Task.h"
-
 #include "slc/Collections/Grid.h"
 #include "slc/Collections/StaticMap.h"
 

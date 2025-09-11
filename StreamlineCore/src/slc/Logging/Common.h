@@ -1,5 +1,7 @@
 #pragma once
 
+#include "slc/Common/Base.h"
+
 #include <span>
 
 namespace slc {

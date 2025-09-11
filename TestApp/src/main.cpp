@@ -192,6 +192,10 @@ void NetClientTest( int argc, char* argv[] )
 	return;
 }
 
+slc::Application* CreateApplication( int argc, char** argv )
+{
+	return nullptr;
+}
 
 int main( int argc, char* argv[] )
 {
@@ -211,6 +215,7 @@ int main( int argc, char* argv[] )
 		MatchCase< ErrorEnum::Unexpected >( []( std::string_view value ) { return value; } )
 	);
 
+	std::cout << "Value: " << bar << "\n";
 
 	//auto a = GetRandom().AndThen( CheckRandom );
 

@@ -1,6 +1,5 @@
 #include "ConsoleLogTarget.h"
 
-#include "slc/Common/Base.h"
 #include "slc/Common/Profiling.h"
 #include "slc/Logging/Logger.h"
 
@@ -79,7 +78,7 @@ namespace {
 			return;
 		}
 #elif defined( SLC_PLATFORM_LINUX )
-		auto result = ::write( STDOUT_FILENO, mMessageBuffer.data(), count );
+		auto result = ::write( STDOUT_FILENO, buffer.data(), count );
 		if ( result == -1 )
 		{
 			auto message = std::system_category().message( errno );
