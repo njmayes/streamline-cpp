@@ -38,7 +38,7 @@ namespace slc {
 		static Logger& GetGlobalLogger();
 		static Logger& GetErrorLogger();
 
-		Logger( std::size_t message_size_limit = MessageSizeLimit, std::size_t max_messages_before_flus = MaxMessagesBeforeFlush );
+		Logger( std::size_t message_size_limit = MessageSizeLimit, std::size_t max_messages_before_flush = MaxMessagesBeforeFlush );
 		~Logger();
 
 		LoggerStats const& GetStats() const
@@ -127,7 +127,7 @@ namespace slc {
 		{
 			SLC_PROFILE_FUNCTION();
 
-			TemporaryBuffer temp;
+			TemporaryBuffer temp{};
 			auto result = std::format_to_n( temp.data(), temp.size(), message, std::forward< Args >( args )... );
 			return temp;
 		}

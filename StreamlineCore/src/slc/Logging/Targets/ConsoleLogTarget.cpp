@@ -160,11 +160,8 @@ namespace slc {
 
 		mCurrentAttribute = next_colour;
 
-		mBuffer[ mToWrite ] = '\x1b';
-		mToWrite++;
-
-		mBuffer[ mToWrite ] = '[';
-		mToWrite++;
+		WriteCharToBuffer( '\x1b' );
+		WriteCharToBuffer( '[' );
 
 		auto style = next_colour & ConsoleAttributes::StyleMask ? next_colour & ConsoleAttributes::StyleMask : ConsoleAttributes::DefaultStyle;
 		auto foreground = next_colour & ConsoleAttributes::ForegroundMask ? next_colour & ConsoleAttributes::ForegroundMask : ConsoleAttributes::DefaultForeground;
@@ -172,21 +169,16 @@ namespace slc {
 
 		WriteStyleAttribute( style >> 16 );
 
-		mBuffer[ mToWrite ] = '3';
-		mToWrite++;
+		WriteCharToBuffer( '3' );
 
 		WriteColourAttribute( foreground );
 
-		mBuffer[ mToWrite ] = ';';
-		mToWrite++;
-
-		mBuffer[ mToWrite ] = '4';
-		mToWrite++;
+		WriteCharToBuffer( ';' );
+		WriteCharToBuffer( '4' );
 
 		WriteColourAttribute( background >> 8 );
 
-		mBuffer[ mToWrite ] = 'm';
-		mToWrite++;
+		WriteCharToBuffer( 'm' );
 	}
 
 	void ConsoleLogTarget::WriteColourAttribute( ConsoleAttributes::Attribute colour )
@@ -196,8 +188,7 @@ namespace slc {
 		// Add '0' to get the character representation
 
 		auto colour_value = static_cast< char >( std::countr_zero( colour ) ) + '0';
-		mBuffer[ mToWrite ] = colour_value;
-		mToWrite++;
+		WriteCharToBuffer( colour_value );
 	}
 
 	void ConsoleLogTarget::WriteStyleAttribute( ConsoleAttributes::Attribute style )
@@ -211,28 +202,19 @@ namespace slc {
 			if ( style & bit_to_check )
 			{
 				auto style_value = ( i + 1 ) + '0';
-				mBuffer[ mToWrite ] = style_value;
-				mToWrite++;
 
-				mBuffer[ mToWrite ] = ';';
-				mToWrite++;
+				WriteCharToBuffer( style_value );
+				WriteCharToBuffer( ';' );
 			}
 		}
 	}
 
 	void ConsoleLogTarget::WriteResetColourCode()
 	{
-		mBuffer[ mToWrite ] = '\x1b';
-		mToWrite++;
-
-		mBuffer[ mToWrite ] = '[';
-		mToWrite++;
-
-		mBuffer[ mToWrite ] = '0';
-		mToWrite++;
-
-		mBuffer[ mToWrite ] = 'm';
-		mToWrite++;
+		WriteCharToBuffer( '\x1b' );
+		WriteCharToBuffer( '[' );
+		WriteCharToBuffer( '0' );
+		WriteCharToBuffer( 'm' );
 
 		mCurrentAttribute = ConsoleAttributes::Default;
 	}
