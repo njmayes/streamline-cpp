@@ -196,7 +196,7 @@ def __FindOpenSSLRecursively(dirs=None):
                 return os.path.abspath(root_dir)
     return None
 
-def CheckOpenSSLInstalled():
+def CheckOpenSSLInstalled(search_recusively=False):
     dev_path = (
         __FindOpenSSLFromEnv() or
         __FindOpenSSLFromPath() or
@@ -204,16 +204,38 @@ def CheckOpenSSLInstalled():
     )
 
     # If still not found, optionally use slow recursive search
-    if not dev_path:
-        reply = str(input("OpenSSL development files not found in standard locations. Search recursively? (warning: very slow) [Y/N]:")).lower().strip()[:1]
-        if reply == 'y':
-            dev_path = __FindOpenSSLRecursively()
+    if not dev_path and search_recusively:
+        dev_path = __FindOpenSSLRecursively()
 
     dev_installed = dev_path is not None
     return {
         "dev_installed": dev_installed,
         "dev_path": dev_path
     }
+
+
+def __AddOpenSSLEnvironmentVariable():
+    validation = CheckOpenSSLInstalled(search_recusively=True)
+
+    path = validation["dev_path"]
+    if path is None:
+        raise EnvironmentError("OpenSSL development files not found following installation.")
+
+    key = winreg.HKEY_CURRENT_USER
+    sub_key = r"Environment"
+
+    # Open registry key for writing
+    with winreg.OpenKey(key, sub_key, 0, winreg.KEY_SET_VALUE) as reg_key:
+        winreg.SetValueEx(reg_key, "OPENSSL_ROOT_DIR", 0, winreg.REG_SZ, path)
+
+    # Notify Windows about the environment change (so new processes see it)
+    import ctypes
+    HWND_BROADCAST = 0xFFFF
+    WM_SETTINGCHANGE = 0x1A
+    SMTO_ABORTIFHUNG = 0x0002
+    ctypes.windll.user32.SendMessageTimeoutW(HWND_BROADCAST, WM_SETTINGCHANGE, 0, "Environment", SMTO_ABORTIFHUNG, 5000, None)
+
+    print(f"Environment variable OPENSSL_ROOT_DIR set to {path}.")
 
 def InstallOpenSSL():
     import requests
@@ -227,8 +249,14 @@ def InstallOpenSSL():
         with open(installer_path, "wb") as f:
             for chunk in r.iter_content(chunk_size=8192):
                 f.write(chunk)
+
     print("Running OpenSSL installer...")
     os.startfile(installer_path)
-    input("Please follow the installer prompts. Re-run this script after installation.")
+
+    input("Please follow the installer prompts. Hit Enter to continue after installation.")
     os.remove(installer_path)
+    __AddOpenSSLEnvironmentVariable()
+
+    print("OpenSSL installation complete. Please re-run this script.") 
+
     quit()

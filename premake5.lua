@@ -29,6 +29,10 @@ OPENSSL_ROOT = os.getenv("OPENSSL_ROOT_DIR")
 outputDir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
 IncludeDir = {}
+
+LibraryDir = {}
+Library = {}
+
 IncludeDir["StreamlineCore"] 	= "%{wks.location}/StreamlineCore/src"
 IncludeDir["asio"] 			    = "%{wks.location}/StreamlineCore/dependencies/asio/include"
 IncludeDir["glfw"] 	            = "%{wks.location}/StreamlineCore/dependencies/glfw/include"
@@ -42,19 +46,14 @@ IncludeDir["pfd"] 				= "%{wks.location}/StreamlineCore/dependencies/portable-fi
 IncludeDir["stb_image"] 		= "%{wks.location}/StreamlineCore/dependencies/stb_image"
 IncludeDir["VulkanSDK"] 		= "%{VULKAN_SDK}/Include"
 
-LibraryDir = {}
-LibraryDir["VulkanSDK"] 		 	= "%{VULKAN_SDK}/Lib"
-
-Library = {}
-
-Library["asio"] 					= "asio"
-Library["glad"] 					= "glad"
-Library["glfw"] 					= "glfw"
-Library["imgui"] 					= "imgui"
+Library["asio"] 				= "asio"
+Library["glad"] 				= "glad"
+Library["glfw"] 				= "glfw"
+Library["imgui"] 				= "imgui"
 
 filter "system:windows"
-    -- OpenSSL Configuration
-    IncludeDir["OpenSSL"]        = "%{OPENSSL_ROOT}/include"
+    LibraryDir["VulkanSDK"] 	= "%{VULKAN_SDK}/Lib"
+    IncludeDir["OpenSSL"]       = "%{OPENSSL_ROOT}/include"
 
 filter {}
 

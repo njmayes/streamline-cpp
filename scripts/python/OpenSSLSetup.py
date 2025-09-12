@@ -15,12 +15,16 @@ class OpenSSLConfiguration:
     def Validate(cls):
         validation = Utils.CheckOpenSSLInstalled()
         if (not validation["dev_installed"]):
-            print("\nYou don't have the OpenSSL installed!")
+            print("\nYou don't have the OpenSSL SDK installed!")
+            
+            permissionGranted = False
+            while not permissionGranted:
+                reply = str(input("Would you like to install the OpenSSL SDK? [Y/N]: ")).lower().strip()[:1]
+                if reply == 'n':
+                    return False
+                permissionGranted = (reply == 'y')
+
             Utils.InstallOpenSSL()
             return False
-
-        # Set environment variable for build systems on Windows
-        if validation["dev_path"] is not None:
-            os.environ["OPENSSL_ROOT_DIR"] = validation["dev_path"]
 
         return True
