@@ -1,31 +1,40 @@
 #pragma once
 
 #include "Socket.h"
-#include "Payload.h"
 
 namespace slc::net {
 
 	class Connection : public std::enable_shared_from_this< Connection >
 	{
 	public:
+		using OnMessageFunc = std::function< void( Payload const& ) >;
+		using OnConnectionFunc = std::function< void() >;
+
 		Connection( Socket socket );
 		virtual ~Connection();
 
 		Connection( Connection&& other ) noexcept;
 		Connection& operator=( Connection&& other ) noexcept;
 
-		virtual void OnRead( Payload message ) = 0;
-		virtual void OnWrite( Payload message ) = 0;
+		std::string GetRemoteAddress() const;
 
-		virtual void OnConnect()
-		{}
-		virtual void OnDisconnect()
-		{}
+		void OnConnect( OnConnectionFunc&& on_connect );
+		void OnDisconnect( OnConnectionFunc&& on_disconnect );
 
-		void AddToQueue( const Payload& message );
+		void OnRead( OnMessageFunc&& on_read );
+		void OnWrite( OnMessageFunc&& on_write );
 
-		void Start( bool is_server );
+		void AddToQueue( Payload message );
+
+		void Start();
 		void Stop();
+
+	private:
+		void DoOnConnect();
+		void DoOnDisconnect();
+
+		void DoOnRead( Payload const& payload );
+		void DoOnWrite( Payload const& payload );
 
 	private:
 		struct Impl;

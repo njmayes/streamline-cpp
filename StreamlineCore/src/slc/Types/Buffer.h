@@ -13,7 +13,7 @@ namespace slc {
 		{}
 		Buffer( size_t size )
 		{
-			mData.reserve( size );
+			mData.resize( size );
 		}
 
 		static Buffer Copy( const void* data, size_t size );
@@ -80,6 +80,17 @@ namespace slc {
 		void Resize( size_t new_size );
 
 		Buffer CopyBytes( size_t size, size_t offset = 0 );
+
+		template < typename range_t >
+			requires std::ranges::contiguous_range< range_t > and IsStandard< std::ranges::range_value_t< range_t > >
+		void Append( range_t&& r )
+		{
+			auto span = std::span{ r };
+			auto bytes = std::as_bytes( span );
+			if ( bytes.size() > mData.size() )
+				mData.reserve( bytes.size() );
+			std::ranges::copy( bytes, std::back_inserter( mData ) );
+		}
 
 	public:
 		operator bool() const

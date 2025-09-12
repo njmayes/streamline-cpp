@@ -1,63 +1,71 @@
 #include "ChatClient.h"
 
+#include "slc/Logging/Log.h"
+#include "slc/Common/Time.h"
+
 #include <iostream>
 
-namespace Connection {
+static std::string GetTimestamp()
+{
+	std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+	std::time_t now_c = std::chrono::system_clock::to_time_t( now );
 
-	class Impl : public slc::net::Connection
-	{
-	public:
-		Impl( slc::net::Socket socket, ChatClient& client )
-			: slc::net::Connection( std::move( socket ) )
-			, mClient( client )
-		{
-		}
+	std::tm time = slc::GetLocalTime( &now_c );
 
-		void OnRead( slc::net::Payload message ) override
-		{
-			mClient.Receive( message );
-		}
-		void OnWrite( slc::net::Payload message ) override
-		{
-			// Do nothing for now
-		}
+	std::string timestamp( 20, '\0' );
+	std::strftime( timestamp.data(), timestamp.size(), "%F %T", &time );
+	return timestamp;
+}
 
-		void OnConnect() override
-		{
-		}
-		void OnDisconnect() override
-		{
-		}
-
-	private:
-		std::deque< std::string > mWriteMessages;
-		ChatClient& mClient;
-	};
-} // namespace Connection
-
-ChatClient::ChatClient()
+ChatClient::ChatClient( slc::net::ClientContextOptions const& opts )
+	: mContext( opts )
 {
 }
 
-void ChatClient::AddPort( std::uint16_t port )
+void ChatClient::Connect( std::string const& host, std::uint16_t port )
 {
-	mContext.Listen( port, [ & ]( slc::net::Socket socket ) {
-		mServerConnection = std::make_shared< Connection::Impl >( std::move( socket ), *this );
-		mServerConnection->Start( /*is_server=*/false );
+	mContext.Connect( host, port, [ = ]( slc::net::ConnectionPtr connection ) {
+		slc::log::Info( "Client connected to {}:{}", host, port );
+
+		mServerConnection = connection;
+
+		mServerConnection->OnConnect( [ = ] {
+			mEntryThread = std::thread( std::bind( &ChatClient::ListenForInput, this ) );
+			slc::log::Info( "Please enter your name..." );
+		} );
+
+		mServerConnection->OnRead( [ = ]( slc::net::Payload const& msg ) { Receive( msg ); } );
+		mServerConnection->Start();
 	} );
 }
 
 void ChatClient::Run()
 {
-	mEntryThread = std::thread( std::bind( &ChatClient::ListenForInput, this ) );
 	mContext.Run();
 }
 
 void ChatClient::Receive( slc::net::Payload msg )
 {
 	std::string_view message( msg.As< char >(), msg.Size() );
-	std::cout << message << std::endl;
+	std::cout << message << '\n';
 }
+
+// static std::string GenRandomString( const int len )
+//{
+//	static const char alphanum[] =
+//		"0123456789"
+//		"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+//		"abcdefghijklmnopqrstuvwxyz";
+//	std::string tmp_s;
+//	tmp_s.reserve( len );
+//
+//	for ( int i = 0; i < len; ++i )
+//	{
+//		tmp_s += alphanum[ rand() % ( sizeof( alphanum ) - 1 ) ];
+//	}
+//
+//	return tmp_s;
+// }
 
 void ChatClient::ListenForInput()
 {
@@ -65,19 +73,30 @@ void ChatClient::ListenForInput()
 	{
 		for ( ;; )
 		{
-			std::string line;
+			std::string line; // = GenRandomString( 128 );
 			if ( !std::getline( std::cin, line ) )
 				break;
 
-			if ( mServerConnection )
+			if (mUsername.empty())
 			{
-				slc::net::Payload msg = slc::net::Payload::Copy( line.data(), line.size() );
-				mServerConnection->AddToQueue( msg );
+				mUsername = std::move( line );
+				slc::log::Info( "Welcome {}!", mUsername );
+			}
+			else if ( mServerConnection and not line.empty() )
+			{
+				auto timestamp = GetTimestamp();
+				auto text = std::format( "{}: [{}] {}", timestamp, mUsername, line );
+
+				slc::net::Payload msg{};
+				msg.Reserve( text.size() + 1 );
+				msg.Append( text );
+				msg.Push( '\0' );
+				mServerConnection->AddToQueue( std::move( msg ) );
 			}
 		}
 	}
 	catch ( std::exception& e )
 	{
-		std::cerr << "Input Exception: " << e.what() << "\n";
+		slc::log::Error( "Input Exception: {}", e.what() );
 	}
 }

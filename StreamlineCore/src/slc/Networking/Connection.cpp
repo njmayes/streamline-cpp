@@ -17,6 +17,7 @@
 #include <asio/detached.hpp>
 #include <asio/signal_set.hpp>
 #include <asio/co_spawn.hpp>
+#include <asio/strand.hpp>
 #include <asio/ssl.hpp>
 
 #include <deque>
@@ -25,16 +26,28 @@ namespace slc::net {
 
 	struct Connection::Impl
 	{
-		Connection* parent;
+		Connection* parent{};
+
+		InstanceType type{};
 
 		asio::ssl::stream< asio::ip::tcp::socket > socket;
+		asio::strand< asio::any_io_executor > strand{};
 		asio::steady_timer timer;
+
 		std::deque< Payload > write_msgs{};
 
+		OnConnectionFunc on_connect{};
+		OnConnectionFunc on_disconnect{};
+
+		OnMessageFunc on_read{};
+		OnMessageFunc on_write{};
+
 		Impl( Connection* parent, Socket socket )
-			: parent( parent )
+			: parent{ parent }
+			, type( socket.GetInstanceType() )
 			, socket( std::move( socket.GetNativeSocket() )  )
-			, timer( this->socket.get_executor() )
+			, strand( this->socket.lowest_layer().get_executor() )
+			, timer( strand )
 		{
 			timer.expires_at( std::chrono::steady_clock::time_point::max() );
 		}
@@ -54,7 +67,7 @@ namespace slc::net {
 					if ( n != header.size )
 						throw std::runtime_error( "Read size mismatch" );
 
-					parent->OnRead( std::move( read_msg ) );
+					parent->DoOnRead( read_msg );
 				}
 			}
 			catch ( std::exception& e )
@@ -72,7 +85,8 @@ namespace slc::net {
 				{
 					if ( not write_msgs.empty() )
 					{
-						auto& next_payload = write_msgs.front();
+						auto next_payload = std::move( write_msgs.front() );
+						write_msgs.pop_front();
 
 						PayloadHeader header;
 						header.size = next_payload.Size();
@@ -80,8 +94,7 @@ namespace slc::net {
 						co_await asio::async_write( socket, asio::buffer( &header, sizeof( PayloadHeader ) ), asio::use_awaitable );
 						co_await asio::async_write( socket, asio::buffer( next_payload.Data(), next_payload.Size() ), asio::use_awaitable );
 
-						parent->OnWrite( std::move( next_payload ) );
-						write_msgs.pop_front();
+						parent->DoOnWrite( next_payload );
 					}
 					else
 					{
@@ -97,12 +110,19 @@ namespace slc::net {
 			}
 		}
 
-		asio::awaitable< void > Handshake( bool is_server )
+		asio::awaitable< void > Handshake()
 		{
-			if ( is_server )
-				co_await socket.async_handshake( asio::ssl::stream_base::server, asio::use_awaitable );
-			else
-				co_await socket.async_handshake( asio::ssl::stream_base::client, asio::use_awaitable );
+			switch ( type )
+			{
+				case InstanceType::Client:
+					co_await socket.async_handshake( asio::ssl::stream_base::client, asio::use_awaitable );
+					break;
+				case InstanceType::Server:
+					co_await socket.async_handshake( asio::ssl::stream_base::server, asio::use_awaitable );
+					break;
+				default:
+					break;
+			}
 		}
 	};
 
@@ -127,23 +147,60 @@ namespace slc::net {
 		return *this;
 	}
 
-	void Connection::AddToQueue( const Payload& message )
+	std::string Connection::GetRemoteAddress() const
 	{
-		mImpl->write_msgs.push_back( message );
-		mImpl->timer.cancel_one();
+		try
+		{
+			return mImpl->socket.next_layer().remote_endpoint().address().to_string();
+		}
+		catch ( std::exception& e )
+		{
+			log::Error( "Failed to get remote address: {0}", e.what() );
+			return "Unknown";
+		}
 	}
 
-	void Connection::Start( bool is_server )
+	void Connection::OnConnect( OnConnectionFunc&& on_connect )
 	{
-		OnConnect();
+		mImpl->on_connect = std::move( on_connect );
+	}
 
-		auto listener = [ self = shared_from_this(), is_server ]() -> asio::awaitable< void > {
+	void Connection::OnDisconnect( OnConnectionFunc&& on_disconnect )
+	{
+		mImpl->on_disconnect = std::move( on_disconnect );
+	}
+
+	void Connection::OnRead( OnMessageFunc&& on_read )
+	{
+		mImpl->on_read = std::move( on_read );
+	}
+
+	void Connection::OnWrite( OnMessageFunc&& on_write )
+	{
+		mImpl->on_write = std::move( on_write );
+	}
+
+	void Connection::AddToQueue( Payload message )
+	{
+		asio::post( mImpl->strand, [ self = shared_from_this(), message = std::move( message ) ] {
+			self->mImpl->write_msgs.push_back( std::move( message ) );
+			self->mImpl->timer.cancel_one();
+		} );
+	}
+
+	void Connection::Start()
+	{
+		DoOnConnect();
+
+		auto listener = [ self = shared_from_this() ]() -> asio::awaitable< void > {
 			try
 			{
-				co_await self->mImpl->Handshake( is_server );
+				co_await asio::dispatch( self->mImpl->strand, asio::use_awaitable );
 
-				asio::co_spawn( self->mImpl->socket.get_executor(), [ self ] { return self->mImpl->Reader(); }, asio::detached );
-				asio::co_spawn( self->mImpl->socket.get_executor(), [ self ] { return self->mImpl->Writer(); }, asio::detached );
+				co_await self->mImpl->Handshake();
+
+				asio::co_spawn( self->mImpl->strand, [ self ] { return self->mImpl->Reader(); }, asio::detached );
+				asio::co_spawn( self->mImpl->strand, [ self ] { return self->mImpl->Writer(); }, asio::detached );
 			}
 			catch ( std::exception& e )
 			{
@@ -157,11 +214,35 @@ namespace slc::net {
 
 	void Connection::Stop()
 	{
-		OnDisconnect();
+		DoOnDisconnect();
 
 		asio::error_code ec;
 		mImpl->socket.shutdown( ec );
 		mImpl->socket.lowest_layer().close( ec );
 		mImpl->timer.cancel();
+	}
+
+	void Connection::DoOnConnect()
+	{
+		if ( mImpl->on_connect )
+			mImpl->on_connect();
+	}
+
+	void Connection::DoOnDisconnect()
+	{
+		if ( mImpl->on_disconnect )
+			mImpl->on_disconnect();
+	}
+
+	void Connection::DoOnRead( Payload const& payload )
+	{
+		if ( mImpl->on_read )
+			mImpl->on_read( payload );
+	}
+
+	void Connection::DoOnWrite( Payload const& payload )
+	{
+		if ( mImpl->on_write )
+			mImpl->on_write( payload );
 	}
 } // namespace slc::net

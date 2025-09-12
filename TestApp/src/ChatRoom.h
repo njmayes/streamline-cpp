@@ -9,9 +9,7 @@
 class ChatRoom
 {
 public:
-	ChatRoom()
-	{
-	}
+	ChatRoom( slc::net::ServerContextOptions const& opts );
 
 	void AddPort( std::uint16_t port );
 	void Run();
@@ -22,7 +20,7 @@ public:
 	void Deliver( slc::net::Payload msg );
 
 private:
-	slc::net::Context mContext{ true };
+	slc::net::Context mContext;
 	std::set< slc::net::ConnectionPtr > mConnections;
 	enum
 	{

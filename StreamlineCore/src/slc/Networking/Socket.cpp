@@ -1,5 +1,7 @@
 #include "Socket.h"
 
+#include <slc/Logging/Log.h>
+
 #include <asio/ip/tcp.hpp>
 #include <asio/awaitable.hpp>
 #include <asio/write.hpp>
@@ -12,15 +14,17 @@ namespace slc::net {
 
 	struct Socket::Impl
 	{
-		Impl( asio::ssl::stream< asio::ip::tcp::socket > socket )
+		Impl( asio::ssl::stream< asio::ip::tcp::socket > socket, InstanceType type )
 			: socket( std::move( socket ) )
+			, type( type )
 		{
 		}
 		asio::ssl::stream< asio::ip::tcp::socket > socket;
+		InstanceType type;
 	};
 
-	Socket::Socket( asio::ssl_stream&& socket )
-		: mImpl{ MakeBox< Impl >( std::move( socket ) ) }
+	Socket::Socket( asio::ssl_stream&& socket, InstanceType type )
+		: mImpl{ MakeBox< Impl >( std::move( socket ), type ) }
 	{
 	}
 
@@ -38,13 +42,13 @@ namespace slc::net {
 		return *this;
 	}
 
-	bool Socket::IsOpen() const
-	{
-		return mImpl->socket.lowest_layer().is_open();
-	}
-
 	asio::ssl_stream&& Socket::GetNativeSocket()
 	{
 		return std::move( mImpl->socket );
+	}
+
+	InstanceType Socket::GetInstanceType() const
+	{
+		return mImpl->type;
 	}
 } // namespace slc::net

@@ -9,9 +9,9 @@
 class ChatClient
 {
 public:
-	ChatClient();
+	ChatClient( slc::net::ClientContextOptions const& opts );
 
-	void AddPort( std::uint16_t port );
+	void Connect( std::string const& host, std::uint16_t port );
 	void Run();
 
 	void Receive( slc::net::Payload msg );
@@ -20,12 +20,16 @@ private:
 	void ListenForInput();
 
 private:
-	slc::net::Context mContext{ true };
+	std::string mUsername;
+
+	slc::net::Context mContext;
 	slc::net::ConnectionPtr mServerConnection;
+
 	enum
 	{
 		max_recent_msgs = 100
 	};
+
 	std::deque< slc::net::Payload > mRecentMessages;
 	std::thread mEntryThread;
 };

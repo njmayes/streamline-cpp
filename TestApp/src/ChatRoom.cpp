@@ -1,44 +1,23 @@
 #include "ChatRoom.h"
 
-namespace Connection {
+#include "slc/Logging/Log.h"
 
-	class Impl : public slc::net::Connection
-	{
-	public:
-		Impl( slc::net::Socket socket, ChatRoom& room )
-			: slc::net::Connection( std::move( socket ) )
-			, mRoom( room )
-		{
-		}
-
-		void OnRead( slc::net::Payload message ) override
-		{
-			mRoom.Deliver( message );
-		}
-		void OnWrite( slc::net::Payload message ) override
-		{
-			// Do nothing for now
-		}
-
-		void OnConnect() override
-		{
-			mRoom.Join( shared_from_this() );
-		}
-		void OnDisconnect() override
-		{
-			mRoom.Leave( shared_from_this() );
-		}
-
-	private:
-		ChatRoom& mRoom;
-	};
+ChatRoom::ChatRoom( slc::net::ServerContextOptions const& opts )
+	: mContext( opts )
+{
 }
 
 void ChatRoom::AddPort( std::uint16_t port )
 {
-	mContext.Listen( port, [ & ]( slc::net::Socket socket ) {
-		auto session = std::make_shared< Connection::Impl >( std::move( socket ), *this );
-		session->Start( /*is_server=*/true );
+	slc::log::Info( "Starting listener on port {}", port );
+	mContext.Listen( port, [ = ]( slc::net::ConnectionPtr connection ) {
+		slc::log::Info( "Connection received from {}", connection->GetRemoteAddress() );
+
+		connection->OnConnect( [ = ] { Join( connection ); } );
+		connection->OnDisconnect( [ = ] { Leave( connection ); } );
+		connection->OnRead( [ = ]( slc::net::Payload const& msg ) { Deliver( msg ); } );
+
+		connection->Start();
 	} );
 }
 
