@@ -19,7 +19,7 @@ namespace slc {
 		Buffer& operator=( Buffer&& ) noexcept;
 
 		virtual ~Buffer();
-	
+
 		static Buffer Copy( const void* data, size_t size );
 
 	public:
@@ -73,6 +73,11 @@ namespace slc {
 		{
 			ASSERT( offset < mSize );
 			return mData + offset;
+		}
+
+		Buffer View( size_t offset = 0 )
+		{
+			return Buffer( mData + offset, mSize - offset, false );
 		}
 
 		size_t Size() const

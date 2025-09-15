@@ -9,7 +9,9 @@ namespace slc::ipc {
 	class SharedMemory
 	{
 	public:
-		SharedMemory( std::string_view name, std::size_t size, bool create = false );
+		static SharedMemory Create( std::string_view name, std::size_t size );
+		static SharedMemory Acquire( std::string_view name );
+		static void Delete( SharedMemory const& memory );
 
 		SharedMemory( SharedMemory const& ) = delete;
 		SharedMemory( SharedMemory&& ) = default;
@@ -19,7 +21,11 @@ namespace slc::ipc {
 
 		~SharedMemory();
 
-		SharedBuffer Get() const;
+		SharedBuffer Use() const;
+
+	private:
+		SharedMemory( std::string_view name, std::size_t size );
+		SharedMemory( std::string_view name );
 
 	private:
 		struct Impl;

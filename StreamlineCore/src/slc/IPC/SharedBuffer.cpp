@@ -10,7 +10,7 @@ namespace slc::ipc {
 			mMutex = SharedMutex( name, true );
 
 		if ( not mMutex.IsValid() )
-			throw std::runtime_error( "Could not create or acquire mutex for this memory" );
+			throw std::runtime_error( "Could not create or acquire mutex for this shared memory" );
 
 		mMutex.Lock();
 	}

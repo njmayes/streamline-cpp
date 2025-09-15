@@ -22,30 +22,41 @@ namespace slc::ipc {
 		std::string_view name;
 		bool owner{};
 		FileHandle handle;
-
 	};
 
 #ifdef SLC_PLATFORM_WINDOWS
-	std::pair< Buffer, FileDescriptor > CreateSharedBuffer( std::string_view name, std::size_t size )
+	std::tuple< Buffer, Buffer, FileDescriptor > CreateSharedBuffer( std::string_view name, std::size_t size )
 	{
+		auto constexpr offset = sizeof( std::size_t );
+		auto const true_size = offset + size;
+		auto const lo_order_size = static_cast< DWORD >( true_size & 0xffffffff );
+		auto const hi_order_size = 0; // static_cast< DWORD >( ( size_  >> 32 ) & 0xffffffff );
+
 		FileDescriptor desc{};
 
-		desc.handle = CreateFileMappingA( INVALID_HANDLE_VALUE, nullptr, PAGE_READWRITE, 0, ( DWORD )size, name.data() );
+		desc.handle = CreateFileMappingA( INVALID_HANDLE_VALUE, nullptr, PAGE_READWRITE, hi_order_size, lo_order_size, name.data() );
 		desc.name = name;
 		desc.owner = true;
 
 		if ( not desc.handle )
 			return {};
 
-		auto addr = MapViewOfFile( desc.handle, FILE_MAP_ALL_ACCESS, 0, 0, size );
+		auto addr = MapViewOfFile( desc.handle, FILE_MAP_ALL_ACCESS, 0, 0, true_size );
 		if ( not addr )
+		{
+			CloseHandle( desc.handle );
 			return {};
+		}
 
-		Buffer data{ addr, size, false };
-		return std::make_pair( std::move( data ), desc );
+		std::memcpy( addr, &true_size, offset );
+
+		Buffer true_data{ addr, true_size, false };
+		Buffer user_data = true_data.View( offset );
+
+		return std::make_tuple( std::move( true_data ), std::move( user_data ), desc );
 	}
 
-	std::pair< Buffer, FileDescriptor > MapSharedBuffer( std::string_view name, std::size_t size )
+	std::tuple< Buffer, Buffer, FileDescriptor > MapSharedBuffer( std::string_view name )
 	{
 		FileDescriptor desc{};
 
@@ -56,12 +67,21 @@ namespace slc::ipc {
 		if ( not desc.handle )
 			return {};
 
-		auto addr = MapViewOfFile( desc.handle, FILE_MAP_ALL_ACCESS, 0, 0, size );
-		if ( not addr )
+		auto constexpr offset = sizeof( std::size_t );
+		auto header_ptr = MapViewOfFile( desc.handle, FILE_MAP_ALL_ACCESS, 0, 0, offset );
+		if ( not header_ptr )
+		{
+			CloseHandle( desc.handle );
 			return {};
+		}
 
-		Buffer data{ addr, size, false };
-		return std::make_pair( std::move( data ), desc );
+		auto const true_size = *static_cast< std::size_t const* >( header_ptr );
+		auto true_addr = MapViewOfFile( desc.handle, FILE_MAP_ALL_ACCESS, 0, 0, true_size );
+
+		Buffer true_data{ true_addr, true_size, false };
+		Buffer user_data = true_data.View( offset );
+
+		return std::make_tuple( std::move( true_data ), std::move( user_data ), desc );
 	}
 
 	void CloseSharedBuffer( Buffer buffer, FileDescriptor desc )
@@ -73,11 +93,19 @@ namespace slc::ipc {
 		if ( desc.handle )
 			CloseHandle( desc.handle );
 	}
+
+	void DeleteSharedBuffer( FileDescriptor desc )
+	{
+		throw std::runtime_error( "Cannot manually delete a shared memory instance on Windows. This will happen automatically when the last usage ends." );
+	}
 #endif
 
 #ifdef SLC_PLATFORM_LINUX
-	std::pair< Buffer, FileDescriptor > CreateSharedBuffer( std::string_view name, std::size_t size )
+	std::tuple< Buffer, Buffer, FileDescriptor > CreateSharedBuffer( std::string_view name, std::size_t size )
 	{
+		auto constexpr offset = sizeof( std::size_t );
+		auto const true_size = offset + size;
+
 		FileDescriptor desc{};
 		desc.handle = -1;
 
@@ -89,20 +117,31 @@ namespace slc::ipc {
 		if ( not desc.handle )
 			return {};
 
-		if ( ftruncate( desc.handle, size ) == -1 )
+		if ( ftruncate( desc.handle, true_size ) == -1 )
+		{
+			close( desc.handle );
 			return {};
+		}
 
-		auto addr = mmap( nullptr, size, PROT_READ | PROT_WRITE, MAP_SHARED, desc.handle, 0 );
-
-		if ( not addr )
+		auto addr = mmap( nullptr, true_size, PROT_READ | PROT_WRITE, MAP_SHARED, desc.handle, 0 );
+		if ( addr == MAP_FAILED )
+		{
+			close( desc.handle );
 			return {};
+		}
 
-		Buffer data{ addr, size, false };
-		return std::make_pair( std::move( data ), desc );
+		std::memcpy( addr, &true_size, offset );
+
+		Buffer true_data{ addr, size, false };
+		Buffer user_data = true_data.View( offset );
+
+		return std::make_tuple( std::move( true_data ), std::move( user_data ), desc );
 	}
 
-	std::pair< Buffer, FileDescriptor > MapSharedBuffer( std::string_view name, std::size_t size )
+	std::tuple< Buffer, Buffer, FileDescriptor > MapSharedBuffer( std::string_view name )
 	{
+		auto constexpr offset = sizeof( std::size_t );
+
 		FileDescriptor desc{};
 
 		int oflag = O_CREAT | O_RDWR;
@@ -113,13 +152,27 @@ namespace slc::ipc {
 		if ( not desc.handle )
 			return {};
 
-		auto addr = mmap( nullptr, size, PROT_READ | PROT_WRITE, MAP_SHARED, desc.handle, 0 );
+		auto header_ptr = mmap( nullptr, offset, PROT_READ | PROT_WRITE, MAP_SHARED, desc.handle, 0 );
+		if ( header_ptr == MAP_FAILED )
+		{
+			close( desc.handle );
+			return;
+		}
 
-		if ( not addr )
-			return {};
+		std::size_t total_size = *static_cast< size_t* >( header_ptr );
+		munmap( header_ptr, offset );
 
-		Buffer data{ addr, size, false };
-		return std::make_pair( std::move( data ), desc );
+		auto addr = mmap( nullptr, total_size, PROT_READ | PROT_WRITE, MAP_SHARED, desc.handle, 0 );
+		if ( addr == MAP_FAILED )
+		{
+			close( desc.handle );
+			return;
+		}
+
+		Buffer true_data{ addr, true_size, false };
+		Buffer user_data = true_data.View( offset );
+
+		return std::make_tuple( std::move( true_data ), std::move( user_data ), desc );
 	}
 
 	void CloseSharedBuffer( Buffer buffer, FileDescriptor desc )
@@ -130,35 +183,68 @@ namespace slc::ipc {
 
 		if ( desc.handle != -1 )
 			close( desc.handle );
+	}
 
-		if ( desc.owner and not desc.name.empty() )
-			shm_unlink( desc.name.data() );
+	void DeleteSharedBuffer( FileDescriptor desc )
+	{
+		if ( not desc.owner )
+			throw std::runtime_error( "Only the original creator of this shared memory can delete it." );
+
+		shm_unlink( desc.name.data() );
 	}
 #endif
 
 	struct SharedMemory::Impl
 	{
-		Buffer data;
+		Buffer true_data;
+		Buffer user_data;
 		FileDescriptor desc;
 	};
 
 
-	SharedMemory::SharedMemory( std::string_view name, std::size_t size, bool create )
+	SharedMemory::SharedMemory( std::string_view name, std::size_t size )
 		: mImpl{ MakeBox< Impl >() }
 	{
-		auto&& [ buffer, desc ] = create ? CreateSharedBuffer( name, size ) : MapSharedBuffer( name, size );
+		auto&& [ true_buffer, user_buffer, desc ] = CreateSharedBuffer( name, size );
 
-		mImpl->data = std::move( buffer );
+		mImpl->true_data = std::move( true_buffer );
+		mImpl->user_data = std::move( user_buffer );
 		mImpl->desc = desc;
+	}
+
+
+	SharedMemory::SharedMemory( std::string_view name )
+		: mImpl{ MakeBox< Impl >() }
+	{
+		auto&& [ true_buffer, user_buffer, desc ] = MapSharedBuffer( name );
+
+		mImpl->true_data = std::move( true_buffer );
+		mImpl->user_data = std::move( user_buffer );
+		mImpl->desc = desc;
+	}
+
+	SharedMemory SharedMemory::Create( std::string_view name, std::size_t size )
+	{
+		return SharedMemory( name, size );
+	}
+
+	SharedMemory SharedMemory::Acquire( std::string_view name )
+	{
+		return SharedMemory( name );
+	}
+
+	void SharedMemory::Delete( SharedMemory const& memory )
+	{
+		return DeleteSharedBuffer( memory.mImpl->desc );
 	}
 
 	SharedMemory::~SharedMemory()
 	{
-		CloseSharedBuffer( mImpl->data, mImpl->desc );
+		CloseSharedBuffer( mImpl->true_data, mImpl->desc );
 	}
 
-	SharedBuffer SharedMemory::Get() const
+	SharedBuffer SharedMemory::Use() const
 	{
-		return SharedBuffer{ mImpl->desc.name, mImpl->data };
+		return SharedBuffer{ mImpl->desc.name, mImpl->user_data };
 	}
 } // namespace slc::ipc

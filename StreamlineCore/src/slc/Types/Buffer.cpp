@@ -89,7 +89,7 @@ namespace slc {
 	void Buffer::Reserve( size_t new_size )
 	{
 		if ( !mOwned )
-			return;
+			throw std::runtime_error( "Cannot resize buffer that you do not own the memory of" );
 
 		if ( new_size < mCapacity )
 			return;
@@ -111,7 +111,7 @@ namespace slc {
 	void Buffer::Resize( size_t new_size )
 	{
 		if ( !mOwned )
-			return;
+			throw std::runtime_error( "Cannot resize buffer that you do not own the memory of" );
 
 		if ( new_size > mSize )
 		{
