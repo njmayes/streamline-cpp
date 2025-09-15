@@ -16,7 +16,7 @@ namespace slc::file {
 		{
 			// Failed to open the file
 			log::Warn( "Failed to open {}", filepath.string() );
-			return nullptr;
+			return {};
 		}
 
 		std::streampos end = stream.tellg();
@@ -27,7 +27,7 @@ namespace slc::file {
 		{
 			// File is empty
 			log::Warn( "File {} was empty!", filepath.string() );
-			return nullptr;
+			return {};
 		}
 
 		Buffer buffer( size );

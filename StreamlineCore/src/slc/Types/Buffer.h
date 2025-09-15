@@ -9,13 +9,17 @@ namespace slc {
 	{
 	public:
 		Buffer() = default;
-		Buffer( std::nullptr_t )
-		{}
-		Buffer( size_t size )
-		{
-			mData.resize( size );
-		}
+		Buffer( void* data, size_t size, bool owned = true );
+		Buffer( std::size_t size );
 
+		Buffer( Buffer const& );
+		Buffer( Buffer&& ) noexcept;
+
+		Buffer& operator=( Buffer const& );
+		Buffer& operator=( Buffer&& ) noexcept;
+
+		virtual ~Buffer();
+	
 		static Buffer Copy( const void* data, size_t size );
 
 	public:
@@ -39,41 +43,41 @@ namespace slc {
 			auto span = std::span< const T, 1 >{ std::addressof( data ), 1 };
 			auto bytes = std::as_bytes( span );
 
-			if ( offset + bytes.size() > mData.size() )
+			if ( offset + bytes.size() > mSize )
 				Resize( offset + bytes.size() );
 
-			std::memcpy( mData.data() + offset, bytes.data(), bytes.size() );
+			std::memcpy( mData + offset, bytes.data(), bytes.size() );
 		}
 
 		template < IsStandard T >
 		void Push( const T& data )
 		{
-			Set( data, mData.size() );
+			Set( data, mSize );
 		}
 
 		template < IsStandard T >
 		T Pop()
 		{
 			constexpr std::size_t DataSize = sizeof( T );
-			auto data = std::move( Read< T >( mData.size() - DataSize ) );
-			Resize( mData.size() - DataSize );
+			auto data = std::move( Read< T >( mSize - DataSize ) );
+			Resize( mSize - DataSize );
 			return data;
 		}
 
 		Byte* Data( size_t offset = 0 )
 		{
-			ASSERT( offset < mData.size() );
-			return mData.data() + offset;
+			ASSERT( offset < mSize );
+			return mData + offset;
 		}
 		const Byte* Data( size_t offset = 0 ) const
 		{
-			ASSERT( offset < mData.size() );
-			return mData.data() + offset;
+			ASSERT( offset < mSize );
+			return mData + offset;
 		}
 
 		size_t Size() const
 		{
-			return mData.size();
+			return mSize;
 		}
 
 		void Reserve( size_t new_size );
@@ -87,15 +91,17 @@ namespace slc {
 		{
 			auto span = std::span{ r };
 			auto bytes = std::as_bytes( span );
-			if ( bytes.size() > mData.size() )
-				mData.reserve( bytes.size() );
-			std::ranges::copy( bytes, std::back_inserter( mData ) );
+			if ( bytes.size() > mSize )
+				Reserve( bytes.size() );
+
+			std::memcpy( mData, bytes.data(), bytes.size() );
+			mSize += bytes.size();
 		}
 
 	public:
 		operator bool() const
 		{
-			return mData.data() != nullptr and mData.size() > 0;
+			return mData != nullptr and mSize > 0;
 		}
 
 		Byte& operator[]( size_t index )
@@ -108,6 +114,10 @@ namespace slc {
 		}
 
 	private:
-		std::vector< Byte > mData;
+		Byte* mData{};
+		std::size_t mSize{};
+		std::size_t mCapacity{};
+
+		bool mOwned{};
 	};
 } // namespace slc

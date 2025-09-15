@@ -11,6 +11,8 @@
 
 #include "slc/IO/Json.h"
 
+#include "slc/IPC/SharedMemory.h"
+
 #include "slc/Logging/Log.h"
 #include "slc/Logging/Targets/FileLogTarget.h"
 #include "slc/Logging/Targets/ConsoleLogTarget.h"
