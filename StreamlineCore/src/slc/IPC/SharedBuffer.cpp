@@ -4,11 +4,8 @@ namespace slc::ipc {
 
 	SharedBuffer::SharedBuffer( std::string_view name, Buffer buffer )
 		: Buffer( buffer )
-		, mMutex( name, false )
+		, mMutex( name )
 	{
-		if ( not mMutex.IsValid() )
-			mMutex = SharedMutex( name, true );
-
 		if ( not mMutex.IsValid() )
 			throw std::runtime_error( "Could not create or acquire mutex for this shared memory" );
 

@@ -7,7 +7,7 @@ namespace slc::ipc {
 	class SharedMutex
 	{
 	public:
-		SharedMutex( std::string_view name, bool create );
+		SharedMutex( std::string_view name );
 
 		SharedMutex( SharedMutex const& ) = delete;
 		SharedMutex( SharedMutex&& ) noexcept;

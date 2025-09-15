@@ -135,10 +135,12 @@ namespace slc::ipc {
 	};
 
 
-	SharedMutex::SharedMutex( std::string_view name, bool create )
+	SharedMutex::SharedMutex( std::string_view name )
 		: mImpl{ MakeBox< Impl >() }
 	{
-		mImpl->desc = create ? CreateSharedMutex( name ) : MapSharedMutex( name );
+		mImpl->desc = MapSharedMutex( name );
+		if ( not IsValid() )
+			mImpl->desc = CreateSharedMutex( name );
 	}
 
 	SharedMutex::SharedMutex( SharedMutex&& ) noexcept = default;
