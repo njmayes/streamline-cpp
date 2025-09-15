@@ -10,10 +10,10 @@ namespace slc::ipc {
 		SharedMutex( std::string_view name, bool create );
 
 		SharedMutex( SharedMutex const& ) = delete;
-		SharedMutex( SharedMutex&& ) = default;
+		SharedMutex( SharedMutex&& ) noexcept;
 
 		SharedMutex& operator=( SharedMutex const& ) = delete;
-		SharedMutex& operator=( SharedMutex&& ) = default;
+		SharedMutex& operator=( SharedMutex&& ) noexcept;
 
 		~SharedMutex();
 

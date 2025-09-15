@@ -10,7 +10,6 @@
 
 namespace slc::ipc {
 
-
 	struct MutexDescriptor
 	{
 		std::string_view name;
@@ -78,7 +77,7 @@ namespace slc::ipc {
 		MutexDescriptor desc{};
 
 		int oflag = O_CREAT;
-		sem = sem_open( name.data(), oflag, 0666, 1 );
+		auto sem = sem_open( name.data(), oflag, 0666, 1 );
 		if ( sem == SEM_FAILED )
 			return {};
 
@@ -94,7 +93,7 @@ namespace slc::ipc {
 		MutexDescriptor desc{};
 
 		int oflag = 0;
-		sem = sem_open( name.data(), oflag, 0666, 1 );
+		auto sem = sem_open( name.data(), oflag, 0666, 1 );
 		if ( sem == SEM_FAILED )
 			return {};
 
@@ -107,20 +106,20 @@ namespace slc::ipc {
 	void CloseSharedMutex( MutexDescriptor desc )
 	{
 		if ( desc.sem )
-			sem_close( sem );
+			sem_close( desc.sem );
 		if ( desc.owner and not desc.name.empty() )
 			sem_unlink( desc.name.data() );
 	}
 
 	void LockSharedMutex( MutexDescriptor desc )
 	{
-		if ( sem_wait( sem ) == -1 )
+		if ( sem_wait( desc.sem ) == -1 )
 			throw std::runtime_error( "Lock mutex failed" );
 	}
 
 	void UnlockSharedMutex( MutexDescriptor desc )
 	{
-		if ( sem_post( sem ) == -1 )
+		if ( sem_post( desc.sem ) == -1 )
 			throw std::runtime_error( "Unlock mutex failed" );
 	}
 
@@ -141,6 +140,9 @@ namespace slc::ipc {
 	{
 		mImpl->desc = create ? CreateSharedMutex( name ) : MapSharedMutex( name );
 	}
+
+	SharedMutex::SharedMutex( SharedMutex&& ) noexcept = default;
+	SharedMutex& SharedMutex::operator=( SharedMutex&& ) noexcept = default;
 
 	SharedMutex::~SharedMutex()
 	{

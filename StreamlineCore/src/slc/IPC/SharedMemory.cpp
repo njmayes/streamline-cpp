@@ -64,7 +64,7 @@ namespace slc::ipc {
 		return std::make_pair( std::move( data ), desc );
 	}
 
-	void CloseSharedBuffer( Buffer const& buffer, FileDescriptor desc )
+	void CloseSharedBuffer( Buffer buffer, FileDescriptor desc )
 	{
 		auto data = buffer.Data();
 		if ( data )
@@ -122,7 +122,7 @@ namespace slc::ipc {
 		return std::make_pair( std::move( data ), desc );
 	}
 
-	void CloseSharedBuffer( Buffer const& buffer, FileDescriptor desc )
+	void CloseSharedBuffer( Buffer buffer, FileDescriptor desc )
 	{
 		auto data = buffer.Data();
 		if ( data )
@@ -132,7 +132,7 @@ namespace slc::ipc {
 			close( desc.handle );
 
 		if ( desc.owner and not desc.name.empty() )
-			shm_unlink( name.data() );
+			shm_unlink( desc.name.data() );
 	}
 #endif
 
