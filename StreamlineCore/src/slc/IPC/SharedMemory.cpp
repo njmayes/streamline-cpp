@@ -122,7 +122,7 @@ namespace slc::ipc {
 #ifdef SLC_PLATFORM_LINUX
 	std::tuple< Buffer, Buffer, FileDescriptor > CreateSharedBuffer( std::string_view name, std::size_t size )
 	{
-		auto constexpr offset = sizeof( HeaderBuffer );
+		auto constexpr offset = sizeof( BufferHeader );
 		auto const true_size = offset + size;
 
 		FileDescriptor desc{};
@@ -173,30 +173,31 @@ namespace slc::ipc {
 		if ( not desc.handle )
 			return {};
 
-		auto header_ptr = mmap( nullptr, offset, PROT_READ | PROT_WRITE, MAP_SHARED, desc.handle, 0 );
-		if ( header_ptr == MAP_FAILED )
+		auto base_addr = mmap( nullptr, offset, PROT_READ | PROT_WRITE, MAP_SHARED, desc.handle, 0 );
+		if ( base_addr == MAP_FAILED )
 		{
 			close( desc.handle );
 			return {};
 		}
 
-		munmap( header_ptr, offset );
+		BufferHeader header = *static_cast< BufferHeader* >( base_addr );
+		munmap( base_addr, offset );
 
-		auto addr = mmap( nullptr, header_ptr->size, PROT_READ | PROT_WRITE, MAP_SHARED, desc.handle, 0 );
+		auto addr = mmap( nullptr, header.size, PROT_READ | PROT_WRITE, MAP_SHARED, desc.handle, 0 );
 		if ( addr == MAP_FAILED )
 		{
 			close( desc.handle );
 			return {};
 		}
 
-		BufferHeader* header_ptr = static_cast< BufferHeader* >( addr );
+		BufferHeader* header_ptr = static_cast<BufferHeader*>(addr);
 
 		SharedMutex mutex( desc.name );
 		mutex.Lock();
 		header_ptr->ref_count += 1;
 		mutex.Unlock();
 
-		Buffer true_data{ addr, true_size, false };
+		Buffer true_data{ addr, header_ptr->size, false };
 		Buffer user_data = true_data.View( offset );
 
 		return std::make_tuple( std::move( true_data ), std::move( user_data ), desc );
