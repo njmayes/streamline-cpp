@@ -29,12 +29,12 @@ void ChatClient::Connect( std::string const& host, std::uint16_t port )
 
 		mServerConnection = connection;
 
-		mServerConnection->OnConnect( [ = ] {
+		mServerConnection->OnConnect( [ this ] {
 			mEntryThread = std::thread( std::bind( &ChatClient::ListenForInput, this ) );
 			slc::log::Info( "Please enter your name..." );
 		} );
 
-		mServerConnection->OnRead( [ = ]( slc::net::Payload const& msg ) { Receive( msg ); } );
+		mServerConnection->OnRead( [ this ]( slc::net::Payload const& msg ) { Receive( msg ); } );
 		mServerConnection->Start();
 	} );
 }

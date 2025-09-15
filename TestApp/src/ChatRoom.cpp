@@ -10,12 +10,12 @@ ChatRoom::ChatRoom( slc::net::ServerContextOptions const& opts )
 void ChatRoom::AddPort( std::uint16_t port )
 {
 	slc::log::Info( "Starting listener on port {}", port );
-	mContext.Listen( port, [ = ]( slc::net::ConnectionPtr connection ) {
+	mContext.Listen( port, [ this ]( slc::net::ConnectionPtr connection ) {
 		slc::log::Info( "Connection received from {}", connection->GetRemoteAddress() );
 
-		connection->OnConnect( [ = ] { Join( connection ); } );
-		connection->OnDisconnect( [ = ] { Leave( connection ); } );
-		connection->OnRead( [ = ]( slc::net::Payload const& msg ) { Deliver( msg ); } );
+		connection->OnConnect( [ this, connection ] { Join( connection ); } );
+		connection->OnDisconnect( [ this, connection ] { Leave( connection ); } );
+		connection->OnRead( [ this ]( slc::net::Payload const& msg ) { Deliver( msg ); } );
 
 		connection->Start();
 	} );

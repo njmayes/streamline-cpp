@@ -156,17 +156,17 @@ namespace slc::ipc {
 		if ( header_ptr == MAP_FAILED )
 		{
 			close( desc.handle );
-			return;
+			return {};
 		}
 
-		std::size_t total_size = *static_cast< size_t* >( header_ptr );
+		std::size_t true_size = *static_cast< size_t* >( header_ptr );
 		munmap( header_ptr, offset );
 
-		auto addr = mmap( nullptr, total_size, PROT_READ | PROT_WRITE, MAP_SHARED, desc.handle, 0 );
+		auto addr = mmap( nullptr, true_size, PROT_READ | PROT_WRITE, MAP_SHARED, desc.handle, 0 );
 		if ( addr == MAP_FAILED )
 		{
 			close( desc.handle );
-			return;
+			return {};
 		}
 
 		Buffer true_data{ addr, true_size, false };

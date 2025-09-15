@@ -143,7 +143,7 @@ namespace slc::net {
 		auto threads = std::vector< std::jthread >( mImpl->num_threads );
 		for (auto& thread : threads)
 		{
-			thread = std::jthread( [ = ] {
+			thread = std::jthread( [ this ] {
 				mImpl->io_ctx.run();
 			} );
 		}
