@@ -3,6 +3,8 @@
 #include "ChatRoom.h"
 #include "ChatClient.h"
 
+#include "BillionRows.h"
+
 #include <iostream>
 
 namespace slc {
@@ -203,6 +205,14 @@ slc::Application* CreateApplication( int argc, char** argv )
 int main( int argc, char* argv[] )
 {
 	slc::Logger::GetGlobalLogger().AddLogTarget< slc::ConsoleLogTarget >( slc::LogLevel::Info );
+
+	{
+		ScopedTimer timer( "1 Billion Row Challenge" );
+
+		BillionRows brc{ "measurements_small.txt" };
+		brc.Run();
+		brc.Print();
+	}
 
 	if ( argc < 2 )
 		return -1;
