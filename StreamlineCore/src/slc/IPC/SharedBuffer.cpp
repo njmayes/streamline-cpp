@@ -2,8 +2,8 @@
 
 namespace slc::ipc {
 
-	SharedBuffer::SharedBuffer( std::string_view name, Buffer buffer )
-		: Buffer( buffer )
+	SharedBuffer::SharedBuffer( std::string_view name, BufferView buffer )
+		: BufferView( buffer )
 		, mMutex( name )
 	{
 		if ( not mMutex.IsValid() )

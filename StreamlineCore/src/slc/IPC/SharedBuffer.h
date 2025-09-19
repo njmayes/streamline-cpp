@@ -7,10 +7,10 @@
 namespace slc::ipc {
 
 	// A RAII buffer object that locks and unlocks the shared mutex for the associated shared memory.
-	class SharedBuffer : public Buffer
+	class SharedBuffer : public BufferView
 	{
 	public:
-		SharedBuffer( std::string_view name, Buffer buffer );
+		SharedBuffer( std::string_view name, BufferView buffer );
 		virtual ~SharedBuffer();
 
 		SharedBuffer( SharedBuffer const& ) = delete;

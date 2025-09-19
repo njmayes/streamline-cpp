@@ -1,134 +1,99 @@
 #include "Buffer.h"
+#include <algorithm>
+#include <cstring>
 
 namespace slc {
 
-	Buffer::Buffer( void* data, size_t size, bool owned )
-		: mOwned{ owned }
-	{
-		if ( mOwned )
-		{
-			*this = Copy( data, size );
-		}
-		else
-		{
-			mData = static_cast< Byte* >( data );
-			mSize = size;
-			mCapacity = size;
-		}
-	}
+	// ----- Constructors -----
 
 	Buffer::Buffer( size_t size )
-		: mOwned{ true }
 	{
 		Resize( size );
 	}
 
-	Buffer::Buffer( Buffer const& other )
-		: Buffer( other.mData, other.mSize, other.mOwned )
+	Buffer::Buffer( const void* data, size_t size )
 	{
+		Resize( size );
+		std::memcpy( mData.get(), data, size );
+	}
+
+	Buffer::Buffer( const Buffer& other )
+	{
+		Resize( other.mSize );
+		std::memcpy( mData.get(), other.mData.get(), other.mSize );
 	}
 
 	Buffer::Buffer( Buffer&& other ) noexcept
-		: mData{ other.mData }
-		, mSize{ other.mSize }
-		, mCapacity{ other.mCapacity }
-		, mOwned{ other.mOwned }
+		: mData( std::exchange( other.mData, nullptr ) )
+		, mSize( std::exchange( other.mSize, 0 ) )
+		, mCapacity( std::exchange( other.mCapacity, 0 ) )
 	{
 	}
 
-	Buffer& Buffer::operator=( Buffer const& other )
-	{
-		if ( other.mOwned )
-		{
-			*this = Copy( other.mData, other.mSize );
-		}
-		else
-		{
-			mData = static_cast< Byte* >( other.mData );
-			mSize = other.mSize;
-			mCapacity = other.mCapacity;
-		}
+	// ----- Assignment -----
 
+	Buffer& Buffer::operator=( const Buffer& other )
+	{
+		if ( this != &other )
+		{
+			Resize( other.mSize );
+			std::memcpy( mData.get(), other.mData.get(), other.mSize );
+		}
 		return *this;
 	}
 
 	Buffer& Buffer::operator=( Buffer&& other ) noexcept
 	{
 		mData = std::exchange( other.mData, nullptr );
-		mSize = other.mSize;
-		mCapacity = other.mCapacity;
-		mOwned = other.mOwned;
-
+		mSize = std::exchange( other.mSize, 0 );
+		mCapacity = std::exchange( other.mCapacity, 0 );
 		return *this;
 	}
 
-	Buffer::~Buffer()
-	{
-		if ( mOwned )
-		{
-			::operator delete[]( mData );
-		}
-	}
+	// ----- Static Copy -----
 
 	Buffer Buffer::Copy( const void* data, size_t size )
 	{
-		auto buffer = Buffer{};
-		buffer.Reserve( size );
-
-		std::memcpy( buffer.mData, data, size );
-
-		return buffer;
+		return Buffer( data, size );
 	}
 
-	Buffer Buffer::CopyBytes( size_t size, size_t offset )
-	{
-		ASSERT( offset + size <= mSize, "Buffer overflow!" );
-		return Buffer::Copy( Data( offset ), size );
-	}
+	// ----- Reserve / Resize -----
 
-	void Buffer::Reserve( size_t new_size )
+	void Buffer::Reserve( size_t new_capacity )
 	{
-		if ( !mOwned )
-			throw std::runtime_error( "Cannot resize buffer that you do not own the memory of" );
-
-		if ( new_size < mCapacity )
+		if ( new_capacity <= mCapacity )
 			return;
 
-		auto new_data = ::operator new[]( new_size );
-		std::memset( new_data, 0, new_size );
-
+		auto new_data = std::make_unique< Byte[] >( new_capacity );
 		if ( mData )
-		{
-			auto copy_size = std::min( mSize, new_size );
-			std::memcpy( new_data, mData, copy_size );
-			::operator delete[]( mData );
-		}
+			std::memcpy( new_data.get(), mData.get(), mSize );
 
-		mData = static_cast< Byte* >( new_data );
-		mCapacity = new_size;
+		mData = std::move( new_data );
+		mCapacity = new_capacity;
 	}
 
 	void Buffer::Resize( size_t new_size )
 	{
-		if ( !mOwned )
-			throw std::runtime_error( "Cannot resize buffer that you do not own the memory of" );
-
+		EnsureCapacity( new_size );
 		if ( new_size > mSize )
-		{
-			auto new_data = ::operator new[]( new_size );
-			std::memset( new_data, 0, new_size );
-
-			if ( mData )
-			{
-				auto copy_size = std::min( mSize, new_size );
-				std::memcpy( new_data, mData, copy_size );
-				::operator delete[]( mData );
-			}
-
-			mData = static_cast< Byte* >( new_data );
-			mCapacity = new_size;
-		}
-
+			std::memset( mData.get() + mSize, 0, new_size - mSize );
 		mSize = new_size;
 	}
+
+	// ----- Copy bytes -----
+
+	Buffer Buffer::CopyBytes( size_t size, size_t offset ) const
+	{
+		if ( offset + size > mSize )
+			throw std::runtime_error( "Buffer overflow" );
+		return Buffer( mData.get() + offset, size );
+	}
+
+	// ----- View -----
+
+	BufferView Buffer::View( size_t offset, size_t size )
+	{
+		return BufferView( *this, offset, size );
+	}
+
 } // namespace slc

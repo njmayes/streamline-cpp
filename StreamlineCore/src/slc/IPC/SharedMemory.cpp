@@ -22,7 +22,6 @@ namespace slc::ipc {
 	struct FileDescriptor
 	{
 		std::string_view name;
-		bool owner{};
 		FileHandle handle;
 	};
 
@@ -33,7 +32,7 @@ namespace slc::ipc {
 	};
 
 #ifdef SLC_PLATFORM_WINDOWS
-	std::tuple< Buffer, Buffer, FileDescriptor > CreateSharedBuffer( std::string_view name, std::size_t size )
+	std::tuple< BufferView, BufferView, FileDescriptor > CreateSharedBuffer( std::string_view name, std::size_t size )
 	{
 		auto constexpr offset = sizeof( BufferHeader );
 		auto const true_size = offset + size;
@@ -44,7 +43,6 @@ namespace slc::ipc {
 
 		desc.handle = CreateFileMappingA( INVALID_HANDLE_VALUE, nullptr, PAGE_READWRITE, hi_order_size, lo_order_size, name.data() );
 		desc.name = name;
-		desc.owner = true;
 
 		if ( not desc.handle )
 			return {};
@@ -60,19 +58,18 @@ namespace slc::ipc {
 		header_ptr->size = true_size;
 		header_ptr->ref_count = 1;
 
-		Buffer true_data{ addr, true_size, false };
-		Buffer user_data = true_data.View( offset );
+		BufferView true_data{ addr, true_size };
+		BufferView user_data = true_data.View( offset );
 
 		return std::make_tuple( std::move( true_data ), std::move( user_data ), desc );
 	}
 
-	std::tuple< Buffer, Buffer, FileDescriptor > MapSharedBuffer( std::string_view name )
+	std::tuple< BufferView, BufferView, FileDescriptor > MapSharedBuffer( std::string_view name )
 	{
 		FileDescriptor desc{};
 
 		desc.handle = OpenFileMappingA( FILE_MAP_ALL_ACCESS, FALSE, name.data() );
 		desc.name = name;
-		desc.owner = false;
 
 		if ( not desc.handle )
 			return {};
@@ -93,13 +90,13 @@ namespace slc::ipc {
 		header_ptr->ref_count += 1;
 		mutex.Unlock();
 
-		Buffer true_data{ true_addr, header_ptr->size, false };
-		Buffer user_data = true_data.View( offset );
+		BufferView true_data{ true_addr, header_ptr->size };
+		BufferView user_data = true_data.View( offset );
 
 		return std::make_tuple( std::move( true_data ), std::move( user_data ), desc );
 	}
 
-	void CloseSharedBuffer( Buffer buffer, FileDescriptor desc )
+	void CloseSharedBuffer( BufferView buffer, FileDescriptor desc )
 	{
 		auto data = buffer.Data();
 		if ( data )
@@ -120,7 +117,7 @@ namespace slc::ipc {
 #endif
 
 #ifdef SLC_PLATFORM_LINUX
-	std::tuple< Buffer, Buffer, FileDescriptor > CreateSharedBuffer( std::string_view name, std::size_t size )
+	std::tuple< BufferView, BufferView, FileDescriptor > CreateSharedBuffer( std::string_view name, std::size_t size )
 	{
 		auto constexpr offset = sizeof( BufferHeader );
 		auto const true_size = offset + size;
@@ -131,7 +128,6 @@ namespace slc::ipc {
 		int oflag = O_CREAT | O_RDWR;
 		desc.handle = shm_open( name.data(), oflag, 0666 );
 		desc.name = name;
-		desc.owner = true;
 
 		if ( not desc.handle )
 			return {};
@@ -153,13 +149,13 @@ namespace slc::ipc {
 		header_ptr->size = true_size;
 		header_ptr->ref_count = 1;
 
-		Buffer true_data{ addr, size, false };
-		Buffer user_data = true_data.View( offset );
+		BufferView true_data{ addr, size };
+		BufferView user_data = true_data.View( offset );
 
 		return std::make_tuple( std::move( true_data ), std::move( user_data ), desc );
 	}
 
-	std::tuple< Buffer, Buffer, FileDescriptor > MapSharedBuffer( std::string_view name )
+	std::tuple< BufferView, BufferView, FileDescriptor > MapSharedBuffer( std::string_view name )
 	{
 		auto constexpr offset = sizeof( BufferHeader );
 
@@ -168,7 +164,6 @@ namespace slc::ipc {
 		int oflag = O_CREAT | O_RDWR;
 		desc.handle = shm_open( name.data(), oflag, 0666 );
 		desc.name = name;
-		desc.owner = false;
 
 		if ( not desc.handle )
 			return {};
@@ -197,13 +192,13 @@ namespace slc::ipc {
 		header_ptr->ref_count += 1;
 		mutex.Unlock();
 
-		Buffer true_data{ addr, header_ptr->size, false };
-		Buffer user_data = true_data.View( offset );
+		BufferView true_data{ addr, header_ptr->size };
+		BufferView user_data = true_data.View( offset );
 
 		return std::make_tuple( std::move( true_data ), std::move( user_data ), desc );
 	}
 
-	void CloseSharedBuffer( Buffer buffer, FileDescriptor desc )
+	void CloseSharedBuffer( BufferView buffer, FileDescriptor desc )
 	{
 		bool unlink = false;
 
@@ -231,11 +226,10 @@ namespace slc::ipc {
 
 	struct SharedMemory::Impl
 	{
-		Buffer true_data;
-		Buffer user_data;
+		BufferView true_data;
+		BufferView user_data;
 		FileDescriptor desc;
 	};
-
 
 	SharedMemory::SharedMemory( std::string_view name, std::size_t size )
 		: mImpl{ MakeBox< Impl >() }
@@ -276,5 +270,10 @@ namespace slc::ipc {
 	SharedBuffer SharedMemory::Use() const
 	{
 		return SharedBuffer{ mImpl->desc.name, mImpl->user_data };
+	}
+
+	BufferView SharedMemory::View() const
+	{
+		return mImpl->user_data;
 	}
 } // namespace slc::ipc

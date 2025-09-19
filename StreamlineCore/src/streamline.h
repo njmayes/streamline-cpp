@@ -12,6 +12,7 @@
 #include "slc/IO/Json.h"
 
 #include "slc/IPC/SharedMemory.h"
+#include "slc/IPC/SharedFile.h"
 
 #include "slc/Logging/Log.h"
 #include "slc/Logging/Targets/FileLogTarget.h"
@@ -19,10 +20,14 @@
 
 #include "slc/Reflection/Type.h"
 
+#include "slc/Threading/ThreadPool.h"
+
 #include "slc/Types/Enum.h"
 #include "slc/Types/Option.h"
 #include "slc/Types/Result.h"
 #include "slc/Types/SmallVector.h"
+#include "slc/Types/Buffer.h"
+#include "slc/Types/StaticString.h"
 #include "slc/Types/Timer.h"
 #include "slc/Types/ScopedTimer.h"
 #include "slc/Types/UUID.h"

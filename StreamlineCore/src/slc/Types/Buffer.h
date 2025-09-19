@@ -1,128 +1,288 @@
 #pragma once
-
 #include "slc/Common/Base.h"
+#include <cstring>
+#include <memory>
+#include <stdexcept>
+#include <span>
+#include <type_traits>
+#include <utility>
 
 namespace slc {
 
-	// N.B. this class technically invokes undefined behaviour to read types out of the buffer, but this is generally safe for standard layout types on major compilers.
+	class BufferView;
+
 	class Buffer
 	{
 	public:
 		Buffer() = default;
-		Buffer( void* data, size_t size, bool owned = true );
-		Buffer( std::size_t size );
+		explicit Buffer( std::size_t size );
+		Buffer( const void* data, std::size_t size );
 
-		Buffer( Buffer const& );
-		Buffer( Buffer&& ) noexcept;
+		Buffer( const Buffer& other );
+		Buffer( Buffer&& other ) noexcept;
 
-		Buffer& operator=( Buffer const& );
-		Buffer& operator=( Buffer&& ) noexcept;
+		Buffer& operator=( const Buffer& other );
+		Buffer& operator=( Buffer&& other ) noexcept;
 
-		virtual ~Buffer();
+		virtual ~Buffer() = default;
 
-		static Buffer Copy( const void* data, size_t size );
+		static Buffer Copy( const void* data, std::size_t size );
 
-	public:
-		template < IsStandard T, typename Self >
-		decltype( auto ) As( this Self&& self )
+		// Access / read
+		template < IsStandard T >
+		T* As( std::size_t offset = 0 )
 		{
-			using ReturnType = std::conditional_t< std::is_const_v< Self >, const T*, T* >;
-			return reinterpret_cast< ReturnType >( std::forward< Self >( self ).Data() );
-		}
-
-		template < IsStandard T, typename Self >
-		decltype( auto ) Read( this Self&& self, std::size_t offset )
-		{
-			using ReturnType = std::conditional_t< std::is_const_v< Self >, const T&, T& >;
-			return *reinterpret_cast< ReturnType >( std::forward< Self >( self ).Data( offset ) );
+			CheckBounds< T >( offset );
+			return reinterpret_cast< T* >( Data( offset ) );
 		}
 
 		template < IsStandard T >
-		void Set( const T& data, size_t offset = 0 )
+		const T* As( std::size_t offset = 0 ) const
 		{
-			auto span = std::span< const T, 1 >{ std::addressof( data ), 1 };
-			auto bytes = std::as_bytes( span );
+			CheckBounds< T >( offset );
+			return reinterpret_cast< const T* >( Data( offset ) );
+		}
 
-			if ( offset + bytes.size() > mSize )
-				Resize( offset + bytes.size() );
+		template < IsStandard T >
+		T& Read( std::size_t offset = 0 )
+		{
+			return *As< T >( offset );
+		}
 
-			std::memcpy( mData + offset, bytes.data(), bytes.size() );
+		template < IsStandard T >
+		T const& Read( std::size_t offset = 0 ) const
+		{
+			return *As< T >( offset );
+		}
+
+		template < IsStandard T >
+		void Set( const T& data, std::size_t offset = 0 )
+		{
+			std::size_t aligned_offset = AlignOffset( offset, alignof( T ) );
+			EnsureCapacity( aligned_offset + sizeof( T ) );
+
+			std::memcpy( mData.get() + aligned_offset, &data, sizeof( T ) );
+			if ( aligned_offset + sizeof( T ) > mSize )
+				mSize = aligned_offset + sizeof( T );
+		}
+
+		template < typename T, typename... Args >
+		T* Construct( std::size_t offset, Args&&... args )
+		{
+			std::size_t aligned_offset = AlignOffset( offset, alignof( T ) );
+			EnsureCapacity( aligned_offset + sizeof( T ) );
+
+			auto ptr = std::construct_at( reinterpret_cast< T* >( mData + aligned_offset ), std::forward< Args >( args )... );
+			if ( aligned_offset + sizeof( T ) > mSize )
+				mSize = aligned_offset + sizeof( T );
+			return ptr;
+		}
+
+		template < typename T >
+		void Destroy( std::size_t offset )
+		{
+			auto* ptr = As< T >( offset );
+			std::destroy_at( ptr );
 		}
 
 		template < IsStandard T >
 		void Push( const T& data )
 		{
-			Set( data, mSize );
+			std::size_t aligned_offset = AlignOffset( mSize, alignof( T ) );
+			Set( data, aligned_offset );
 		}
 
 		template < IsStandard T >
 		T Pop()
 		{
-			constexpr std::size_t DataSize = sizeof( T );
-			auto data = std::move( Read< T >( mSize - DataSize ) );
-			Resize( mSize - DataSize );
+			if ( mSize < sizeof( T ) )
+				throw std::runtime_error( "Buffer underflow" );
+
+			std::size_t aligned_offset = AlignOffset( mSize - sizeof( T ), alignof( T ) );
+			CheckBounds< T >( aligned_offset );
+
+			T data = Read< T >( aligned_offset );
+			mSize = aligned_offset;
+
 			return data;
 		}
 
-		Byte* Data( size_t offset = 0 )
+		Byte* Data( std::size_t offset = 0 )
 		{
-			ASSERT( offset < mSize );
-			return mData + offset;
-		}
-		const Byte* Data( size_t offset = 0 ) const
-		{
-			ASSERT( offset < mSize );
-			return mData + offset;
+			if ( offset > mSize )
+				throw std::runtime_error( "Data access out of bounds." );
+			return Data( offset );
 		}
 
-		Buffer View( size_t offset = 0 )
+		const Byte* Data( std::size_t offset = 0 ) const
 		{
-			return Buffer( mData + offset, mSize - offset, false );
+			if ( offset > mSize )
+				throw std::runtime_error( "Data access out of bounds." );
+			return Data( offset );
 		}
 
-		size_t Size() const
+		std::size_t Size() const
 		{
 			return mSize;
 		}
+		std::size_t Capacity() const
+		{
+			return mCapacity;
+		}
 
-		void Reserve( size_t new_size );
-		void Resize( size_t new_size );
+		void Reserve( std::size_t new_capacity );
+		void Resize( std::size_t new_size );
 
-		Buffer CopyBytes( size_t size, size_t offset = 0 );
+		Buffer CopyBytes( std::size_t size, std::size_t offset = 0 ) const;
 
 		template < typename range_t >
-			requires std::ranges::contiguous_range< range_t > and IsStandard< std::ranges::range_value_t< range_t > >
+			requires std::ranges::contiguous_range< range_t > && IsStandard< std::ranges::range_value_t< range_t > >
 		void Append( range_t&& r )
 		{
 			auto span = std::span{ r };
 			auto bytes = std::as_bytes( span );
-			if ( bytes.size() > mSize )
-				Reserve( bytes.size() );
 
-			std::memcpy( mData, bytes.data(), bytes.size() );
+			EnsureCapacity( mSize + bytes.size() );
+			std::memcpy( mData.get() + mSize, bytes.data(), bytes.size() );
 			mSize += bytes.size();
 		}
 
-	public:
-		operator bool() const
+		// operator[]
+		Byte& operator[]( std::size_t index )
 		{
-			return mData != nullptr and mSize > 0;
+			if ( index >= mSize )
+				throw std::runtime_error( "Index out of bounds" );
+			return mData[ index ];
 		}
 
-		Byte& operator[]( size_t index )
+		Byte operator[]( std::size_t index ) const
 		{
+			if ( index >= mSize )
+				throw std::runtime_error( "Index out of bounds" );
 			return mData[ index ];
 		}
-		Byte operator[]( size_t index ) const
+
+		explicit operator bool() const
 		{
-			return mData[ index ];
+			return mData != nullptr && mSize > 0;
+		}
+
+		// Non-owning view
+		BufferView View( std::size_t offset = 0, std::size_t size = Limits< std::size_t >::Max );
+
+	private:
+		void EnsureCapacity( std::size_t required )
+		{
+			if ( required > mCapacity )
+				Reserve( required );
+		}
+
+		static std::size_t AlignOffset( std::size_t offset, std::size_t alignment )
+		{
+			return ( offset + alignment - 1 ) & ~( alignment - 1 );
+		}
+
+		template < typename T >
+		void CheckBounds( std::size_t offset ) const
+		{
+			if ( offset + sizeof( T ) > mSize )
+				throw std::runtime_error( "Buffer access out of bounds or misaligned" );
+			if ( reinterpret_cast< uintptr_t >( Data( offset ) ) % alignof( T ) != 0 )
+				throw std::runtime_error( "Buffer access misaligned" );
 		}
 
 	private:
-		Byte* mData{};
-		std::size_t mSize{};
-		std::size_t mCapacity{};
-
-		bool mOwned{};
+		std::unique_ptr< Byte[] > mData;
+		std::size_t mSize{ 0 };
+		std::size_t mCapacity{ 0 };
 	};
+
+	///////////////////////////////////////////////////////////////////////////////
+	// BufferView: Non-owning lightweight view of a buffer
+	///////////////////////////////////////////////////////////////////////////////
+
+	class BufferView
+	{
+	public:
+		BufferView() = default;
+		BufferView( void* data, std::size_t size )
+			: mData( static_cast< Byte* >( data ), size )
+		{}
+
+		BufferView( Buffer& buffer, std::size_t offset = 0, std::size_t size = Limits< std::size_t >::Max )
+		{
+			if ( offset > buffer.Size() )
+				throw std::runtime_error( "View offset out of bounds" );
+
+			auto data = buffer.Data( offset );
+			auto actual_size = std::min( size, buffer.Size() - offset );
+			mData = std::span{ data, actual_size };
+		}
+
+		Byte* Data( std::size_t offset = 0 )
+		{
+			if ( offset > mData.size() )
+				throw std::runtime_error( "Data access out of bounds." );
+			return mData.data() + offset;
+		}
+
+		const Byte* Data( std::size_t offset = 0 ) const
+		{
+			if ( offset > mData.size() )
+				throw std::runtime_error( "Data access out of bounds." );
+			return mData.data() + offset;
+		}
+
+		std::size_t Size() const
+		{
+			return mData.size();
+		}
+
+		template < IsStandard T >
+		T* As( std::size_t offset = 0 )
+		{
+			if ( offset + sizeof( T ) > mData.size() )
+				throw std::runtime_error( "BufferView access out of bounds" );
+			if ( reinterpret_cast< uintptr_t >( Data( offset ) ) % alignof( T ) != 0 )
+				throw std::runtime_error( "BufferView access misaligned" );
+			return reinterpret_cast< T* >( Data( offset ) );
+		}
+
+		template < IsStandard T >
+		const T* As( std::size_t offset = 0 ) const
+		{
+			if ( offset + sizeof( T ) > mData.size() )
+				throw std::runtime_error( "BufferView access out of bounds" );
+			if ( reinterpret_cast< uintptr_t >( Data( offset ) ) % alignof( T ) != 0 )
+				throw std::runtime_error( "BufferView access misaligned" );
+			return reinterpret_cast< const T* >( Data( offset ) );
+		}
+
+		template < IsStandard T >
+		T& Read( std::size_t offset = 0 )
+		{
+			return *As< T >( offset );
+		}
+
+		template < IsStandard T >
+		T const& Read( std::size_t offset = 0 ) const
+		{
+			return *As< T >( offset );
+		}
+
+		BufferView View( std::size_t offset = 0, std::size_t size = Limits< std::size_t >::Max )
+		{
+			auto actual_size = std::min( size, Size() - offset );
+			return BufferView( Data( offset ), actual_size );
+		}
+
+		explicit operator bool() const
+		{
+			return mData.data() and mData.size();
+		}
+
+	private:
+		std::span< Byte > mData;
+	};
+
 } // namespace slc

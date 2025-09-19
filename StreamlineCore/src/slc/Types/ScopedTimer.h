@@ -2,7 +2,7 @@
 
 #include "Timer.h"
 
-#include <iostream>
+#include <print>
 
 namespace slc {
 
@@ -15,7 +15,7 @@ namespace slc {
 		~ScopedTimer()
 		{
 			float time = mTimer.ElapsedMillis();
-			std::cout << mName << " - " << time << "ms\n";
+			std::println( "{} - {}ms", mName, time );
 		}
 
 	private:
