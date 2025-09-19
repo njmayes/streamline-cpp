@@ -9,7 +9,7 @@ using namespace slc;
 class BillionRowsV2
 {
 private:
-	static std::size_t constexpr ChunkSize = 1_KB;
+	static std::size_t constexpr ChunkSize = 64_KB;
 
 	struct Entry
 	{
@@ -90,6 +90,8 @@ public:
 			entry.sum += value;
 			entry.count++;
 		}
+
+		result.extra_bytes_end = chunk_view.substr( chunk_bytes_read ) | std::ranges::to< std::vector >();
 
 		return result;
 	}
