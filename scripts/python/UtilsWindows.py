@@ -241,7 +241,7 @@ def InstallOpenSSL():
     import requests
     from zipfile import ZipFile
 
-    openssl_url = "https://slproweb.com/download/Win64OpenSSL-3_5_2.exe"
+    openssl_url = "https://slproweb.com/download/Win64OpenSSL-3_5_3.exe"
     installer_path = os.path.abspath("./Win64OpenSSL-3_5_2.exe")
     print(f"Downloading OpenSSL installer from {openssl_url}...")
     with requests.get(openssl_url, stream=True) as r:

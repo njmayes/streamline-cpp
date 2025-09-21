@@ -9,10 +9,13 @@
 #include "slc/ImGui/Widgets.h"
 #include "slc/ImGui/Utils.h"
 
+#include "slc/Filesystem/Utils.h"
+#include "slc/Filesystem/Dialog.h"
+#include "slc/Filesystem/SharedFile.h"
+
 #include "slc/IO/Json.h"
 
 #include "slc/IPC/SharedMemory.h"
-#include "slc/IPC/SharedFile.h"
 
 #include "slc/Logging/Log.h"
 #include "slc/Logging/Targets/FileLogTarget.h"

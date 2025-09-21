@@ -262,7 +262,7 @@ namespace slc {
 			field = string_edit_buffer.ToString();
 	}
 
-	void Widgets::PathEdit(std::string_view label, fs::path& field)
+	void Widgets::PathEdit(std::string_view label, std::filesystem::path& field)
 	{
 		StaticString<512> path_edit_buffer(field.string());
 		if (ImGui::InputText(label.data(), path_edit_buffer.Data(), path_edit_buffer.Length()))

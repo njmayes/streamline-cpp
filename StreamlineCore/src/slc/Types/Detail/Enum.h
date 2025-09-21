@@ -39,7 +39,7 @@ namespace slc::detail {
 	template < typename... Fs >
 	struct Overload : Fs...
 	{
-		using Fs::operator()...;
+		using std::filesystem::operator()...;
 	};
 
 

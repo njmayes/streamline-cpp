@@ -29,7 +29,7 @@ namespace slc {
 	using Predicate = Func< bool, T... >;
 
 
-	template < std::integral T >
+	template < Numeric T >
 	struct Limits
 	{
 		SCONSTEXPR T Min = std::numeric_limits< T >::min();
@@ -70,6 +70,4 @@ namespace slc {
 	{
 		return value * 1024 * 1024 * 1024;
 	}
-
-	namespace fs = std::filesystem;
 } // namespace slc

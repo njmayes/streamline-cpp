@@ -1,14 +1,12 @@
-#include "Filesystem.h"
+#include "Utils.h"
 
 #include "slc/Logging/Log.h"
 
 #include <fstream>
 
-#include <portable-file-dialogs.h>
+namespace slc::fs {
 
-namespace slc::file {
-
-	Buffer ReadToBuffer( const fs::path& filepath )
+	Buffer ReadToBuffer( const std::filesystem::path& filepath )
 	{
 		std::ifstream stream( filepath, std::ios::binary | std::ios::ate );
 
@@ -37,7 +35,7 @@ namespace slc::file {
 		return buffer;
 	}
 
-	std::string ReadToString( const fs::path& filepath )
+	std::string ReadToString( const std::filesystem::path& filepath )
 	{
 		std::ifstream stream( filepath, std::ios::binary | std::ios::ate );
 
@@ -67,7 +65,7 @@ namespace slc::file {
 		return result;
 	}
 
-	void Write( const fs::path& filepath, Buffer buffer )
+	void Write( const std::filesystem::path& filepath, Buffer buffer )
 	{
 		std::ofstream stream( filepath, std::ios::binary );
 
@@ -84,7 +82,7 @@ namespace slc::file {
 		stream.write( buffer.As< char >(), buffer.Size() );
 	}
 
-	void Write( const fs::path& filepath, std::string_view string )
+	void Write( const std::filesystem::path& filepath, std::string_view string )
 	{
 		std::ofstream stream( filepath, std::ios::binary );
 
@@ -101,7 +99,7 @@ namespace slc::file {
 		stream.write( string.data(), string.size() );
 	}
 
-	void Create( const fs::path& filepath )
+	void Create( const std::filesystem::path& filepath )
 	{
 		std::ofstream stream( filepath, std::ios::binary );
 		if ( !stream )
@@ -112,54 +110,35 @@ namespace slc::file {
 		}
 	}
 
-	void CreateDir( const fs::path& filepath )
+	void CreateDir( const std::filesystem::path& filepath )
 	{
-		fs::create_directories( filepath );
+		std::filesystem::create_directories( filepath );
 	}
 
-	void CopyDir( const fs::path& src, const fs::path& dest )
+	void CopyDir( const std::filesystem::path& src, const std::filesystem::path& dest )
 	{
-		fs::copy( src, dest, fs::copy_options::recursive );
+		std::filesystem::copy( src, dest, std::filesystem::copy_options::recursive );
 	}
 
-	void Remove( const fs::path& filepath )
+	void Remove( const std::filesystem::path& filepath )
 	{
-		if ( !fs::exists( filepath ) )
+		if ( !std::filesystem::exists( filepath ) )
 		{
 			log::Warn( "File does not exist!" );
 			return;
 		}
 
-		fs::remove( filepath );
+		std::filesystem::remove( filepath );
 	}
 
-	void RemoveDir( const fs::path& filepath )
+	void RemoveDir( const std::filesystem::path& filepath )
 	{
-		if ( !fs::exists( filepath ) )
+		if ( !std::filesystem::exists( filepath ) )
 		{
 			log::Warn( "Directory does not exist!" );
 			return;
 		}
 
-		fs::remove_all( filepath );
-	}
-
-	fs::path OpenFile( const std::vector< std::string >& filter )
-	{
-		auto selection = pfd::open_file( "Select a file", ".", filter ).result();
-		if ( !selection.empty() )
-			return selection[ 0 ];
-
-		return fs::path();
-	}
-
-	fs::path OpenDir()
-	{
-		return pfd::select_folder( "Select a folder", "." ).result();
-	}
-
-	fs::path SaveFile( const std::vector< std::string >& filter )
-	{
-		return pfd::save_file( "Save file as", ".", filter ).result();
+		std::filesystem::remove_all( filepath );
 	}
 } // namespace slc::file
