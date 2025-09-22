@@ -132,3 +132,13 @@ project "StreamlineCore"
         {
             "SLC_RELEASE"
         }
+        
+
+    filter "configurations:Profile"
+		runtime "Release"
+        optimize "on"
+	    defines 
+        {
+            "SLC_RELEASE",
+            "SLC_PROFILE"
+        }

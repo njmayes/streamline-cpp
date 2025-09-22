@@ -4,7 +4,8 @@ workspace "streamline-cpp"
     configurations 
     { 
         "Debug",
-        "Release"
+        "Release",
+        "Profile"
     }
     
     platforms
