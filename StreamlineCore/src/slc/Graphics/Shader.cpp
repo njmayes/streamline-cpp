@@ -10,7 +10,7 @@
 #include <spirv_cross/spirv_cross.hpp>
 #include <spirv_cross/spirv_glsl.hpp>
 
-#include "slc/IO/Filesystem.h"
+#include "slc/Filesystem/Utils.h"
 #include "slc/Logging/Log.h"
 #include "slc/Types/Timer.h"
 
@@ -100,7 +100,7 @@ namespace slc {
 	{
 		Utils::CreateCacheDirectoryIfNeeded();
 
-		std::string source = file::ReadToString( filepath );
+		std::string source = fs::ReadToString( filepath );
 		auto shader_sources = PreProcess( source );
 
 		{

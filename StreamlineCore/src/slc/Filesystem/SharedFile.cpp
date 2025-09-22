@@ -217,14 +217,12 @@ namespace slc::fs {
 	struct SharedFile::Impl
 	{
 		FileDescriptor desc;
-		SharedFile::Region file;
 	};
 
 	SharedFile::SharedFile( std::string_view name )
 		: mImpl{ MakeBox< Impl >() }
 	{
 		mImpl->desc = CreateSharedFile( name );
-		mImpl->file = Slice( 0, TotalSize() );
 	}
 
 	SharedFile::~SharedFile()
