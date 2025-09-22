@@ -3,9 +3,10 @@
 #include "ChatRoom.h"
 #include "ChatClient.h"
 
-#include "BillionRows.h"
+#include "1BRC/BillionRows.h"
 
 #include <iostream>
+#include <csignal>
 
 namespace slc {
 
@@ -206,13 +207,50 @@ int main( int argc, char* argv[] )
 {
 	slc::Logger::GetGlobalLogger().AddLogTarget< slc::ConsoleLogTarget >( slc::LogLevel::Info );
 
-	{
-		ScopedTimer timer( "1 Billion Row Challenge" );
+	//{
+	//	auto constexpr Count = 10;
+	//	Timer timer;
 
-		BillionRows brc{ "measurements_small.txt" };
-		brc.Run();
-		brc.Print();
+	//	for ( auto i = 0; i < Count; i++ )
+	//	{
+	//		v1::BillionRows brc{ "measurements.txt" };
+	//		brc.Run();
+	//		// brc.Print();
+	//	}
+
+	//	log::Info( "Average time for completion (v1): {}s", timer.Elapsed() / Count );
+	//}
+
+	//{
+	//	auto constexpr Count = 10;
+	//	Timer timer;
+
+	//	for ( auto i = 0; i < Count; i++ )
+	//	{
+	//		v2::BillionRows brc{ "measurements.txt" };
+	//		brc.Run();
+	//		// brc.Print();
+	//	}
+
+	//	log::Info( "Average time for completion (v2): {}s", timer.Elapsed() / Count );
+	//}
+
+	SLC_PROFILE_BEGIN_SESSION( "1 Billion Row Challenge", "output.json" );
+	{
+		auto constexpr Count = 1;
+		Timer timer;
+
+		for ( auto i = 0; i < Count; i++ )
+		{
+			v3::BillionRows brc{ "measurements.txt" };
+			brc.Run();
+			brc.Print();
+		}
+
+		log::Info( "Average time for completion (v3): {}s", timer.Elapsed() / Count );
 	}
+
+	SLC_PROFILE_END_SESSION();
 
 	if ( argc < 2 )
 		return -1;

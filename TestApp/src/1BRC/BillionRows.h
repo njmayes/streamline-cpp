@@ -2,5 +2,4 @@
 
 #include "BillionRowsV1.h"
 #include "BillionRowsV2.h"
-
-using BillionRows = BillionRowsV2;
+#include "BillionRowsV3.h"

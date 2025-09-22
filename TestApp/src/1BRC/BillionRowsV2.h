@@ -6,147 +6,125 @@
 
 using namespace slc;
 
-class BillionRowsV2
-{
-private:
-	static std::size_t constexpr ChunkSize = 64_KB;
+namespace v2 {
 
 	struct Entry
 	{
-		int min = Limits< int >::Max;
-		int max = Limits< int >::Min;
 		std::size_t count{};
-		int sum{};
+		std::int64_t sum{};
+		std::int16_t min{};
+		std::int16_t max{};
 	};
 
-	struct ThreadResult
+	class BillionRows
 	{
-		std::map< std::string, Entry > records;
+	private:
+		static std::size_t constexpr ChunkSize = 32_MB;
+		static std::size_t constexpr ExtraLookAhead = 100;
 
-		std::vector< char > extra_bytes_start{};
-		std::vector< char > extra_bytes_end{};
-	};
-	using ResultFuture = std::future< ThreadResult >;
+		using MapType = std::unordered_map< std::string, Entry >;
+		using ResultFuture = std::future< MapType >;
 
-	using MapType = std::map< std::string, Entry >;
+	public:
+		BillionRows( std::string_view path )
+			: mFile( path )
+		{}
 
-public:
-	BillionRowsV2( std::string_view path )
-		: mFile( path )
-	{}
-
-	void Run()
-	{
-		auto chunk_count = mFile.TotalSize() / ChunkSize;
-
-		auto result_futures = std::vector< ResultFuture >{};
-		result_futures.reserve( chunk_count );
-
-		for ( auto i = 0; i < chunk_count; i++ )
-			result_futures.push_back( mThreadPool.Queue( &BillionRowsV2::RunThread, this, i ) );
-
-		auto results = result_futures | std::views::transform( &ResultFuture::get ) | std::ranges::to< std::vector >();
-		MergeResults( results );
-	}
-
-	void Print()
-	{
-		std::println( "{{" );
-		for ( auto&& [ name, data ] : mRecords | std::ranges::to< std::vector >() )
+		void Run()
 		{
-			std::println( "\t{}:{:.1f}/{:.1f}/{:.1f},", name, static_cast< float >( data.min ) / 10, static_cast< float >( data.sum ) / ( data.count * 10 ), static_cast< float >( data.max ) );
-		}
-		std::println( "}}" );
-	}
+			auto file_size = mFile.TotalSize();
+			auto chunk_size = std::min( file_size - ExtraLookAhead, ChunkSize );
+			auto chunk_count = mFile.TotalSize() / chunk_size;
 
-private:
-	ThreadResult RunThread( std::size_t i )
-	{
-		ThreadResult result{};
+			auto result_futures = std::vector< ResultFuture >{};
+			result_futures.reserve( chunk_count );
 
-		auto buffer = mFile.Slice( i * ChunkSize, ChunkSize );
-		auto chunk_view = buffer.AsStringView();
+			for ( auto i = 0; i < chunk_count; i++ )
+				result_futures.push_back( mThreadPool.Queue( &BillionRows::RunThread, this, i, chunk_size ) );
 
-		std::string name;
-		name.reserve( 256 );
-
-		std::size_t chunk_bytes_read{};
-
-		if ( i > 0 )
-		{
-			result.extra_bytes_start = chunk_view.substr( 0, chunk_view.find_first_of( '\n', chunk_bytes_read ) ) | std::ranges::to< std::vector >();
+			auto results = result_futures | std::views::transform( &ResultFuture::get );
+			MergeResults( results );
 		}
 
-		for ( std::size_t pos = chunk_view.find_first_of( '\n', chunk_bytes_read ); pos != std::string_view::npos; pos = chunk_view.find_first_of( '\n', chunk_bytes_read ) )
+		void Print()
 		{
-			auto line_view = chunk_view.substr( chunk_bytes_read, pos - chunk_bytes_read );
-			chunk_bytes_read = pos + 1;
-
-			auto split = line_view.find_first_of( ';' );
-
-			name = line_view.substr( 0, split );
-			std::string_view data = line_view.substr( split + 1 );
-
-			int value = ParseNumber( data );
-
-			auto& entry = result.records[ name ];
-			entry.min = std::min( value, entry.min );
-			entry.max = std::max( value, entry.max );
-			entry.sum += value;
-			entry.count++;
-		}
-
-		result.extra_bytes_end = chunk_view.substr( chunk_bytes_read ) | std::ranges::to< std::vector >();
-
-		return result;
-	}
-
-	void MergeResults( std::vector< ThreadResult > const& results )
-	{
-		for ( auto const& result_pair : std::views::slide( results, 2 ) )
-		{
-			auto const& result_a = result_pair[ 0 ];
-			auto const& result_b = result_pair[ 1 ];
-
-			auto extra = result_a.extra_bytes_end;
-		}
-	}
-
-	void ParseEntry( std::string_view line, MapType& records )
-	{
-		auto split = line.find_first_of( ';' );
-
-		auto name = line.substr( 0, split );
-		std::string_view data = line.substr( split + 1 );
-
-		int value = ParseNumber( data );
-
-		auto& entry = records[ std::string( name ) ];
-		entry.min = std::min( value, entry.min );
-		entry.max = std::max( value, entry.max );
-		entry.sum += value;
-		entry.count++;
-	}
-
-	int ParseNumber( std::string_view data )
-	{
-		int pow = 0;
-		int direction = std::isdigit( data.front() ) ? 1 : -1;
-		int result = 0;
-
-		for ( auto character : data )
-		{
-			if ( std::isdigit( character ) )
+			std::println( "{{" );
+			for ( auto&& [ name, data ] : mRecords )
 			{
-				result += std::pow( ( character - '0' ), pow++ );
+				std::println( "\t{}:{:.1f}/{:.1f}/{:.1f},", name, static_cast< float >( data.min ) / 10, static_cast< float >( data.sum ) / ( data.count * 10 ), static_cast< float >( data.max ) / 10 );
+			}
+			std::println( "}}" );
+		}
+
+	private:
+		MapType RunThread( std::size_t i, std::size_t chunk_size )
+		{
+			MapType result{};
+
+			auto buffer = mFile.Slice( i * chunk_size, chunk_size + ExtraLookAhead );
+			auto chunk_view = buffer.AsStringView();
+
+			std::size_t chunk_bytes_read = i > 0 ? chunk_view.find_first_of( '\n', 0 ) + 1 : 0;
+
+			for ( std::size_t pos = chunk_view.find_first_of( '\n', chunk_bytes_read ); pos != std::string_view::npos and chunk_bytes_read < chunk_size; pos = chunk_view.find_first_of( '\n', chunk_bytes_read ) )
+			{
+				auto line_view = chunk_view.substr( chunk_bytes_read, pos - chunk_bytes_read );
+				chunk_bytes_read = pos + 1;
+
+				auto split = line_view.find_first_of( ';' );
+
+				std::string_view name = line_view.substr( 0, split );
+				std::string_view data = line_view.substr( split + 1 );
+
+				std::int16_t value = ParseNumber( data );
+
+				auto& entry = result[ std::string( name ) ];
+				entry.min = std::min( value, entry.min );
+				entry.max = std::max( value, entry.max );
+				entry.sum += value;
+				entry.count++;
+			}
+
+			return result;
+		}
+
+		void MergeResults( auto& results )
+		{
+			for ( auto&& result : results )
+			{
+				for ( auto&& [ name, data ] : result )
+				{
+					auto& entry = mRecords[ name ];
+					entry.min = std::min( data.min, entry.min );
+					entry.max = std::min( data.max, entry.max );
+					entry.sum += data.sum;
+					entry.count += data.count;
+				}
 			}
 		}
-		return result * direction;
-	}
 
-private:
-	fs::SharedFile mFile;
-	ThreadPool mThreadPool{ 1 };
+		std::int16_t ParseNumber( std::string_view s )
+		{
+			bool negative = s.front() == '-';
 
-	MapType mRecords;
-};
+			std::int16_t value = 0;
+			std::size_t start_index = negative ? 1 : 0;
+
+			for ( auto i = start_index; i < s.size(); i++ )
+			{
+				if ( s[ i ] != '.' )
+				{
+					value = value * 10 + ( s[ i ] - '0' );
+				}
+			}
+
+			return negative ? -value : value;
+		}
+
+	private:
+		fs::SharedFile mFile;
+		ThreadPool mThreadPool{};
+
+		MapType mRecords;
+	};
+} // namespace v2
