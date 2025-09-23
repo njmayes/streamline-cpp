@@ -3,6 +3,7 @@
 #include "slc/Logging/Log.h"
 
 #ifdef SLC_PLATFORM_WINDOWS
+#define NOMINMAX
 #include <windows.h>
 #elif defined( SLC_PLATFORM_LINUX )
 #include <sys/mman.h>
@@ -199,19 +200,19 @@ namespace slc::fs {
 			UnmapSharedRegion( mBasePtr, mBaseSize );
 	}
 
-	std::string_view SharedFile::Region::AsStringView() const
+	std::string_view SharedFile::Region::AsStringView( std::size_t offset, std::size_t size ) const
 	{
-		return std::string_view{ reinterpret_cast< const char* >( mDataPtr ), mDataSize };
+		return std::string_view{ reinterpret_cast< const char* >( mDataPtr + offset ), std::min( mDataSize, size ) };
 	}
 
-	std::span< Byte > SharedFile::Region::AsSpan()
+	std::span< Byte > SharedFile::Region::AsSpan( std::size_t offset, std::size_t size )
 	{
-		return std::span< Byte >{ mDataPtr, mDataSize };
+		return std::span< Byte >{ mDataPtr + offset, std::min( mDataSize, size ) };
 	}
 
-	std::span< const Byte > SharedFile::Region::AsSpan() const
+	std::span< const Byte > SharedFile::Region::AsSpan( std::size_t offset, std::size_t size ) const
 	{
-		return std::span< const Byte >{ mDataPtr, mDataSize };
+		return std::span< const Byte >{ mDataPtr + offset, std::min( mDataSize, size ) };
 	}
 
 	struct SharedFile::Impl

@@ -2,8 +2,6 @@
 
 #include "streamline.h"
 
-#include "Hash.h"
-
 #include <print>
 
 using namespace slc;
@@ -21,49 +19,7 @@ namespace v3 {
 	class FlatMap
 	{
 	public:
-		FlatMap() = default;
-
-		Entry& operator[]( std::string_view name )
-		{
-			auto entry = Find( name );
-			if ( entry != nullptr )
-				return *entry;
-
-			auto&& [ k, v ] = mData.emplace_back();
-			k = std::string( name );
-			return v;
-		}
-
-		auto begin()
-		{
-			return mData.begin();
-		}
-		auto end()
-		{
-			return mData.end();
-		}
-
-	private:
-		Entry* Find( std::string_view name )
-		{
-			auto it = std::ranges::find_if( mData, [ name ]( auto const& data ) {
-				return data.first == name;
-			} );
-
-			if ( it == mData.end() )
-				return nullptr;
-
-			return &( it->second );
-		}
-
-	private:
-		std::vector< std::pair< std::string, Entry > > mData;
-	};
-
-	class FlatMapV2
-	{
-	public:
-		FlatMapV2()
+		FlatMap()
 		{
 			mFilled.reserve( 10000 );
 		}
@@ -77,7 +33,6 @@ namespace v3 {
 			if ( mKeys[ slot ].empty() )
 			{
 				mFilled.push_back( slot );
-				// mKeyHashes[ slot ] = slot;
 				mKeys[ slot ] = station;
 				mValues[ slot ] = Entry{ 1, data, data, data };
 				return;
@@ -99,7 +54,6 @@ namespace v3 {
 			if ( mKeys[ slot ].empty() )
 			{
 				mFilled.push_back( slot );
-				// mKeyHashes[ slot ] = slot;
 				mKeys[ slot ] = std::move( station );
 				mValues[ slot ] = std::move( data );
 				return;
@@ -128,7 +82,6 @@ namespace v3 {
 		std::uint16_t Lookup( std::string_view station )
 		{
 			std::uint16_t slot = std::hash< std::string_view >{}( station );
-			// std::uint16_t slot = xxh3::XXH3_64bits_const( station );
 
 			while ( not mKeys[ slot ].empty() )
 			{
@@ -150,7 +103,6 @@ namespace v3 {
 		}
 
 	private:
-		// std::array< std::uint16_t, Limits< uint16_t >::Max + 1 > mKeyHashes{};
 		std::array< std::string, Limits< uint16_t >::Max + 1 > mKeys{};
 		std::array< Entry, Limits< uint16_t >::Max + 1 > mValues{};
 		std::vector< std::uint16_t > mFilled{};
@@ -162,8 +114,7 @@ namespace v3 {
 		static std::size_t constexpr ChunkSize = 32_MB;
 		static std::size_t constexpr ExtraLookAhead = 100;
 
-		// using MapType = std::unordered_map< std::string, Entry >;
-		using MapType = FlatMapV2;
+		using MapType = FlatMap;
 		using ResultFuture = std::future< Box< MapType > >;
 
 	public:

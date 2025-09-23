@@ -12,8 +12,8 @@ namespace v2 {
 	{
 		std::size_t count{};
 		std::int64_t sum{};
-		std::int16_t min{};
-		std::int16_t max{};
+		std::int16_t min = Limits< std::int16_t >::Max;
+		std::int16_t max = Limits< std::int16_t >::Min;
 	};
 
 	class BillionRows
@@ -94,7 +94,7 @@ namespace v2 {
 			{
 				for ( auto&& [ name, data ] : result )
 				{
-					auto& entry = mRecords[ name ];
+					auto& entry = mRecords[ std::move( name ) ];
 					entry.min = std::min( data.min, entry.min );
 					entry.max = std::min( data.max, entry.max );
 					entry.sum += data.sum;

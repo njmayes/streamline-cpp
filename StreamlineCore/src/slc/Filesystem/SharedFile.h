@@ -1,6 +1,6 @@
 #pragma once
 
-#include "slc/Common/Base.h"
+#include "slc/Types/Buffer.h"
 
 namespace slc::fs {
 
@@ -21,10 +21,10 @@ namespace slc::fs {
 
 			~Region();
 
-			std::string_view AsStringView() const;
+			std::string_view AsStringView( std::size_t offset = 0, std::size_t size = Limits< std::size_t >::Max ) const;
 
-			std::span< Byte > AsSpan();
-			std::span< const Byte > AsSpan() const;
+			std::span< Byte > AsSpan( std::size_t offset = 0, std::size_t size = Limits< std::size_t >::Max );
+			std::span< const Byte > AsSpan( std::size_t offset = 0, std::size_t size = Limits< std::size_t >::Max ) const;
 
 		private:
 			Byte* mBasePtr{};

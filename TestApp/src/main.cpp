@@ -203,54 +203,35 @@ slc::Application* CreateApplication( int argc, char** argv )
 	return nullptr;
 }
 
-int main( int argc, char* argv[] )
+static auto constexpr Filename = "measurements.txt";
+static auto constexpr RepeatCount = 10;
+
+template < typename T >
+void RunChallenge( bool print = false )
 {
-	slc::Logger::GetGlobalLogger().AddLogTarget< slc::ConsoleLogTarget >( slc::LogLevel::Info );
+	Timer timer;
 
-	//{
-	//	auto constexpr Count = 10;
-	//	Timer timer;
-
-	//	for ( auto i = 0; i < Count; i++ )
-	//	{
-	//		v1::BillionRows brc{ "measurements.txt" };
-	//		brc.Run();
-	//		// brc.Print();
-	//	}
-
-	//	log::Info( "Average time for completion (v1): {}s", timer.Elapsed() / Count );
-	//}
-
-	//{
-	//	auto constexpr Count = 10;
-	//	Timer timer;
-
-	//	for ( auto i = 0; i < Count; i++ )
-	//	{
-	//		v2::BillionRows brc{ "measurements.txt" };
-	//		brc.Run();
-	//		// brc.Print();
-	//	}
-
-	//	log::Info( "Average time for completion (v2): {}s", timer.Elapsed() / Count );
-	//}
-
-	SLC_PROFILE_BEGIN_SESSION( "1 Billion Row Challenge", "output.json" );
+	for ( auto i = 0; i < RepeatCount; i++ )
 	{
-		auto constexpr Count = 1;
-		Timer timer;
+		T brc{ Filename };
+		brc.Run();
 
-		for ( auto i = 0; i < Count; i++ )
-		{
-			v3::BillionRows brc{ "measurements.txt" };
-			brc.Run();
+		if ( print )
 			brc.Print();
-		}
-
-		log::Info( "Average time for completion (v3): {}s", timer.Elapsed() / Count );
 	}
 
-	SLC_PROFILE_END_SESSION();
+	log::Info( "Average time for completion ({}): {}s", TypeTraits< T >::Name, timer.Elapsed() / RepeatCount );
+}
+
+int main( int argc, char* argv[] )
+{
+
+	slc::Logger::GetGlobalLogger().AddLogTarget< slc::ConsoleLogTarget >( slc::LogLevel::Info );
+
+	//RunChallenge< v1::BillionRows >();
+	RunChallenge< v2::BillionRows >();
+	RunChallenge< v3::BillionRows >();
+	RunChallenge< v4::BillionRows >();
 
 	if ( argc < 2 )
 		return -1;
