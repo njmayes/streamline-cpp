@@ -209,6 +209,14 @@ namespace slc {
 			: mData( static_cast< Byte* >( data ), size )
 		{}
 
+		BufferView( BufferView const& ) = default;
+		BufferView( BufferView&& ) = default;
+
+		BufferView& operator=( BufferView const& ) = default;
+		BufferView& operator=( BufferView&& ) = default;
+
+		virtual ~BufferView() = default;
+
 		BufferView( Buffer& buffer, std::size_t offset = 0, std::size_t size = Limits< std::size_t >::Max )
 		{
 			if ( offset > buffer.Size() )

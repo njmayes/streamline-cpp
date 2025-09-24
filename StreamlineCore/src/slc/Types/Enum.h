@@ -63,27 +63,40 @@ namespace slc {
 		struct IsCase< Case< E, U > > : std::true_type
 		{};
 
-		static consteval bool AssertAllCasesUniqueAndValid()
+		static consteval bool AllCasesUniqueAndValid()
 		{
-			static constexpr bool AllValidCases = ( ... and IsCase< Cases >::value );
+			constexpr bool AllValidCases = ( ... and detail::EnumCase< Cases > );
 			if constexpr ( not AllValidCases )
 			{
 				static_assert( false, "All types must be Case<E, Underlying> specializations" );
 				return false;
 			}
 
-			static constexpr auto CaseValues = { Cases::Value... };
-			static constexpr auto EnumValues = magic_enum::enum_values< Enum >();
+			constexpr auto CaseValues = std::array{ Cases::Value... };
+			constexpr auto EnumValues = magic_enum::enum_values< Enum >();
 
-			constexpr auto missing_enum_case = []( auto const& element ) { return std::ranges::count( CaseValues, element ) == 0; };
-			if constexpr ( std::ranges::any_of( EnumValues, missing_enum_case ) )
+			constexpr auto CaseCounts = [ = ] {
+				std::array< std::size_t, magic_enum::enum_count< Enum >() > counts{}; // size = EnumValues.size()
+				for ( std::size_t i = 0; i < EnumValues.size(); ++i )
+					counts[ i ] = std::ranges::count( CaseValues, EnumValues[ i ] );
+				return counts;
+			}();
+
+			constexpr auto ZeroCount = [ = ]( std::size_t count ) {
+				return count == 0;
+			};
+
+			constexpr auto MultipleCount = [ = ]( std::size_t count ) {
+				return count > 1;
+			};
+
+			if constexpr ( std::ranges::any_of( CaseCounts, ZeroCount ) )
 			{
 				static_assert( false, "SmartEnum must provide case for every enum element" );
 				return false;
 			}
 
-			static constexpr auto not_unique_case = []( auto const& element ) { return std::ranges::count( CaseValues, element ) > 1; };
-			if constexpr ( std::ranges::any_of( EnumValues, not_unique_case ) )
+			if constexpr ( std::ranges::any_of( CaseCounts, MultipleCount ) )
 			{
 				static_assert( false, "SmartEnum must provide only one case for each enum element" );
 				return false;
@@ -92,7 +105,7 @@ namespace slc {
 			return true;
 		}
 
-		static_assert( AssertAllCasesUniqueAndValid(), "SmartEnum cases do not satisfy conditions" );
+		static_assert( AllCasesUniqueAndValid(), "SmartEnum cases do not satisfy conditions" );
 
 		using CaseTypes = TypeList< Cases... >;
 		using ValueTypes = TypeList< typename Cases::Type... >;

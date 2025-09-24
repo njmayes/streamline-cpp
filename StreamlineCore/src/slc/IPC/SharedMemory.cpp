@@ -267,12 +267,12 @@ namespace slc::ipc {
 		return SharedMemory( name );
 	}
 
-	SharedBuffer SharedMemory::Use() const
+	SharedBuffer SharedMemory::View()
 	{
 		return SharedBuffer{ mImpl->desc.name, mImpl->user_data };
 	}
 
-	BufferView SharedMemory::View() const
+	BufferView const& SharedMemory::View() const
 	{
 		return mImpl->user_data;
 	}

@@ -20,8 +20,8 @@ namespace slc::ipc {
 
 		~SharedMemory();
 
-		SharedBuffer Use() const;
-		BufferView View() const;
+		SharedBuffer View();
+		BufferView const& View() const;
 
 	private:
 		SharedMemory( std::string_view name, std::size_t size );
