@@ -203,35 +203,9 @@ slc::Application* CreateApplication( int argc, char** argv )
 	return nullptr;
 }
 
-static auto constexpr Filename = "measurements.txt";
-static auto constexpr RepeatCount = 10;
-
-template < typename T >
-void RunChallenge( bool print = false )
-{
-	Timer timer;
-
-	for ( auto i = 0; i < RepeatCount; i++ )
-	{
-		T brc{ Filename };
-		brc.Run();
-
-		if ( print )
-			brc.Print();
-	}
-
-	log::Info( "Average time for completion ({}): {}s", TypeTraits< T >::Name, timer.Elapsed() / RepeatCount );
-}
-
 int main( int argc, char* argv[] )
 {
-
 	slc::Logger::GetGlobalLogger().AddLogTarget< slc::ConsoleLogTarget >( slc::LogLevel::Info );
-
-	//RunChallenge< v1::BillionRows >();
-	RunChallenge< v2::BillionRows >();
-	RunChallenge< v3::BillionRows >();
-	RunChallenge< v4::BillionRows >();
 
 	if ( argc < 2 )
 		return -1;
