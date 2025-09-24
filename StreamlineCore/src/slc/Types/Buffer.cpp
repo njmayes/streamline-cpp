@@ -1,87 +1,99 @@
 #include "Buffer.h"
+#include <algorithm>
+#include <cstring>
 
 namespace slc {
 
-	Buffer::Buffer( const Buffer& buffer )
-	{
-		ASSERT( buffer.mData && buffer.mSize );
+	// ----- Constructors -----
 
-		Allocate( buffer.mSize );
-		memcpy( mData, buffer.mData, buffer.mSize );
+	Buffer::Buffer( size_t size )
+	{
+		Resize( size );
 	}
 
-	Buffer::Buffer( Buffer&& buffer ) noexcept
+	Buffer::Buffer( const void* data, size_t size )
 	{
-		if ( &buffer == this )
-			return;
-
-		mData = buffer.mData;
-		buffer.mData = nullptr;
-
-		mSize = buffer.mSize;
+		Resize( size );
+		std::memcpy( mData.get(), data, size );
 	}
 
-	Buffer& Buffer::operator=( const Buffer& buffer )
+	Buffer::Buffer( const Buffer& other )
 	{
-		ASSERT( buffer.mData && buffer.mSize );
+		Resize( other.mSize );
+		std::memcpy( mData.get(), other.mData.get(), other.mSize );
+	}
 
-		Allocate( buffer.mSize );
-		memcpy( mData, buffer.mData, buffer.mSize );
+	Buffer::Buffer( Buffer&& other ) noexcept
+		: mData( std::exchange( other.mData, nullptr ) )
+		, mSize( std::exchange( other.mSize, 0 ) )
+		, mCapacity( std::exchange( other.mCapacity, 0 ) )
+	{
+	}
 
+	// ----- Assignment -----
+
+	Buffer& Buffer::operator=( const Buffer& other )
+	{
+		if ( this != &other )
+		{
+			Resize( other.mSize );
+			std::memcpy( mData.get(), other.mData.get(), other.mSize );
+		}
 		return *this;
 	}
 
-	Buffer& Buffer::operator=( Buffer&& buffer ) noexcept
+	Buffer& Buffer::operator=( Buffer&& other ) noexcept
 	{
-		ASSERT( &buffer != this, "Cannot move assign an object to itself!" );
-
-		mData = buffer.mData;
-		buffer.mData = nullptr;
-
-		mSize = buffer.mSize;
-
+		mData = std::exchange( other.mData, nullptr );
+		mSize = std::exchange( other.mSize, 0 );
+		mCapacity = std::exchange( other.mCapacity, 0 );
 		return *this;
 	}
+
+	// ----- Static Copy -----
 
 	Buffer Buffer::Copy( const void* data, size_t size )
 	{
-		return Buffer();
+		return Buffer( data, size );
 	}
 
-	void Buffer::Allocate( size_t size )
-	{
-		Release();
+	// ----- Reserve / Resize -----
 
-		if ( size == 0 )
+	void Buffer::Reserve( size_t new_capacity )
+	{
+		if ( new_capacity <= mCapacity )
 			return;
 
-		mData = new Byte[ size ];
-		mSize = size;
+		auto new_data = std::make_unique< Byte[] >( new_capacity );
+		if ( mData )
+			std::memcpy( new_data.get(), mData.get(), mSize );
+
+		mData = std::move( new_data );
+		mCapacity = new_capacity;
 	}
 
-	void Buffer::Release()
+	void Buffer::Resize( size_t new_size )
 	{
-		delete[] mData;
-		mData = nullptr;
-		mSize = 0;
+		EnsureCapacity( new_size );
+		if ( new_size > mSize )
+			std::memset( mData.get() + mSize, 0, new_size - mSize );
+		mSize = new_size;
 	}
 
-	Buffer Buffer::CopyBytes( size_t size, size_t offset )
+	// ----- Copy bytes -----
+
+	Buffer Buffer::CopyBytes( size_t size, size_t offset ) const
 	{
-		ASSERT( offset + size <= mSize, "Buffer overflow!" );
-		return Buffer::Copy( mData + offset, size );
+		if ( offset + size > mSize )
+			throw std::runtime_error( "Buffer overflow" );
+		return Buffer( mData.get() + offset, size );
 	}
 
-	void Buffer::Resize( size_t newSize )
+	// ----- View -----
+
+	BufferView Buffer::View( size_t offset, size_t size )
 	{
-		if ( mSize == newSize )
-			return;
-
-		Byte* newData = new Byte[ newSize ];
-		memcpy( newData, mData, ( newSize > mSize ) ? mSize : newSize );
-		delete[] mData;
-
-		mData = newData;
-		mSize = newSize;
+		return BufferView( *this, offset, size );
 	}
+
 } // namespace slc

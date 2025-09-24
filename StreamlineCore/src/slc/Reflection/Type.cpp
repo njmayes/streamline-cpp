@@ -45,6 +45,7 @@ namespace slc {
 
 	bool Type::IsSubclassOf( const Type& other ) const
 	{
-		return std::ranges::any_of( GetBaseClasses(), [ other ]( auto const& type ) { return type == other; } );
+		auto&& base_classes = GetBaseClasses();
+		return std::any_of( std::ranges::begin(base_classes), std::ranges::end(base_classes), [ other ]( auto const& type ) { return type == other; } );
 	}
 } // namespace slc

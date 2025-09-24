@@ -21,16 +21,16 @@ namespace slc {
 		switch ( severity )
 		{
 			case GL_DEBUG_SEVERITY_HIGH:
-				Log::Error( message );
+				log::Error( message );
 				return;
 			case GL_DEBUG_SEVERITY_MEDIUM:
-				Log::Warn( message );
+				log::Warn( message );
 				return;
 			case GL_DEBUG_SEVERITY_LOW:
-				Log::Info( message );
+				log::Info( message );
 				return;
 			case GL_DEBUG_SEVERITY_NOTIFICATION:
-				Log::Trace( message );
+				log::Trace( message );
 				return;
 		}
 

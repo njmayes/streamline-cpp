@@ -4,7 +4,7 @@
 
 #include "slc/Logging/Log.h"
 
-namespace slc::Environment {
+namespace slc::env {
 
 	bool SetVar( std::string_view env_name, std::string_view env_val )
 	{
@@ -17,7 +17,7 @@ namespace slc::Environment {
 #endif
 		if ( error )
 		{
-			Log::Error( "Could not set the environment variable \"{}\"", env_name );
+			log::Error( "Could not set the environment variable \"{}\"", env_name );
 			return false;
 		}
 
@@ -26,13 +26,14 @@ namespace slc::Environment {
 
 	std::optional< std::string > GetVar( std::string_view env_name )
 	{
-		errno_t error;
+#ifdef SLC_PLATFORM_WINDOWS
+		int error;
 		std::size_t required_size = 0;
 		error = getenv_s( &required_size, nullptr, 0, env_name.data() );
 
 		if ( error )
 		{
-			Log::Error( "Could not get the environment variable \"{}\"", env_name );
+			log::Error( "Could not get the environment variable \"{}\"", env_name );
 			return {};
 		}
 
@@ -41,10 +42,16 @@ namespace slc::Environment {
 
 		if ( error )
 		{
-			Log::Error( "Could not get the environment variable \"{}\"", env_name );
+			log::Error( "Could not get the environment variable \"{}\"", env_name );
 			return {};
 		}
 
 		return result;
+#elif defined( SLC_PLATFORM_LINUX )
+    	const char* val = std::getenv(env_name.data());
+		return val ? std::optional<std::string>{val} : std::nullopt;
+#else
+		return {}};
+#endif
 	}
-} // namespace slc::Environment
+} // namespace slc::env

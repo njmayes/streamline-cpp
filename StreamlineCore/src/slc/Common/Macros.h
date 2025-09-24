@@ -4,6 +4,8 @@
 
 #include <cassert>
 
+#define SLC_VERSION "0.1.0"
+
 #define SLC_EXPAND_MACRO(x) x
 
 #ifdef __has_cpp_attribute
@@ -46,7 +48,15 @@
 
 #define SLC_STRINGIFY( L )  #L 
 #define SLC_MAKE_STRING( x ) SLC_STRINGIFY(x)
-#define SLC_TODO(x) __pragma(message(__FILE__ "(" SLC_MAKE_STRING(__LINE__) ") : TODO - " x))
+
+#if defined(SLC_COMPILER_MSVC)
+	#define SLC_TODO(x) __pragma(message(__FILE__ "(" SLC_MAKE_STRING(__LINE__) ") : TODO - " x))
+#elif defined(SLC_COMPILER_GCC) || defined(__clang__)
+    #define SLC_TODO(x) _Pragma(SLC_MAKE_STRING(message(__FILE__ ":" SLC_MAKE_STRING(__LINE__) " TODO - " x)))
+#else
+    #define SLC_TODO(x)
+#endif
+
 
 #define SASSERT(x, ...) static_assert(x)
 

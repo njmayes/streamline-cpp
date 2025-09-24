@@ -139,6 +139,7 @@ namespace slc {
 
 		using TupleType = std::tuple< Ts... >;
 		using VariantType = std::variant< Ts... >;
+		using VariantTypeWithMonostate = std::variant< std::monostate, Ts... >;
 
 		template < typename R >
 		static constexpr bool Contains = std::disjunction_v< std::is_same< R, Ts >... >;

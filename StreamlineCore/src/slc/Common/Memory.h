@@ -2,6 +2,7 @@
 
 #include <unordered_set>
 #include <memory>
+#include <atomic>
 
 namespace slc {
 
@@ -62,17 +63,20 @@ namespace slc {
 		public:
 			static bool IsTracked( void* data );
 
-		private:
 			static void AddToReferenceTracker( void* data );
 			static void RemoveFromReferenceTracker( void* data );
 
 		private:
 			inline static std::unordered_set< void* > sRefSet;
-
-			template < RefCountable T >
-			friend class Ref;
 		};
 	} // namespace detail
+
+	namespace Memory {
+		inline bool IsTracked( void* data )
+		{
+			return detail::RefTracker::IsTracked( data );
+		}
+	}
 
 	template < RefCountable T >
 	class Ref

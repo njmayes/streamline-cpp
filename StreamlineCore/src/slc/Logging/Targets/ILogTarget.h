@@ -12,6 +12,7 @@ namespace slc {
 		ILogTarget( LogLevel level )
 			: mLogLevel{ level }
 		{
+			SetInitialBufferSize( 256_KB );
 		}
 		virtual ~ILogTarget() = default;
 
@@ -42,6 +43,7 @@ namespace slc {
 		virtual void PopulateBuffer( std::span< MessageEntry > data );
 
 	protected:
+		void WriteCharToBuffer( char c );
 		void PopulateBufferSingleEntry( MessageEntry const& entry );
 		void PopulateBufferNewLine();
 
@@ -52,7 +54,7 @@ namespace slc {
 
 	protected:
 		std::vector< char > mBuffer;
-		std::size_t mToWrite;
+		std::size_t mToWrite = 0;
 
 	private:
 		LogLevel mLogLevel;

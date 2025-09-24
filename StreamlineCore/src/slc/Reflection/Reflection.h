@@ -37,7 +37,7 @@ namespace slc::reflect {
 					return object.data.Get< ArgType >();
 				};
 
-				auto gen_tuple = []< std::size_t... Is >( std::vector< Instance > args, std::index_sequence< Is... > ) -> Params::TupleType {
+				auto gen_tuple = [ &]< std::size_t... Is >( std::vector< Instance > args, std::index_sequence< Is... > ) -> Params::TupleType {
 					return std::make_tuple( gen_tuple_val.template operator()< Is >( std::move( args[ Is ] ) )... );
 				};
 
@@ -190,7 +190,7 @@ namespace slc::reflect {
 			if constexpr ( not IsReturnVoid )
 				method.return_type = GetInfo< ReturnType >();
 
-			method.invoker = []( Instance ctx, std::vector< Instance > args = {} ) -> Instance {
+			method.invoker = [ accessor ]( Instance ctx, std::vector< Instance > args = {} ) -> Instance {
 				auto gen_tuple_val = []< std::size_t I >( Instance& object ) {
 					using ArgType = ArgTypes::template Type< I >;
 					return object.data.Get< ArgType >();
@@ -204,7 +204,7 @@ namespace slc::reflect {
 
 				if constexpr ( IsReturnVoid )
 				{
-					auto func = [ ctx ]< typename... Args >( Args&&... argv ) {
+					auto func = [ ctx, accessor ]< typename... Args >( Args&&... argv ) {
 						auto& ctx_ref = ctx.data.Get< T& >();
 						( ctx_ref.*accessor )( std::forward< Args >( argv )... );
 					};
@@ -213,7 +213,7 @@ namespace slc::reflect {
 				}
 				else
 				{
-					auto func = [ ctx ]< typename... Args >( Args&&... argv ) -> ReturnType {
+					auto func = [ ctx, accessor ]< typename... Args >( Args&&... argv ) -> ReturnType {
 						auto& ctx_ref = ctx.data.Get< T& >();
 						return ( ctx_ref.*accessor )( std::forward< Args >( argv )... );
 					};

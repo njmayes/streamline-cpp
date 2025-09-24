@@ -166,7 +166,7 @@ namespace slc {
 
 	void Widgets::BeginMenuBar()
 	{
-		sCurrentMenuBar = UI::MenuBar();
+		sCurrentMenuBar = ui::MenuBar();
 	}
 
 	void Widgets::AddMenuBarHeading(std::string_view heading)
@@ -196,7 +196,7 @@ namespace slc {
 
 	void Widgets::EndMenuBar()
 	{
-		sCurrentMenuBar = UI::MenuBar();
+		sCurrentMenuBar = ui::MenuBar();
 	}
 
 	void Widgets::OpenPopup(std::string_view popupName)
@@ -206,7 +206,7 @@ namespace slc {
 
 	void Widgets::BeginPopup(std::string_view popupName)
 	{
-		sCurrentPopup = UI::PopUp(popupName);
+		sCurrentPopup = ui::PopUp(popupName);
 	}
 
 	void Widgets::AddPopupItem(std::string_view heading, Action<>&& action)
@@ -216,12 +216,12 @@ namespace slc {
 
 	void Widgets::EndPopup()
 	{
-		sCurrentPopup = UI::PopUp();
+		sCurrentPopup = ui::PopUp();
 	}
 
 	void Widgets::BeginContextPopup()
 	{
-		sCurrentPopupCtx = UI::PopUpContext();
+		sCurrentPopupCtx = ui::PopUpContext();
 	}
 
 	void Widgets::AddContextItem(std::string_view heading, Action<>&& action)
@@ -231,7 +231,7 @@ namespace slc {
 
 	void Widgets::EndContextPopup()
 	{
-		sCurrentPopupCtx = UI::PopUpContext();
+		sCurrentPopupCtx = ui::PopUpContext();
 	}
 
 	void Widgets::Label(std::string_view text)
@@ -262,7 +262,7 @@ namespace slc {
 			field = string_edit_buffer.ToString();
 	}
 
-	void Widgets::PathEdit(std::string_view label, fs::path& field)
+	void Widgets::PathEdit(std::string_view label, std::filesystem::path& field)
 	{
 		StaticString<512> path_edit_buffer(field.string());
 		if (ImGui::InputText(label.data(), path_edit_buffer.Data(), path_edit_buffer.Length()))

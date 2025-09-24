@@ -25,6 +25,7 @@ project "StreamlineCore"
     includedirs
     {
         "%{IncludeDir.StreamlineCore}",
+        "%{IncludeDir.asio}",
         "%{IncludeDir.glfw}",
         "%{IncludeDir.glad}",
         "%{IncludeDir.glm}",
@@ -39,9 +40,10 @@ project "StreamlineCore"
 
 	links
 	{
-        "glad",
-        "glfw",
-        "imgui",
+        "%{Library.asio}",
+        "%{Library.glad}",
+        "%{Library.glfw}",
+        "%{Library.imgui}",
 	}
 
     filter "action:vs*"
@@ -49,19 +51,71 @@ project "StreamlineCore"
 		{
 			"/Zc:preprocessor"
 		}
+        
 	
     filter "system:windows"
         kind "StaticLib"
         systemversion "latest"
+
+        includedirs
+        {
+            "%{IncludeDir.OpenSSL}",
+        }
+
+        libdirs { "%{LibraryDir.VulkanSDK}" }
+
         links
         {
             "opengl32.lib",
+            "Ws2_32.lib",
+            "Winmm.lib",
+            "Version.lib",
+            "Bcrypt.lib",
+            "libssl.lib",
+            "libcrypto.lib",
         }
+
+        --filter { "system:windows", "configurations:Debug" }
+        --    links 
+        --    {
+        --        "shaderc_sharedd.lib",
+        --        "spirv-cross-cored.lib",
+        --        "spirv-cross-glsld.lib",
+        --    }
+        --
+        --filter { "system:windows", "configurations:Release" }
+        --    links 
+        --    {
+        --        "shaderc_shared.lib",
+        --        "spirv-cross-core.lib",
+        --        "spirv-cross-glsl.lib",
+        --    }
+            
+        filter { "system:windows", "configurations:Debug", "platforms:x64" }
+            libdirs { "%{OPENSSL_ROOT}/lib/VC/x64/MDd" }
+            
+        filter { "system:windows", "configurations:Release", "platforms:x64" }
+            libdirs { "%{OPENSSL_ROOT}/lib/VC/x64/MD" }
+
+        filter { "system:windows", "configurations:Debug", "platforms:ARM64" }
+            libdirs { "%{OPENSSL_ROOT}/lib/VC/ARM64/MDd" }
+
+        filter { "system:windows", "configurations:Release", "platforms:ARM64" }
+            libdirs { "%{OPENSSL_ROOT}/lib/VC/ARM64/MD" }
 		
 	filter "system:linux"
         kind "SharedLib"
         pic "On"
         systemversion "latest"
+
+        links
+        {
+            "ssl",
+            "crypto",
+            "shaderc_shared",
+            "spirv-cross-core",
+            "spirv-cross-glsl",
+        }
 
     filter "configurations:Debug"
 		runtime "Debug"
@@ -70,12 +124,6 @@ project "StreamlineCore"
         {
             "SLC_DEBUG"
         }
-        links
-		{
-			"%{Library.ShaderC_Debug}",
-			"%{Library.SPIRV_Cross_Debug}",
-			"%{Library.SPIRV_Cross_GLSL_Debug}"
-		}
 
     filter "configurations:Release"
 		runtime "Release"
@@ -84,9 +132,13 @@ project "StreamlineCore"
         {
             "SLC_RELEASE"
         }
-        links
-		{
-			"%{Library.ShaderC_Release}",
-			"%{Library.SPIRV_Cross_Release}",
-			"%{Library.SPIRV_Cross_GLSL_Release}"
-		}
+        
+
+    filter "configurations:Profile"
+		runtime "Release"
+        optimize "on"
+	    defines 
+        {
+            "SLC_RELEASE",
+            "SLC_PROFILE"
+        }

@@ -2,7 +2,7 @@
 
 #include "imgui.h"
 
-namespace slc::UI {
+namespace slc::ui {
 
 	PopUp::~PopUp()
 	{

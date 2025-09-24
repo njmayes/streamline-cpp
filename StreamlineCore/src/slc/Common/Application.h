@@ -45,7 +45,7 @@ namespace slc {
 	{
 		std::string name = "Streamline Application";
 		Resolution resolution = { 1600, 900 };
-		fs::path workingDir;
+		std::filesystem::path workingDir;
 		bool fullscreen = false;
 
 		virtual ~ApplicationSpecification()

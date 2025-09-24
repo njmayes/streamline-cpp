@@ -1,6 +1,12 @@
 #include "streamline.h"
 
+#include "ChatRoom.h"
+#include "ChatClient.h"
+
+#include "1BRC/BillionRows.h"
+
 #include <iostream>
+#include <csignal>
 
 namespace slc {
 
@@ -126,62 +132,138 @@ using SmartErrorEnum = SmartEnum<
 	ErrorEnum,
 	Case< ErrorEnum::Unexpected, std::string >,
 	Case< ErrorEnum::OutOfBounds >
-	//Case< ErrorEnum::OutOfBounds, std::string >
->;
+	// Case< ErrorEnum::OutOfBounds, std::string >
+	>;
 
-#define TEST(y) int y = 0;
+#define TEST( y ) int y = 0;
 SLC_FOR_EACH( TEST, x )
+
+
+void NetServerTest( int argc, char* argv[] )
+{
+	try
+	{
+		if ( argc < 2 )
+		{
+			return;
+		}
+
+		slc::net::ServerContextOptions opts{};
+		opts.num_threads = 5;
+		opts.cert_file = "server.crt";
+		opts.key_file = "server.key";
+
+		ChatRoom room{ opts };
+
+		for ( int i = 1; i < argc; ++i )
+		{
+			unsigned short port = std::atoi( argv[ i ] );
+			room.AddPort( port );
+		}
+
+		room.Run();
+	}
+	catch ( std::exception& e )
+	{
+		std::cerr << "Exception: " << e.what() << "\n";
+	}
+
+	return;
+}
+
+void NetClientTest( int argc, char* argv[] )
+{
+	try
+	{
+		if ( argc < 2 )
+		{
+			return;
+		}
+
+		slc::net::ClientContextOptions opts{};
+
+		ChatClient client{ opts };
+
+		const char* host = argv[ 1 ];
+		unsigned short port = std::atoi( argv[ 2 ] );
+
+		client.Connect( host, port );
+		client.Run();
+	}
+	catch ( std::exception& e )
+	{
+		std::cerr << "Exception: " << e.what() << "\n";
+	}
+
+	return;
+}
+
+slc::Application* CreateApplication( int argc, char** argv )
+{
+	return nullptr;
+}
 
 int main( int argc, char* argv[] )
 {
-	auto make_input = [] {
-		srand( time( NULL ) );
-		int i = rand() % 2;
-		if ( i == 0 )
-			return SmartErrorEnum::Make< ErrorEnum::Unexpected >( "Actual value" );
-		else
-			return SmartErrorEnum::Make< ErrorEnum::OutOfBounds >();
-	};
+	slc::Logger::GetGlobalLogger().AddLogTarget< slc::ConsoleLogTarget >( slc::LogLevel::Info );
 
-	//SmartErrorEnum fooa = SmartErrorEnum::Make< ErrorEnum::Unexpected >( "Actual value" );
-	SmartErrorEnum foo = make_input();
-	auto bar = foo.Match(
-		MatchCase< ErrorEnum::OutOfBounds >( [] { return "OutOfBounds"; } ),
-		MatchCase< ErrorEnum::Unexpected >( []( std::string_view value ) { return value; } )
-	);
+	if ( argc < 2 )
+		return -1;
 
+	if ( std::string( argv[ 1 ] ) == "server" )
+		NetServerTest( argc - 1, &argv[ 1 ] );
+	else if ( std::string( argv[ 1 ] ) == "client" )
+		NetClientTest( argc - 1, &argv[ 1 ] );
 
-	//auto a = GetRandom().AndThen( CheckRandom );
+	// auto make_input = [] {
+	//	srand( time( NULL ) );
+	//	int i = rand() % 2;
+	//	if ( i == 0 )
+	//		return SmartErrorEnum::Make< ErrorEnum::Unexpected >( "Actual value" );
+	//	else
+	//		return SmartErrorEnum::Make< ErrorEnum::OutOfBounds >();
+	// };
 
-	//FooResult b = a.Map( []( float val ) { return ( int )val; } )
+	////SmartErrorEnum fooa = SmartErrorEnum::Make< ErrorEnum::Unexpected >( "Actual value" );
+	// SmartErrorEnum foo = make_input();
+	// auto bar = foo.Match(
+	//	MatchCase< ErrorEnum::OutOfBounds >( [] { return "OutOfBounds"; } ),
+	//	MatchCase< ErrorEnum::Unexpected >( []( std::string_view value ) { return value; } )
+	//);
+
+	// std::cout << "Value: " << bar << "\n";
+
+	// auto a = GetRandom().AndThen( CheckRandom );
+
+	// FooResult b = a.Map( []( float val ) { return ( int )val; } )
 	//				  .MapError( []( SmartError error ) -> SmartFailure { return SmartFailure::Make< Failure::RandomFail >(); } )
 	//				  .MapError( []( SmartFailure f ) -> SmartError { return SmartError::Make< Error::InvalidRandom >( 24 ); } );
 
 
-	//b.Match(
+	// b.Match(
 	//	MatchCase< FooResult::Ok >( []( int value ) { std::cout << "User entered value of " << value << "\n"; } ),
 	//	MatchCase< Error::InvalidChar >( [] { std::cout << "Invalid character entered\n"; } ),
 	//	MatchCase< Error::InvalidRandom >( []( int value ) { std::cout << "Invalid random value\n"; } ),
 	//	MatchDefault( [] { std::cout << "Default case\n"; } )
 	//);
 
-	//auto bVal = b.UnwrapOrDefault();
+	// auto bVal = b.UnwrapOrDefault();
 
-	//auto c = GetRandom()
+	// auto c = GetRandom()
 	//			 .AndThen( CheckRandom )
 	//			 .MapOr( "Error", []( float val ) { return std::to_string( val ); } );
 
 
-	//auto d = GetRandom()
+	// auto d = GetRandom()
 	//			 .AndThen( GetRandomTwo )
 	//			 .OrElse( GetRandom );
 
 
-	//d.Match(
+	// d.Match(
 	//	MatchCase< FooResult::Ok >( []( int value ) { std::cout << "User entered value of " << value << "\n"; } ),
 	//	MatchCase< Error::InvalidRandom >( []( int value ) { std::cout << "RNG not satisfied\n"; } ),
 	//	MatchDefault( [] { std::cout << "Default case\n"; } )
 	//);
 
-	//auto dVal = d.UnwrapOrElse( []() { return 0; } );
+	// auto dVal = d.UnwrapOrElse( []() { return 0; } );
 }

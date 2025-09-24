@@ -12,7 +12,7 @@ namespace slc {
 
 	static void GLFWErrorCallback(int error, const char* description)
 	{
-		Log::Error("GLFW Error ({0}): {1}", error, description);
+		log::Error("GLFW Error ({0}): {1}", error, description);
 	}
 
 	Box<Window> Window::Create(const WindowProperties& props)
@@ -79,7 +79,7 @@ namespace slc {
 			glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
 		}
 
-		Log::Trace("Creating window {0} ({1}, {2})", mData.title, mData.width, mData.height);
+		log::Trace("Creating window {0} ({1}, {2})", mData.title, mData.width, mData.height);
 
 		{
 #if defined(_DEBUG)
@@ -94,10 +94,10 @@ namespace slc {
 		int status = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 		ASSERT(status, "Failed to initialize Glad!");
 
-		Log::Info("OpenGL Info:");
-		Log::Info("  Vendor: {0}", reinterpret_cast<const char*>(glGetString(GL_VENDOR)));
-		Log::Info("  Renderer: {0}", reinterpret_cast<const char*>(glGetString(GL_RENDERER)));
-		Log::Info("  Version: {0}", reinterpret_cast<const char*>(glGetString(GL_VERSION)));
+		log::Info("OpenGL Info:");
+		log::Info("  Vendor: {0}", reinterpret_cast<const char*>(glGetString(GL_VENDOR)));
+		log::Info("  Renderer: {0}", reinterpret_cast<const char*>(glGetString(GL_RENDERER)));
+		log::Info("  Version: {0}", reinterpret_cast<const char*>(glGetString(GL_VERSION)));
 
 		ASSERT(GLVersion.major > 4 || (GLVersion.major == 4 && GLVersion.minor >= 5), "Streamline requires at least OpenGL version 4.5!");
 
@@ -195,6 +195,6 @@ namespace slc {
 		{
 			glfwTerminate();
 		}
-		Log::Info("Shutdown complete");
+		log::Info("Shutdown complete");
 	}
 }

@@ -3,15 +3,19 @@
 #include "slc/Common/Application.h"
 #include "slc/Common/Environment.h"
 
-#include "slc/Coroutine/Task.h"
-
 #include "slc/Collections/Grid.h"
 #include "slc/Collections/StaticMap.h"
 
 #include "slc/ImGui/Widgets.h"
 #include "slc/ImGui/Utils.h"
 
+#include "slc/Filesystem/Utils.h"
+#include "slc/Filesystem/Dialog.h"
+#include "slc/Filesystem/SharedFile.h"
+
 #include "slc/IO/Json.h"
+
+#include "slc/IPC/SharedMemory.h"
 
 #include "slc/Logging/Log.h"
 #include "slc/Logging/Targets/FileLogTarget.h"
@@ -19,9 +23,14 @@
 
 #include "slc/Reflection/Type.h"
 
+#include "slc/Threading/ThreadPool.h"
+
 #include "slc/Types/Enum.h"
 #include "slc/Types/Option.h"
 #include "slc/Types/Result.h"
+#include "slc/Types/SmallVector.h"
+#include "slc/Types/Buffer.h"
+#include "slc/Types/StaticString.h"
 #include "slc/Types/Timer.h"
 #include "slc/Types/ScopedTimer.h"
 #include "slc/Types/UUID.h"

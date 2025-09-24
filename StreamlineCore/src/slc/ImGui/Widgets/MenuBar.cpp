@@ -2,36 +2,36 @@
 
 #include "imgui.h"
 
-namespace slc::UI {
+namespace slc::ui {
 
 	MenuBar::~MenuBar()
 	{
-		if (mMenuItems.empty())
+		if ( mMenuItems.empty() )
 			return;
 
-		if (!ImGui::BeginMenuBar())
+		if ( !ImGui::BeginMenuBar() )
 			return;
 
-		auto open_menus = mMenuItems | std::views::filter([](const auto& heading) { return ImGui::BeginMenu(heading.label.data()); });
+		auto open_menus = mMenuItems | std::views::filter( []( const auto& heading ) { return ImGui::BeginMenu( heading.label.data() ); } );
 
-		for (const MenuHeading& heading : open_menus)
+		for ( const MenuHeading& heading : open_menus )
 		{
-			for (const MenuItem& item : heading.menu)
+			for ( const MenuItem& item : heading.menu )
 			{
-				switch (item.type)
+				switch ( item.type )
 				{
-				case MenuItemType::Action:
-					if (ImGui::MenuItem(item.label.data(), item.shortcut.data()))
-						item.action();
-					break;
+					case MenuItemType::Action:
+						if ( ImGui::MenuItem( item.label.data(), item.shortcut.data() ) )
+							item.action();
+						break;
 
-				case MenuItemType::Switch:
-					ImGui::MenuItem(item.label.data(), item.shortcut.data(), item.display);
-					break;
+					case MenuItemType::Switch:
+						ImGui::MenuItem( item.label.data(), item.shortcut.data(), item.display );
+						break;
 
-				case MenuItemType::Separator:
-					ImGui::Separator();
-					break;
+					case MenuItemType::Separator:
+						ImGui::Separator();
+						break;
 				}
 			}
 
@@ -41,26 +41,26 @@ namespace slc::UI {
 		ImGui::EndMenuBar();
 	}
 
-	void MenuBar::AddHeading(std::string_view heading)
+	void MenuBar::AddHeading( std::string_view heading )
 	{
-		mMenuItems.emplace_back(heading);
+		mMenuItems.emplace_back( heading );
 	}
 
-	void MenuBar::AddMenuItemAction(std::string_view label, std::string_view shortcut, Action<>&& action)
+	void MenuBar::AddMenuItemAction( std::string_view label, std::string_view shortcut, Action<>&& action )
 	{
 		MenuHeading& last_menu = mMenuItems.back();
-		last_menu.menu.emplace_back(MenuItemType::Action, label, shortcut, std::move(action));
+		last_menu.menu.emplace_back( MenuItemType::Action, label, shortcut, std::move( action ) );
 	}
 
-	void MenuBar::AddMenuItemSwitch(std::string_view label, std::string_view shortcut, bool& show)
+	void MenuBar::AddMenuItemSwitch( std::string_view label, std::string_view shortcut, bool& show )
 	{
 		MenuHeading& last_menu = mMenuItems.back();
-		last_menu.menu.emplace_back(MenuItemType::Switch, label, shortcut, show);
+		last_menu.menu.emplace_back( MenuItemType::Switch, label, shortcut, show );
 	}
 
 	void MenuBar::AddSeparator()
 	{
 		MenuHeading& last_menu = mMenuItems.back();
-		last_menu.menu.emplace_back(MenuItemType::Separator);
+		last_menu.menu.emplace_back( MenuItemType::Separator );
 	}
-}
+} // namespace slc::ui

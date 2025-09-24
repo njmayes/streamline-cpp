@@ -5,8 +5,7 @@
 
 #include "slc/Types/Math.h"
 
-namespace slc::Input {
-
+namespace slc::input {
 	bool IsKeyPressed(KeyCode keycode);
 	bool IsMouseButtonPressed(MouseCode button);
 

@@ -40,6 +40,9 @@ namespace slc {
 	}
 	void ILogTarget::PopulateBufferSingleEntry( MessageEntry const& entry )
 	{
+		while ( mToWrite + entry.length >= mBuffer.size() ) [[unlikely]]
+			mBuffer.resize( mBuffer.size() * 2 );
+
 		std::memcpy( mBuffer.data() + mToWrite, entry.message.data(), entry.length );
 		mToWrite += entry.length;
 	}
@@ -47,11 +50,18 @@ namespace slc {
 	void ILogTarget::PopulateBufferNewLine()
 	{
 #ifdef SLC_PLATFORM_WINDOWS
-		mBuffer[ mToWrite ] = '\r';
-		mToWrite++;
+		WriteCharToBuffer( '\r' );
 #endif // SLC_PLATFORM_WINDOWS
 
-		mBuffer[ mToWrite ] = '\n';
+		WriteCharToBuffer( '\n' );
+	}
+
+	void ILogTarget::WriteCharToBuffer( char c )
+	{
+		if ( mToWrite >= mBuffer.size() ) [[unlikely]]
+			mBuffer.resize( mBuffer.size() * 2 );
+
+		mBuffer[ mToWrite ] = c;
 		mToWrite++;
 	}
 } // namespace slc

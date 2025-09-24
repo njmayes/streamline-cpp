@@ -1,7 +1,5 @@
 #pragma once
 
-#include "slc/Common/Base.h"
-
 #include "Common.h"
 
 namespace slc {

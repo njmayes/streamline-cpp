@@ -16,3 +16,6 @@
 [submodule "StreamlineCore/dependencies/portable-file-dialogs"]
 	path = StreamlineCore/dependencies/portable-file-dialogs
 	url = https://github.com/amayesingnathan/portable-file-dialogs.git
+[submodule "StreamlineCore/dependencies/asio"]
+	path = StreamlineCore/dependencies/asio
+	url = https://github.com/njmayes/asio.git

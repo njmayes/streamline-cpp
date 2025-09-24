@@ -126,3 +126,137 @@ def UnpackFile(filepath, filter, deleteZipFile=True):
 
     if deleteZipFile:
         os.remove(zipFilePath) # delete zip file
+
+
+def InstallVulkan(version):
+    vulkanDirectory = "./streamline-cpp/dependencies/VulkanSDK"
+    vulkanFilename = "vulkan_sdk.exe"
+    vulkanExecPath = f"{vulkanDirectory}/VulkanSDK-{version}-Installer.exe"
+    
+
+    vulkanInstallURL = f"https://sdk.lunarg.com/sdk/download/{version}/windows/{vulkanFilename}"
+    vulkanInstallPath = f"{vulkanDirectory}/{vulkanFilename}"
+    print("Downloading {0:s} to {1:s}".format(vulkanInstallURL, vulkanInstallPath))
+    DownloadFile(vulkanInstallURL, vulkanInstallPath)
+    print("Running Vulkan SDK installer...")        
+    
+    os.startfile(os.path.abspath(vulkanExecPath))
+    print("Re-run this script after installation!")
+
+
+def __CheckOpenSSLDevDir(root):
+    """Check if development files exist in a given directory."""
+    include_path = os.path.join(root, "include", "openssl", "ssl.h")
+    lib_dir = os.path.join(root, "lib")
+    
+    has_libs = False
+
+    for root, _, files in os.walk(lib_dir):
+        if "libssl.lib" in files and "libcrypto.lib" in files:
+           has_libs = True
+
+    return os.path.exists(include_path) and has_libs
+
+def __FindOpenSSLFromEnv():
+    root = os.environ.get("OPENSSL_ROOT_DIR")
+    if root and __CheckOpenSSLDevDir(root):
+        return root
+    return None
+
+def __FindOpenSSLFromPath():
+    """Check PATH for openssl.exe and infer dev directory."""
+    paths = os.environ.get("PATH", "").split(os.pathsep)
+    for p in paths:
+        # Heuristic: assume include/lib are one level up from the bin folder
+        candidate = os.path.abspath(os.path.join(p, ".."))
+        if __CheckOpenSSLDevDir(candidate):
+            return candidate
+    return None
+
+def __FindOpenSSLInCommonDirs():
+    common_dirs = [
+        "C:\\Program Files\\OpenSSL-Win64",
+        "C:\\Program Files (x86)\\OpenSSL-Win32",
+        "C:\\OpenSSL-Win64",
+        "C:\\OpenSSL-Win32"
+    ]
+    for d in common_dirs:
+        if os.path.exists(d) and __CheckOpenSSLDevDir(d):
+            return d
+    return None
+
+def __FindOpenSSLRecursively(dirs=None):
+    print("Searching for OpenSSL installation recursively (this may take a while)...")
+    if dirs is None:
+        dirs = ["C:\\", "C:\\Program Files", "C:\\Program Files (x86)"]
+
+    for root_dir in dirs:
+        for root, _, files in os.walk(root_dir):
+            if "ssl.h" in files and "libssl.lib" in files and "libcrypto.lib" in files:
+                return os.path.abspath(root_dir)
+    return None
+
+def CheckOpenSSLInstalled(search_recusively=False):
+    dev_path = (
+        __FindOpenSSLFromEnv() or
+        __FindOpenSSLFromPath() or
+        __FindOpenSSLInCommonDirs()
+    )
+
+    # If still not found, optionally use slow recursive search
+    if not dev_path and search_recusively:
+        dev_path = __FindOpenSSLRecursively()
+
+    dev_installed = dev_path is not None
+    return {
+        "dev_installed": dev_installed,
+        "dev_path": dev_path
+    }
+
+
+def __AddOpenSSLEnvironmentVariable():
+    validation = CheckOpenSSLInstalled(search_recusively=True)
+
+    path = validation["dev_path"]
+    if path is None:
+        raise EnvironmentError("OpenSSL development files not found following installation.")
+
+    key = winreg.HKEY_CURRENT_USER
+    sub_key = r"Environment"
+
+    # Open registry key for writing
+    with winreg.OpenKey(key, sub_key, 0, winreg.KEY_SET_VALUE) as reg_key:
+        winreg.SetValueEx(reg_key, "OPENSSL_ROOT_DIR", 0, winreg.REG_SZ, path)
+
+    # Notify Windows about the environment change (so new processes see it)
+    import ctypes
+    HWND_BROADCAST = 0xFFFF
+    WM_SETTINGCHANGE = 0x1A
+    SMTO_ABORTIFHUNG = 0x0002
+    ctypes.windll.user32.SendMessageTimeoutW(HWND_BROADCAST, WM_SETTINGCHANGE, 0, "Environment", SMTO_ABORTIFHUNG, 5000, None)
+
+    print(f"Environment variable OPENSSL_ROOT_DIR set to {path}.")
+
+def InstallOpenSSL():
+    import requests
+    from zipfile import ZipFile
+
+    openssl_url = "https://slproweb.com/download/Win64OpenSSL-3_5_3.exe"
+    installer_path = os.path.abspath("./Win64OpenSSL-3_5_2.exe")
+    print(f"Downloading OpenSSL installer from {openssl_url}...")
+    with requests.get(openssl_url, stream=True) as r:
+        r.raise_for_status()
+        with open(installer_path, "wb") as f:
+            for chunk in r.iter_content(chunk_size=8192):
+                f.write(chunk)
+
+    print("Running OpenSSL installer...")
+    os.startfile(installer_path)
+
+    input("Please follow the installer prompts. Hit Enter to continue after installation.")
+    os.remove(installer_path)
+    __AddOpenSSLEnvironmentVariable()
+
+    print("OpenSSL installation complete. Please re-run this script.") 
+
+    quit()

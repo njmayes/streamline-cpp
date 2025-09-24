@@ -84,7 +84,7 @@ namespace slc {
 			mMemBlock = static_cast< T* >( ::operator new( mMaxSize * sizeof( T ) ) );
 			mHead = mMemBlock + offset;
 
-			memcpy( mMemBlock, tmp, tmp_size );
+			std::memcpy( mMemBlock, tmp, tmp_size );
 			::operator delete( tmp );
 		}
 

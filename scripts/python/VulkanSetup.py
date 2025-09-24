@@ -1,43 +1,31 @@
 import os
-import sys
-import subprocess
 import platform
 from pathlib import Path
+import Common
 
 if platform.system() == "Windows":
     import UtilsWindows as Utils
 elif platform.system() == "Linux":
     import UtilsLinux as Utils
-
-from io import BytesIO
-from urllib.request import urlopen
+else:
+    raise ImportError("Unsupported platform")
 
 class VulkanConfiguration:
     requiredVulkanVersion = "1.3."
     installVulkanVersion = "1.3.216.0"
-    vulkanDirectory = "./Labyrinth/dependencies/VulkanSDK"
-
-    if platform.system() == "Windows":
-        vulkanPlatform = "windows"
-        vulkanFilename = "vulkan_sdk.exe"
-        vulkanExecPath = f"{vulkanDirectory}/VulkanSDK-{installVulkanVersion}-Installer.exe"
-    elif platform.system() == "Linux":
-        vulkanPlatform = "linux"
-        vulkanFilename = "vulkan_sdk.tar.gz"
-        vulkanExecPath = f"{vulkanDirectory}/{installVulkanVersion}/vulkan_sdk"
 
     @classmethod
     def Validate(cls):
-        if (not cls.CheckVulkanSDK()):
+        if (not cls.__CheckVulkanSDK()):
             print("Vulkan SDK not installed correctly.")
             return
             
-        if (not cls.CheckVulkanSDKDebugLibs()):
+        if (not cls.__CheckVulkanSDKDebugLibs()):
             print(f"\nNo Vulkan SDK debug libs found. Install Vulkan SDK with debug libs.")
             print(f"\nDebug configuration disabled.")
 
     @classmethod
-    def CheckVulkanSDK(cls):
+    def __CheckVulkanSDK(cls):
         vulkanSDK = os.environ.get("VULKAN_SDK")
         if (vulkanSDK is None):
             print("\nYou don't have the Vulkan SDK installed!")
@@ -56,31 +44,13 @@ class VulkanConfiguration:
 
     @classmethod
     def __InstallVulkanSDK(cls):
-        permissionGranted = False
-        while not permissionGranted:
-            reply = str(input("Would you like to install VulkanSDK {0:s}? [Y/N]: ".format(cls.installVulkanVersion))).lower().strip()[:1]
-            if reply == 'n':
-                return
-            permissionGranted = (reply == 'y')
+        install_job = lambda _: Utils.InstallVulkan(cls.installVulkanVersion)
 
-        vulkanInstallURL = f"https://sdk.lunarg.com/sdk/download/{cls.installVulkanVersion}/{cls.vulkanPlatform}/{cls.vulkanFilename}"
-        vulkanInstallPath = f"{cls.vulkanDirectory}/{cls.vulkanFilename}"
-        print("Downloading {0:s} to {1:s}".format(vulkanInstallURL, vulkanInstallPath))
-        Utils.DownloadFile(vulkanInstallURL, vulkanInstallPath)
-        print("Running Vulkan SDK installer...")        
-        if platform.system() == "linux":
-            print("Extracting", vulkanInstallPath)
-            Utils.UnpackFile(vulkanInstallPath, [], True)
-        os.startfile(os.path.abspath(vulkanExecPath))
-        print("Re-run this script after installation!")
-        quit()
+        Common.PromptUserForTask( "Would you like to install VulkanSDK {0:s}? [Y/N]: ".format(cls.installVulkanVersion), install_job)
 
     @classmethod
-    def CheckVulkanSDKDebugLibs(cls):
+    def __CheckVulkanSDKDebugLibs(cls):
         vulkanSDK = os.environ.get("VULKAN_SDK")
         shadercdLib = Path(f"{vulkanSDK}/Lib/shaderc_sharedd.lib")
         
         return shadercdLib.exists()
-
-if __name__ == "__main__":
-    VulkanConfiguration.Validate()

@@ -23,10 +23,10 @@ namespace slc {
 		const char* renderer = ( char* )glGetString( GL_RENDERER );
 		const char* version = ( char* )glGetString( GL_VERSION );
 
-		Log::Info( "OpenGL Info:" );
-		Log::Info( "  Vendor: {0}", vendor );
-		Log::Info( "  Renderer: {0}", renderer );
-		Log::Info( "  Version: {0}", version );
+		log::Info( "OpenGL Info:" );
+		log::Info( "  Vendor: {0}", vendor );
+		log::Info( "  Renderer: {0}", renderer );
+		log::Info( "  Version: {0}", version );
 
 		ASSERT( GLVersion.major > 4 || ( GLVersion.major == 4 && GLVersion.minor >= 5 ), "Labyrinth requires at least OpenGL version 4.5!" );
 	}
