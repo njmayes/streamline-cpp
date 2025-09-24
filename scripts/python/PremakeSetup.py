@@ -1,13 +1,15 @@
-import sys
 import os
 import platform
 import requests
 from pathlib import Path
+import Common
 
 if platform.system() == "Windows":
     import UtilsWindows as Utils
 elif platform.system() == "Linux":
     import UtilsLinux as Utils
+else:
+    raise ImportError("Unsupported platform")
 
 def GetLatestPremakeVersion():
     LATEST_ENTRY = 0
@@ -61,23 +63,17 @@ class PremakeConfiguration:
 
     @classmethod
     def InstallPremake(cls):
-        permissionGranted = False
-        while not permissionGranted:
-            reply = str(input("Premake not found. Would you like to download Premake {0:s}? [Y/N]: ".format(cls.premakeVersion))).lower().strip()[:1]
-            if reply == 'n':
-                return False
-            permissionGranted = (reply == 'y')
+        def InstallJob():
+            premakePath = f"{cls.premakeDirectory}/premake-{cls.premakeVersion}-{cls.premakeSuffix}"
+            print("Downloading {0:s} to {1:s}".format(cls.premakeBinaryUrls, premakePath))
+            Utils.DownloadFile(cls.premakeBinaryUrls, premakePath)
+            print("Extracting", premakePath)
+            Utils.UnpackFile(premakePath, cls.premakeFilters, True)
+            print(f"Premake {cls.premakeVersion} has been downloaded to '{cls.premakeDirectory}'")
 
-        premakePath = f"{cls.premakeDirectory}/premake-{cls.premakeVersion}-{cls.premakeSuffix}"
-        print("Downloading {0:s} to {1:s}".format(cls.premakeBinaryUrls, premakePath))
-        Utils.DownloadFile(cls.premakeBinaryUrls, premakePath)
-        print("Extracting", premakePath)
-        Utils.UnpackFile(premakePath, cls.premakeFilters, True)
-        print(f"Premake {cls.premakeVersion} has been downloaded to '{cls.premakeDirectory}'")
+            premakeLicensePath = f"{cls.premakeDirectory}/LICENSE.txt"
+            print("Downloading {0:s} to {1:s}".format(cls.premakeLicenseUrl, premakeLicensePath))
+            Utils.DownloadFile(cls.premakeLicenseUrl, premakeLicensePath)
+            print(f"Premake License file has been downloaded to '{cls.premakeDirectory}'")
 
-        premakeLicensePath = f"{cls.premakeDirectory}/LICENSE.txt"
-        print("Downloading {0:s} to {1:s}".format(cls.premakeLicenseUrl, premakeLicensePath))
-        Utils.DownloadFile(cls.premakeLicenseUrl, premakeLicensePath)
-        print(f"Premake License file has been downloaded to '{cls.premakeDirectory}'")
-
-        return True
+        return Common.PromptUserForTask("Premake not found. Would you like to download Premake {0:s}? [Y/N]: ".format(cls.premakeVersion), InstallJob )

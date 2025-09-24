@@ -1,16 +1,14 @@
 import os
-import sys
-import subprocess
 import platform
 from pathlib import Path
+import Common
 
 if platform.system() == "Windows":
     import UtilsWindows as Utils
-else:
+elif platform.system() == "Linux":
     import UtilsLinux as Utils
-
-from io import BytesIO
-from urllib.request import urlopen
+else:
+    raise ImportError("Unsupported platform")
 
 class VulkanConfiguration:
     requiredVulkanVersion = "1.3."
@@ -46,14 +44,9 @@ class VulkanConfiguration:
 
     @classmethod
     def __InstallVulkanSDK(cls):
-        permissionGranted = False
-        while not permissionGranted:
-            reply = str(input("Would you like to install VulkanSDK {0:s}? [Y/N]: ".format(cls.installVulkanVersion))).lower().strip()[:1]
-            if reply == 'n':
-                return
-            permissionGranted = (reply == 'y')
+        install_job = lambda _: Utils.InstallVulkan(cls.installVulkanVersion)
 
-        Utils.InstallVulkan(cls.installVulkanVersion)
+        Common.PromptUserForTask( "Would you like to install VulkanSDK {0:s}? [Y/N]: ".format(cls.installVulkanVersion), install_job)
 
     @classmethod
     def __CheckVulkanSDKDebugLibs(cls):

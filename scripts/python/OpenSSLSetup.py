@@ -1,13 +1,12 @@
-import sys
-import os
-import shutil
-import subprocess
 import platform
+import Common
 
 if platform.system() == "Windows":
     import UtilsWindows as Utils
-else:
+elif platform.system() == "Linux":
     import UtilsLinux as Utils
+else:
+    raise ImportError("Unsupported platform")
 
 class OpenSSLConfiguration:
 
@@ -16,15 +15,8 @@ class OpenSSLConfiguration:
         validation = Utils.CheckOpenSSLInstalled()
         if (not validation["dev_installed"]):
             print("\nYou don't have the OpenSSL SDK installed!")
-            
-            permissionGranted = False
-            while not permissionGranted:
-                reply = str(input("Would you like to install the OpenSSL SDK? [Y/N]: ")).lower().strip()[:1]
-                if reply == 'n':
-                    return False
-                permissionGranted = (reply == 'y')
 
-            Utils.InstallOpenSSL()
+            Common.PromptUserForTask("Would you like to install the OpenSSL SDK? [Y/N]: ", Utils.InstallOpenSSL )
             return False
 
         return True
