@@ -14,24 +14,24 @@ namespace slc {
 		static void Shutdown();
 
 		static void BeginState();
-		static void BeginState( const Matrix4f& transform );
+		static void BeginState( const Mat4f& transform );
 		static void EndState();
 
-		static void DrawQuad( const Vector2f& position, const Vector2f& size, const Vector4f& colour );
-		static void DrawQuad( const Matrix4f& transform, const Vector4f& colour );
+		static void DrawQuad( const Vec2f& position, const Vec2f& size, const Vec4f& colour );
+		static void DrawQuad( const Mat4f& transform, const Vec4f& colour );
 
-		static void DrawQuad( const Vector2f& position, const Vector2f& size, const Ref< IRenderable >& texture, float tiling_factor = 1.0f, const Vector4f& tint_colour = Vector4f( 1.0f ) );
-		static void DrawQuad( const Matrix4f& transform, const Ref< IRenderable >& textureSlot, float tiling_factor = 1.0f, const Vector4f& tint_colour = Vector4f( 1.0f ) );
+		static void DrawQuad( const Vec2f& position, const Vec2f& size, const Ref< IRenderable >& texture, float tiling_factor = 1.0f, const Vec4f& tint_colour = Vec4f( 1.0f ) );
+		static void DrawQuad( const Mat4f& transform, const Ref< IRenderable >& textureSlot, float tiling_factor = 1.0f, const Vec4f& tint_colour = Vec4f( 1.0f ) );
 
-		static void DrawRotatedQuad( const Vector2f& position, const Vector2f& size, float rotation, const Vector4f& colour );
-		static void DrawRotatedQuad( const Vector2f& position, const Vector2f& size, float rotation, const Ref< IRenderable >& texture, float tiling_factor = 1.0f, const Vector4f& tint_colour = Vector4f( 1.0f ) );
+		static void DrawRotatedQuad( const Vec2f& position, const Vec2f& size, float rotation, const Vec4f& colour );
+		static void DrawRotatedQuad( const Vec2f& position, const Vec2f& size, float rotation, const Ref< IRenderable >& texture, float tiling_factor = 1.0f, const Vec4f& tint_colour = Vec4f( 1.0f ) );
 
-		static void DrawCircle( const Matrix4f& transform, const Vector4f& colour, float thickness = 1.0f );
+		static void DrawCircle( const Mat4f& transform, const Vec4f& colour, float thickness = 1.0f );
 
-		static void DrawLine( const Vector3f& p0, const Vector3f& p1, const Vector4f& colour );
+		static void DrawLine( const Vec3f& p0, const Vec3f& p1, const Vec4f& colour );
 
-		static void DrawRect( const Vector2f& position, const Vector2f& size, const Vector4f& colour );
-		static void DrawRect( const Matrix4f& transform, const Vector4f& colour );
+		static void DrawRect( const Vec2f& position, const Vec2f& size, const Vec4f& colour );
+		static void DrawRect( const Mat4f& transform, const Vec4f& colour );
 
 		static void ResetStats();
 		static const RenderStatistics& GetStats();

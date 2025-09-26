@@ -21,6 +21,10 @@
 #include "slc/Logging/Targets/FileLogTarget.h"
 #include "slc/Logging/Targets/ConsoleLogTarget.h"
 
+#include "slc/Networking/Context.h"
+#include "slc/Networking/Connection.h"
+#include "slc/Networking/NetworkLayer.h"
+
 #include "slc/Reflection/Type.h"
 
 #include "slc/Threading/ThreadPool.h"

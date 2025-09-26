@@ -324,7 +324,7 @@ namespace slc {
 		}
 		template < typename T, IsAction Func >
 			requires VecSized< ImVec2, T >
-		static void Button( const T& size, std::string_view label, Func&& action = {} )
+		static void Button( std::string_view label, const T& size, Func&& action = {} )
 		{
 			if ( ButtonInternal( label, Utils::ToImVec< ImVec2 >( size ) ) )
 			{

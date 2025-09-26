@@ -10,7 +10,7 @@ namespace slc {
 	public:
 		virtual uint32_t GetTextureID() const = 0;
 		void BindTexture( uint32_t slot = 0 ) const;
-		virtual const Vector2f* GetTextureCoords() const
+		virtual const Vec2f* GetTextureCoords() const
 		{
 			return DefaultCoords;
 		}
@@ -21,6 +21,6 @@ namespace slc {
 		}
 
 	private:
-		static constexpr Vector2f DefaultCoords[ 4 ] = { { 0.0f, 0.0f }, { 1.0f, 0.0f }, { 1.0f, 1.0f }, { 0.0f, 1.0f } };
+		static constexpr Vec2f DefaultCoords[ 4 ] = { { 0.0f, 0.0f }, { 1.0f, 0.0f }, { 1.0f, 1.0f }, { 0.0f, 1.0f } };
 	};
 } // namespace slc

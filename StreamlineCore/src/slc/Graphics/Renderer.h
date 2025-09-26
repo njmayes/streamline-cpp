@@ -13,7 +13,7 @@ namespace slc {
 		static void Shutdown();
 
 		static void SetViewport( uint32_t w, uint32_t h );
-		static void SetClearColor( const Vector4f& colour );
+		static void SetClearColor( const Vec4f& colour );
 		static void Clear();
 
 		static void SetLineWidth( float width );

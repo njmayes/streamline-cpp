@@ -68,7 +68,7 @@ namespace slc {
 		glViewport( 0, 0, w, h );
 	}
 
-	void Renderer::SetClearColor( const glm::vec4& colour )
+	void Renderer::SetClearColor( const Vec4f& colour )
 	{
 		glClearColor( colour.r, colour.g, colour.b, colour.a );
 	}

@@ -14,9 +14,9 @@ namespace slc {
 
 	struct QuadVertex
 	{
-		Vector3f position;
-		Vector4f colour;
-		Vector2f texCoord;
+		Vec3f position;
+		Vec4f colour;
+		Vec2f texCoord;
 
 		float texture_index;
 		float tiling_factor;
@@ -24,16 +24,16 @@ namespace slc {
 
 	struct CircleVertex
 	{
-		Vector3f world_position;
+		Vec3f world_position;
 		float thickness;
-		Vector2f local_position;
-		Vector4f colour;
+		Vec2f local_position;
+		Vec4f colour;
 	};
 
 	struct LineVertex
 	{
-		Vector3f position;
-		Vector4f colour;
+		Vec3f position;
+		Vec4f colour;
 	};
 
 	struct RenderStatistics
@@ -57,7 +57,7 @@ namespace slc {
 		static constexpr uint32_t MaxVertices = MaxQuads * 4;
 		static constexpr uint32_t MaxIndices = MaxQuads * 6;
 		static constexpr uint32_t MaxTextureSlots = 32;
-		static constexpr Vector4f QuadVertexPositions[ 4 ] = {
+		static constexpr Vec4f QuadVertexPositions[ 4 ] = {
 			{ -0.5f, -0.5f, 0.0f, 1.0f },
 			{ 0.5f, -0.5f, 0.0f, 1.0f },
 			{ 0.5f, 0.5f, 0.0f, 1.0f },
@@ -101,7 +101,7 @@ namespace slc {
 
 		RenderStatistics stats;
 
-		using CameraData = Matrix4f;
+		using CameraData = Mat4f;
 		CameraData camera_matrix;
 		Ref< UniformBuffer > camera_uniform_buffer;
 	};

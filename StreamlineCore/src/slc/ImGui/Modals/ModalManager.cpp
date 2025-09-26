@@ -5,6 +5,8 @@
 
 namespace slc {
 
+	static auto constexpr ButtonSize = Vec2f{ 60, 40 };
+
 	void ModalManager::Render()
 	{
 		float line_spacing = Utils::FrameHeightWithSpacing();
@@ -22,7 +24,7 @@ namespace slc {
 			Utils::SetNextWindowPos< glm::vec2 >( Utils::GetMainWindowCentre< glm::vec2 >(), { 0.5f, 0.5f } );
 			if ( Widgets::BeginWindow( modal_data.heading, &modal_data.open, ImGuiWindowFlags_NoDocking ) )
 			{
-				Widgets::BeginChild( "ModalBody", glm::vec2{ 0, -2 * line_spacing } );
+				Widgets::BeginChild( "ModalBody", glm::vec2{ 0, -ButtonSize.y - 5.0f } );
 				modal_data.modal->OnOverlayRender();
 				Widgets::EndChild();
 
@@ -37,7 +39,7 @@ namespace slc {
 
 		// Call any completion callbacks before deleting modal entries. Filter for modals that are now closed and have callbacks.
 		auto has_callbacks = mEditorModals |
-							   std::views::filter( [ this ]( const ModalEntry& entry ) { return !entry.open && mModalCallbacks.contains( entry.heading ); } );
+							 std::views::filter( [ this ]( const ModalEntry& entry ) { return !entry.open && mModalCallbacks.contains( entry.heading ); } );
 
 		for ( const ModalEntry& entry : has_callbacks )
 		{
@@ -55,14 +57,15 @@ namespace slc {
 		if ( modal_data.type == ModalButtons::None )
 			return;
 
-		Widgets::NewLine();
 		Widgets::Separator();
+
+		Utils::SetWindowFontScale( 2.0f );
 
 		switch ( modal_data.type )
 		{
 			case ModalButtons::OK:
 			{
-				Widgets::Button( "OK", [ & ]() {
+				Widgets::Button( "OK", ButtonSize, [ & ]() {
 					modal_data.modal->OnComplete();
 					modal_data.open = false;
 				} );
@@ -70,27 +73,27 @@ namespace slc {
 			}
 			case ModalButtons::OKCancel:
 			{
-				Widgets::Button( "OK", [ & ]() {
+				Widgets::Button( "OK", ButtonSize, [ & ]() {
 					modal_data.modal->OnComplete();
 					modal_data.open = false;
 				} );
 
 				Widgets::SameLine();
 
-				Widgets::Button( "Cancel", [ & ]() { modal_data.open = false; } );
+				Widgets::Button( "Cancel", ButtonSize, [ & ]() { modal_data.open = false; } );
 
 				break;
 			}
 			case ModalButtons::YesNo:
 			{
-				Widgets::Button( "Yes", [ & ]() {
+				Widgets::Button( "Yes", ButtonSize, [ & ]() {
 					modal_data.modal->OnComplete();
 					modal_data.open = false;
 				} );
 
 				Widgets::SameLine();
 
-				Widgets::Button( "No", [ & ]() { modal_data.open = false; } );
+				Widgets::Button( "No", ButtonSize, [ & ]() { modal_data.open = false; } );
 
 				break;
 			}

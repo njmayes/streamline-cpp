@@ -20,7 +20,7 @@ namespace slc::input {
 		return state == GLFW_PRESS;
 	}
 
-	Vector2f GetMousePosition()
+	Vec2f GetMousePosition()
 	{
 		auto* window = static_cast< GLFWwindow* >( Application::Get().GetWindow().GetNativeWindow() );
 		double xpos, ypos;

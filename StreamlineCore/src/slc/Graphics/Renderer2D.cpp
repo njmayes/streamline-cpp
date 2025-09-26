@@ -98,10 +98,10 @@ namespace slc {
 
 	void Renderer2D::BeginState()
 	{
-		BeginState( Matrix4f{ 1.0f } );
+		BeginState( Mat4f{ 1.0f } );
 	}
 
-	void Renderer2D::BeginState( const Matrix4f& cameraTransform )
+	void Renderer2D::BeginState( const Mat4f& cameraTransform )
 	{
 		sRenderData->camera_matrix = cameraTransform;
 		sRenderData->camera_uniform_buffer->SetData( &sRenderData->camera_matrix, sizeof( Renderer2DData::CameraData ) );
@@ -114,38 +114,38 @@ namespace slc {
 		Flush();
 	}
 
-	void Renderer2D::DrawQuad( const Vector2f& position, const Vector2f& size, const Vector4f& colour )
+	void Renderer2D::DrawQuad( const Vec2f& position, const Vec2f& size, const Vec4f& colour )
 	{
-		Matrix4f transform = glm::translate( Matrix4f( 1.0f ), { position, 0.0f } ) * glm::scale( Matrix4f( 1.0f ), { size.x, size.y, 1.0f } );
+		Mat4f transform = glm::translate( Mat4f( 1.0f ), { position, 0.0f } ) * glm::scale( Mat4f( 1.0f ), { size.x, size.y, 1.0f } );
 
 		DrawQuad( transform, colour );
 	}
 
-	void Renderer2D::DrawQuad( const Vector2f& position, const Vector2f& size, const Ref< IRenderable >& texture, float tiling_factor, const Vector4f& tint_colour )
+	void Renderer2D::DrawQuad( const Vec2f& position, const Vec2f& size, const Ref< IRenderable >& texture, float tiling_factor, const Vec4f& tint_colour )
 	{
-		Matrix4f transform = glm::translate( Matrix4f( 1.0f ), { position, 0.0f } ) * glm::scale( Matrix4f( 1.0f ), { size.x, size.y, 1.0f } );
+		Mat4f transform = glm::translate( Mat4f( 1.0f ), { position, 0.0f } ) * glm::scale( Mat4f( 1.0f ), { size.x, size.y, 1.0f } );
 
 		DrawQuad( transform, texture, tiling_factor, tint_colour );
 	}
 
-	void Renderer2D::DrawRotatedQuad( const Vector2f& position, const Vector2f& size, float rotation, const Vector4f& colour )
+	void Renderer2D::DrawRotatedQuad( const Vec2f& position, const Vec2f& size, float rotation, const Vec4f& colour )
 	{
-		Matrix4f transform = glm::translate( Matrix4f( 1.0f ), { position, 0.0f } ) * glm::rotate( Matrix4f( 1.0f ), rotation, { 0.0f, 0.0f, 1.0f } ) * glm::scale( Matrix4f( 1.0f ), { size.x, size.y, 1.0f } );
+		Mat4f transform = glm::translate( Mat4f( 1.0f ), { position, 0.0f } ) * glm::rotate( Mat4f( 1.0f ), rotation, { 0.0f, 0.0f, 1.0f } ) * glm::scale( Mat4f( 1.0f ), { size.x, size.y, 1.0f } );
 
 		DrawQuad( transform, colour );
 	}
 
-	void Renderer2D::DrawRotatedQuad( const Vector2f& position, const Vector2f& size, float rotation, const Ref< IRenderable >& texture, float tiling_factor, const Vector4f& tint_colour )
+	void Renderer2D::DrawRotatedQuad( const Vec2f& position, const Vec2f& size, float rotation, const Ref< IRenderable >& texture, float tiling_factor, const Vec4f& tint_colour )
 	{
-		Matrix4f transform = glm::translate( Matrix4f( 1.0f ), { position, 0.0f } ) * glm::rotate( Matrix4f( 1.0f ), rotation, { 0.0f, 0.0f, 1.0f } ) * glm::scale( Matrix4f( 1.0f ), { size.x, size.y, 1.0f } );
+		Mat4f transform = glm::translate( Mat4f( 1.0f ), { position, 0.0f } ) * glm::rotate( Mat4f( 1.0f ), rotation, { 0.0f, 0.0f, 1.0f } ) * glm::scale( Mat4f( 1.0f ), { size.x, size.y, 1.0f } );
 
 		DrawQuad( transform, texture, tiling_factor, tint_colour );
 	}
 
-	void Renderer2D::DrawQuad( const Matrix4f& transform, const Vector4f& colour )
+	void Renderer2D::DrawQuad( const Mat4f& transform, const Vec4f& colour )
 	{
 		constexpr size_t quad_vertex_count = 4;
-		constexpr Vector2f texture_coords[ 4 ] = { { 0.0f, 0.0f }, { 1.0f, 0.0f }, { 1.0f, 1.0f }, { 0.0f, 1.0f } };
+		constexpr Vec2f texture_coords[ 4 ] = { { 0.0f, 0.0f }, { 1.0f, 0.0f }, { 1.0f, 1.0f }, { 0.0f, 1.0f } };
 		constexpr float texture_index = 0.0f; // White Texture
 		constexpr float tiling_factor = 1.0f;
 
@@ -166,10 +166,10 @@ namespace slc {
 		sRenderData->stats.quad_count++;
 	}
 
-	void Renderer2D::DrawQuad( const Matrix4f& transform, const Ref< IRenderable >& textureSlot, float tiling_factor, const Vector4f& tint_colour )
+	void Renderer2D::DrawQuad( const Mat4f& transform, const Ref< IRenderable >& textureSlot, float tiling_factor, const Vec4f& tint_colour )
 	{
 		constexpr size_t quad_vertex_count = 4;
-		const Vector2f* texture_coords = textureSlot->GetTextureCoords();
+		const Vec2f* texture_coords = textureSlot->GetTextureCoords();
 
 		if ( sRenderData->quad_index_count >= Renderer2DData::MaxIndices )
 			NextBatch();
@@ -208,7 +208,7 @@ namespace slc {
 		sRenderData->stats.quad_count++;
 	}
 
-	void Renderer2D::DrawLine( const Vector3f& p0, const Vector3f& p1, const Vector4f& colour )
+	void Renderer2D::DrawLine( const Vec3f& p0, const Vec3f& p1, const Vec4f& colour )
 	{
 		sRenderData->line_vertex_buffer_ptr->position = p0;
 		sRenderData->line_vertex_buffer_ptr->colour = colour;
@@ -221,16 +221,16 @@ namespace slc {
 		sRenderData->line_vertex_count += 2;
 	}
 
-	void Renderer2D::DrawRect( const Vector2f& position, const Vector2f& size, const Vector4f& colour )
+	void Renderer2D::DrawRect( const Vec2f& position, const Vec2f& size, const Vec4f& colour )
 	{
-		Matrix4f transform = glm::translate( Matrix4f( 1.0f ), { position, 0.0f } ) * glm::scale( Matrix4f( 1.0f ), { size.x, size.y, 1.0f } );
+		Mat4f transform = glm::translate( Mat4f( 1.0f ), { position, 0.0f } ) * glm::scale( Mat4f( 1.0f ), { size.x, size.y, 1.0f } );
 
 		DrawRect( transform, colour );
 	}
 
-	void Renderer2D::DrawRect( const Matrix4f& transform, const Vector4f& colour )
+	void Renderer2D::DrawRect( const Mat4f& transform, const Vec4f& colour )
 	{
-		Vector3f line_vertices[ 4 ];
+		Vec3f line_vertices[ 4 ];
 		for ( size_t i = 0; i < 4; i++ )
 			line_vertices[ i ] = transform * Renderer2DData::QuadVertexPositions[ i ];
 
@@ -240,7 +240,7 @@ namespace slc {
 		DrawLine( line_vertices[ 3 ], line_vertices[ 0 ], colour );
 	}
 
-	void Renderer2D::DrawCircle( const Matrix4f& transform, const Vector4f& colour, float thickness )
+	void Renderer2D::DrawCircle( const Mat4f& transform, const Vec4f& colour, float thickness )
 	{
 		if ( sRenderData->circle_index_count >= Renderer2DData::MaxIndices )
 			NextBatch();

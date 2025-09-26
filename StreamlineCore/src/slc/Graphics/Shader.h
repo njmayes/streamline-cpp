@@ -24,10 +24,10 @@ namespace slc {
 
 		void SetInt( std::string_view name, int value );
 		void SetIntArray( std::string_view name, int* values, uint32_t count );
-		void SetMat4( std::string_view name, const Matrix4f& value );
+		void SetMat4( std::string_view name, const Mat4f& value );
 		void SetFloat( std::string_view name, float value );
-		void SetFloat3( std::string_view name, const Vector3f& value );
-		void SetFloat4( std::string_view name, const Vector4f& value );
+		void SetFloat3( std::string_view name, const Vec3f& value );
+		void SetFloat4( std::string_view name, const Vec4f& value );
 
 	private:
 		int GetUniformLocation( std::string_view name ) const;
