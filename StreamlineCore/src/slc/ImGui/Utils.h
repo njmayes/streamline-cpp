@@ -151,6 +151,8 @@ namespace slc {
 		static bool IsLeftMouseClicked();
 		static bool IsLeftMouseDoubleClicked();
 
+		static void ReloadUserBuffers();
+
 	private:
 		static ImVec2 CursorPosInternal();
 		static ImVec2 GetMainWindowCentreInternal();

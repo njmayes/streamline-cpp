@@ -206,4 +206,10 @@ namespace slc {
 	{
 		return ImGui::IsMouseDoubleClicked( ImGuiMouseButton_Left );
 	}
+
+	void Utils::ReloadUserBuffers()
+	{
+		if ( ImGuiInputTextState * state{ ImGui::GetInputTextState( ImGui::GetItemID() ) } )
+			state->ReloadUserBufAndSelectAll();
+	}
 } // namespace slc

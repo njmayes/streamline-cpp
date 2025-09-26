@@ -46,7 +46,7 @@ namespace slc {
 		ImGui::DestroyContext();
 	}
 
-	void ImGuiController::StartFrame() const
+	void ImGuiController::StartFrame()
 	{
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
@@ -54,9 +54,11 @@ namespace slc {
 		ImGuizmo::BeginFrame();
 
 		Widgets::BeginDockspace();
+
+		mModalManager.Render();
 	}
 
-	void ImGuiController::EndFrame() const
+	void ImGuiController::EndFrame()
 	{
 		Widgets::EndDockspace();
 
@@ -84,8 +86,8 @@ namespace slc {
 		ImGuiIO& io = ImGui::GetIO();
 
 		auto eventType = e.GetType();
-		bool handled = ( ( eventType & EVENT_CATEGORY_MOUSE ) && io.WantCaptureMouse ) or
-					   ( ( eventType & EVENT_CATEGORY_KEY ) && io.WantCaptureKeyboard );
+		bool handled = ( ( eventType & EventType::EVENT_CATEGORY_MOUSE ) && io.WantCaptureMouse ) or
+					   ( ( eventType & EventType::EVENT_CATEGORY_KEY ) && io.WantCaptureKeyboard );
 
 		e.SetHandled( handled );
 	}

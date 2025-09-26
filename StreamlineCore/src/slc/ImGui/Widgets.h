@@ -115,8 +115,8 @@ namespace slc {
 		static void Label( std::string_view fmt );
 		static void LabelWrapped( std::string_view fmt );
 
-		static void StringEdit( std::string_view label, std::string& field, bool editable = true );
-		static void PathEdit( std::string_view label, std::filesystem::path& field, bool editable = true );
+		static void StringEdit( std::string_view label, std::string& field, ImGuiInputTextFlags flags = 0, Action<>&& = {} );
+		static void PathEdit( std::string_view label, std::filesystem::path& field, ImGuiInputTextFlags flags = 0, Action<>&& = {} );
 
 		template < std::signed_integral T >
 		static void IntEdit( std::string_view label, T& field )

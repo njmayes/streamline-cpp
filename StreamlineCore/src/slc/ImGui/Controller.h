@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Modals/ModalManager.h"
+
 #include "slc/Events/IEventListener.h"
 
 struct GLFWwindow;
@@ -18,14 +20,21 @@ namespace slc {
 		ImGuiController( ImGuiController&& ) = delete;
 		ImGuiController& operator=( ImGuiController&& ) = delete;
 
-		void StartFrame() const;
-		void EndFrame() const;
+		void StartFrame();
+		void EndFrame();
+
+		template < IsEditorModal T, typename... Args >
+		void OpenModal( std::string_view title, ModalButtons type, Args&&... args )
+		{
+			mModalManager.Open< T >( title, type, std::forward< Args >( args )... );
+		}
 
 		template < typename... Args >
 		static Box< ImGuiController > Create( Args&&... args )
 		{
 			return MakeBox< ImGuiController >( std::forward< Args >( args )... );
 		}
+
 
 	public:
 		void OnEvent( Event& e );
@@ -41,5 +50,6 @@ namespace slc {
 
 	private:
 		bool mBlockEvents = false;
+		ModalManager mModalManager{};
 	};
 } // namespace slc

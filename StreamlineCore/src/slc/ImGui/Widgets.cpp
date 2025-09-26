@@ -255,18 +255,34 @@ namespace slc {
 		ImGui::TextWrapped( "%s", text.data() );
 	}
 
-	void Widgets::StringEdit( std::string_view label, std::string& field, bool editable )
+	void Widgets::StringEdit( std::string_view label, std::string& field, ImGuiInputTextFlags flags, Action<>&& action )
 	{
-		StaticString< 256 > string_edit_buffer( field );
-		if ( ImGui::InputText( label.data(), string_edit_buffer.Data(), string_edit_buffer.Length(), editable ? 0 : ImGuiInputTextFlags_ReadOnly ) )
-			field = string_edit_buffer.ToString();
+		flags |= ImGuiInputTextFlags_CallbackResize;
+
+		auto callback = []( ImGuiInputTextCallbackData* data ) -> int {
+			if ( data->EventFlag == ImGuiInputTextFlags_CallbackResize )
+			{
+				auto* my_str = ( std::string* )data->UserData;
+				IM_ASSERT( my_str->c_str() == data->Buf );
+				my_str->reserve( data->BufSize - 1 ); // ensure enough capacity
+				my_str->resize( data->BufTextLen );	  // current text length
+				data->Buf = ( char* )my_str->c_str();
+			}
+			return 0;
+		};
+
+		if ( ImGui::InputText( label.data(), ( char* )field.c_str(), field.capacity() + 1, flags, callback, &field ) and action )
+			action();
 	}
 
-	void Widgets::PathEdit( std::string_view label, std::filesystem::path& field, bool editable )
+	void Widgets::PathEdit( std::string_view label, std::filesystem::path& field, ImGuiInputTextFlags flags, Action<>&& action )
 	{
-		StaticString< 512 > path_edit_buffer( field.string() );
-		if ( ImGui::InputText( label.data(), path_edit_buffer.Data(), path_edit_buffer.Length(), editable ? 0 : ImGuiInputTextFlags_ReadOnly ) )
-			field = path_edit_buffer.ToString();
+		std::string temp = field.string();
+
+		Widgets::StringEdit( label, temp, flags, std::move( action ) );
+
+		if ( temp != field.string() )
+			field = temp;
 	}
 
 	bool Widgets::BeginDragDropSourceInternal()
