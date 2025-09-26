@@ -6,10 +6,11 @@
 #include "slc/Types/Math.h"
 
 namespace slc::input {
-	bool IsKeyPressed(KeyCode keycode);
-	bool IsMouseButtonPressed(MouseCode button);
+
+	bool IsKeyPressed( KeyCode keycode );
+	bool IsMouseButtonPressed( MouseCode button );
 
 	Vector2f GetMousePosition();
 	float GetMouseX();
 	float GetMouseY();
-}
+} // namespace slc::input

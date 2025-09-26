@@ -1,5 +1,7 @@
 #include "Context.h"
 
+#include "slc/Common/Application.h"
+
 #include <asio/io_context.hpp>
 #include <asio/awaitable.hpp>
 #include <asio/use_awaitable.hpp>
@@ -44,11 +46,14 @@ namespace slc::net {
 					break;
 				}
 			}
+
+			threads.reserve( num_threads );
 		}
 
 		InstanceType type;
 
 		std::size_t num_threads{};
+		std::vector< std::jthread > threads;
 
 		asio::io_context io_ctx;
 		asio::ssl::context ssl_ctx;
@@ -96,6 +101,8 @@ namespace slc::net {
 		}
 	};
 
+	Context::Context() = default;
+
 	Context::Context( InstanceType type, ContextOptions const& options )
 		: mImpl{ MakeBox< Impl >( type, options ) }
 	{
@@ -103,6 +110,7 @@ namespace slc::net {
 
 	Context::~Context()
 	{
+		Stop();
 	}
 
 	Context::Context( Context&& other ) noexcept
@@ -138,15 +146,19 @@ namespace slc::net {
 
 	void Context::Run()
 	{
-		mImpl->signals.async_wait( [ this ]( auto&&... ) { mImpl->io_ctx.stop(); } );
+		mImpl->signals.async_wait( [ this ]( auto&&... ) {
+			mImpl->io_ctx.stop();
+			Application::Close();
+		} );
 
-		auto threads = std::vector< std::jthread >( mImpl->num_threads );
-		for (auto& thread : threads)
-		{
-			thread = std::jthread( [ this ] {
-				mImpl->io_ctx.run();
-			} );
-		}
+		for ( auto i = 0; i < mImpl->num_threads; i++ )
+			mImpl->threads.emplace_back( [ this ] { mImpl->io_ctx.run(); } );
+	}
+
+	void Context::Stop()
+	{
+		mImpl->io_ctx.stop();
+		mImpl->threads.clear();
 	}
 
 } // namespace slc::net

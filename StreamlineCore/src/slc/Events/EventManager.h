@@ -7,10 +7,23 @@ namespace slc {
 	class IEventListener;
 
 	namespace detail {
+
+		struct EventQueue
+		{
+			std::vector< Event > events;
+			EventModelAllocator allocator;
+
+			void swap(EventQueue& other) noexcept
+			{
+				std::swap( events, other.events );
+				std::swap( allocator, other.allocator );
+			}
+		};
+
 		struct EventManagerState
 		{
-			std::vector< Event > event_queue;
-			EventModelAllocator model_allocator;
+			EventQueue queue;
+			EventQueue new_queue;
 
 			IEventListener* app_listener = nullptr;
 			IEventListener* imgui_listener = nullptr;
@@ -47,13 +60,16 @@ namespace slc {
 		static void Post( TArgs&&... args )
 		{
 			// Get event model instance from allocator. Event will be constructed in place inside model.
-			EventModel< TEvent >& event_model = sState.model_allocator.NewModel< TEvent >( std::forward< TArgs >( args )... );
+			EventModel< TEvent >& event_model = sState.new_queue.allocator.NewModel< TEvent >( std::forward< TArgs >( args )... );
 
 			// Add event to queue
-			sState.event_queue.emplace_back( event_model );
+			sState.new_queue.events.emplace_back( event_model );
 		}
 
 		static void Dispatch();
+		static void DispatchAppListener( Event& e );
+		static void DispatchImguiListener( Event& e );
+		static void DispatchGenericListeners( Event& e );
 
 	private:
 		inline static detail::EventManagerState sState{};

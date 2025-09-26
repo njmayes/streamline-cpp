@@ -1,35 +1,62 @@
 #pragma once
 
-#include "slc/Networking/Context.h"
-#include "slc/Networking/Connection.h"
+#include "streamline.h"
 
 #include <deque>
 #include <thread>
 
-class ChatClient
+
+class ChatLayer : public slc::ApplicationLayer
 {
 public:
-	ChatClient( slc::net::ClientContextOptions const& opts );
+	LISTENING_EVENTS( NetworkIn );
 
-	void Connect( std::string const& host, std::uint16_t port );
-	void Run();
+	void OnAttach() override;
+	void OnDetach() override
+	{}
 
-	void Receive( slc::net::Payload msg );
+	void OnRender() override
+	{}
+	void OnOverlayRender() override;
+
+	void OnUpdate( slc::Timestep );
+	void OnEvent( slc::Event& e ) override
+	{
+		e.Dispatch< slc::NetworkInEvent >( SLC_BIND_EVENT_FUNC( OnMessageReceived ) );
+	}
 
 private:
-	void ListenForInput();
+	bool OnMessageReceived( slc::NetworkInEvent& e );
+	bool SendMessage();
 
 private:
 	std::string mUsername;
-
-	slc::net::Context mContext;
-	slc::net::ConnectionPtr mServerConnection;
+	std::string mUsernameEntry;
+	std::string mCurrentText;
 
 	enum
 	{
 		max_recent_msgs = 100
 	};
-
 	std::deque< slc::net::Payload > mRecentMessages;
-	std::thread mEntryThread;
+};
+
+
+class ClientLayer : public slc::net::ClientLayer
+{
+public:
+	ClientLayer( slc::net::ClientContextOptions const& opts );
+
+	void OnConnect( slc::net::ConnectionPtr connection )
+	{
+		slc::Application::Get().PushLayer< ChatLayer >();
+	}
+	void OnDisconnect( slc::net::ConnectionPtr )
+	{}
+};
+
+class ChatClient : public slc::Application
+{
+public:
+	ChatClient( slc::Box< slc::ApplicationSpecification > spec, slc::net::ClientContextOptions const& opts );
 };

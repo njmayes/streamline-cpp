@@ -28,6 +28,8 @@ namespace slc {
 	class ApplicationLayer : public IEventListener
 	{
 	public:
+		virtual ~ApplicationLayer() = default;
+
 		virtual void OnAttach() = 0;
 		virtual void OnDetach() = 0;
 		virtual void OnUpdate( Timestep ts ) = 0;
@@ -47,6 +49,7 @@ namespace slc {
 		Resolution resolution = { 1600, 900 };
 		std::filesystem::path workingDir;
 		bool fullscreen = false;
+		bool headless = false;
 
 		virtual ~ApplicationSpecification()
 		{}
@@ -66,7 +69,7 @@ namespace slc {
 	class Application : public IEventListener
 	{
 	public:
-		LISTENING_EVENTS( EventType::WindowClose, EventType::WindowResize )
+		LISTENING_EVENTS( WindowClose, WindowResize )
 
 	public:
 		Application( Box< ApplicationSpecification > spec );
@@ -79,7 +82,6 @@ namespace slc {
 			return *mWindow;
 		}
 
-	protected:
 		template < IsLayer T, typename... Args >
 		void PushLayer( Args&&... args )
 		{
@@ -161,6 +163,18 @@ namespace slc {
 		static float GetWindowHeight()
 		{
 			return static_cast< float >( sInstance->mWindow->GetHeight() );
+		}
+
+		template < IsEditorModal T, typename... Args >
+		static void OpenModal(std::string_view title, ModalButtons type, Args&&... args)
+		{
+			if ( !sInstance )
+				return;
+
+			if ( !sInstance->mImGuiController )
+				return;
+
+			sInstance->mImGuiController->OpenModal< T >( title, type, std::forward< Args >( args )... ); 
 		}
 
 	private:

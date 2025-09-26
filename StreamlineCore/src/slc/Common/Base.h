@@ -2,6 +2,7 @@
 
 #include "Macros.h"
 #include "Reflection.h"
+#include "Enum.h"
 #include "Environment.h"
 #include "Memory.h"
 
@@ -11,6 +12,7 @@
 #include <ranges>
 #include <map>
 #include <unordered_map>
+#include <set>
 #include <utility>
 #include <cstddef>
 #include <cstring>
@@ -42,17 +44,26 @@ namespace slc {
 		return 1ull << bit;
 	}
 
-	inline std::size_t hash_combine( std::size_t seed )
-	{
-		return seed;
-	}
+	namespace detail {
 
-	template < typename T, typename... Rest >
-	inline void HashCombine( std::size_t& seed, const T& v, Rest... rest )
+		inline std::size_t HashCombine( std::size_t seed )
+		{
+			return seed;
+		}
+
+		template < typename Hash, typename T, typename... Rest >
+		inline std::size_t HashCombine( std::size_t seed, const T& v, Rest... rest )
+		{
+			Hash hasher;
+			seed ^= hasher( v ) + 0x9e3779b9 + ( seed << 6 ) + ( seed >> 2 );
+			return HashCombine( seed, rest... );
+		}
+	} // namespace detail
+
+	template < typename... Args >
+	inline std::size_t HashCombine( Args&&... args )
 	{
-		std::hash< T > hasher;
-		seed ^= hasher( v ) + 0x9e3779b9 + ( seed << 6 ) + ( seed >> 2 );
-		HashCombine( seed, rest... );
+		return detail::HashCombine( 0, std::forward< Args >( args )... );
 	}
 
 	constexpr unsigned long long operator "" _KB( unsigned long long value )

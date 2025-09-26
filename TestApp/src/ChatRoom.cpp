@@ -2,48 +2,35 @@
 
 #include "slc/Logging/Log.h"
 
-ChatRoom::ChatRoom( slc::net::ServerContextOptions const& opts )
-	: mContext( opts )
+ServerLayer::ServerLayer( slc::net::ServerContextOptions const& opts )
+	: slc::net::ServerLayer( opts )
 {
 }
 
-void ChatRoom::AddPort( std::uint16_t port )
+void ServerLayer::OnConnect( slc::net::ConnectionPtr participant )
 {
-	slc::log::Info( "Starting listener on port {}", port );
-	mContext.Listen( port, [ this ]( slc::net::ConnectionPtr connection ) {
-		slc::log::Info( "Connection received from {}", connection->GetRemoteAddress() );
+	if ( mRecentMessages.empty() )
+		return;
 
-		connection->OnConnect( [ this, connection ] { Join( connection ); } );
-		connection->OnDisconnect( [ this, connection ] { Leave( connection ); } );
-		connection->OnRead( [ this ]( slc::net::Payload const& msg ) { Deliver( msg ); } );
+	// Strip null terminator from each message
+	auto messages = mRecentMessages | std::views::transform( []( auto const& buffer ) { return buffer.View( 0, buffer.Size() - 1 ); } );
+	auto message = slc::Buffer::Concat( messages, '\0', '\n' );
 
-		connection->Start();
-	} );
+	participant->AddToQueue( message );
 }
 
-void ChatRoom::Run()
+void ServerLayer::OnMessage( slc::net::Payload const& msg )
 {
-	mContext.Run();
-}
-
-void ChatRoom::Join( slc::net::ConnectionPtr participant )
-{
-	mConnections.insert( participant );
-	for ( auto const& msg : mRecentMessages )
-		participant->AddToQueue( msg );
-}
-
-void ChatRoom::Leave( slc::net::ConnectionPtr participant )
-{
-	mConnections.erase( participant );
-}
-
-void ChatRoom::Deliver( slc::net::Payload msg )
-{
-	auto const& new_msg = mRecentMessages.emplace_back( std::move( msg ) );
+	auto const& new_msg = mRecentMessages.emplace_back( msg );
 	while ( mRecentMessages.size() > max_recent_msgs )
 		mRecentMessages.pop_front();
 
-	for ( auto participant : mConnections )
-		participant->AddToQueue( new_msg );
+	slc::EventManager::Post< slc::NetworkOutEvent >( new_msg );
+}
+
+ChatServer::ChatServer( slc::Box< slc::ApplicationSpecification > spec, slc::net::ServerContextOptions const& opts )
+	: Application( std::move( spec ) )
+{
+	PushLayer< ServerLayer >( opts );
+	AddLogTarget< slc::ConsoleLogTarget >( slc::LogLevel::Info );
 }

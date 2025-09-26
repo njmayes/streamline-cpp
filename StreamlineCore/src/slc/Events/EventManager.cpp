@@ -16,25 +16,48 @@ namespace slc {
 		std::erase_if( sState.generic_listeners, [ & ]( const IEventListener* listener ) { return std::ranges::contains( sState.old_listeners, listener ); } );
 		sState.old_listeners.clear();
 
+		std::swap( sState.queue, sState.new_queue );
+
 		// Distribute events in the queue
-		for ( Event& e : sState.event_queue )
+		for ( Event& e : sState.queue.events )
 		{
 			// Handle app events first
-			if ( sState.app_listener->Accept( e ) )
-				sState.app_listener->OnEvent( e );
+			DispatchAppListener( e );
 
 			// Handle imgui events next
-			if ( sState.imgui_listener->Accept( e ) )
-				sState.imgui_listener->OnEvent( e );
+			DispatchImguiListener( e );
 
 			// Handle any generic listeners that accept this event type.
-			for ( IEventListener* listener : sState.generic_listeners | std::views::filter( [ & ]( IEventListener* listener ) { return listener->Accept( e ); } ) )
-				listener->OnEvent( e );
+			DispatchGenericListeners( e );
 		}
 
 		// Clear down event queue and reset event model allocators.
-		sState.event_queue.clear();
-		sState.model_allocator.Flush();
+		sState.queue.events.clear();
+		sState.queue.allocator.Flush();
+	}
+
+	void EventManager::DispatchAppListener( Event& e )
+	{
+		if ( not sState.app_listener )
+			return;
+
+		if ( sState.app_listener->Accept( e ) )
+			sState.app_listener->OnEvent( e );
+	}
+
+	void EventManager::DispatchImguiListener( Event& e )
+	{
+		if ( not sState.imgui_listener )
+			return;
+
+		if ( sState.imgui_listener->Accept( e ) )
+			sState.imgui_listener->OnEvent( e );
+	}
+
+	void EventManager::DispatchGenericListeners( Event& e )
+	{
+		for ( IEventListener* listener : sState.generic_listeners | std::views::filter( [ & ]( IEventListener* listener ) { return listener->Accept( e ); } ) )
+			listener->OnEvent( e );
 	}
 
 	void EventManager::RegisterListener( IEventListener* listener, ListenerType type )

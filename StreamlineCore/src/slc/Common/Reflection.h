@@ -53,6 +53,13 @@ namespace slc {
 	} // namespace detail
 
 
+
+
+
+	/*
+		Type Traits for inspecting a given type
+	*/
+
 	template < typename T >
 	struct TypeTraits
 	{
@@ -77,45 +84,6 @@ namespace slc {
 		static constexpr bool IsSameAs = std::is_same_v< T, R >;
 	};
 
-	template < typename T >
-	concept IsEnum = TypeTraits< T >::IsEnum;
-
-	namespace Enum {
-
-		template < IsEnum T >
-		inline static constexpr std::string_view ToString( T enumVal )
-		{
-			static_assert( MAGIC_ENUM_SUPPORTED, "Compiler does not support magic enums! Define your own conversions!" );
-
-			return magic_enum::enum_name( enumVal );
-		}
-
-		template < IsEnum T >
-		inline static constexpr std::optional< T > FromString( std::string_view enumStr )
-		{
-			static_assert( MAGIC_ENUM_SUPPORTED, "Compiler does not support magic enums! Define your own conversions!" );
-
-			auto enumVal = magic_enum::enum_cast< T >( enumStr );
-			if ( enumVal.has_value() )
-				return enumVal.value();
-
-			return std::nullopt;
-		}
-
-		template < IsEnum T >
-		inline static constexpr bool Contains( std::underlying_type_t< T > value )
-		{
-			return magic_enum::enum_contains< T >( value );
-		}
-
-		template < IsEnum T >
-		inline static constexpr size_t Count()
-		{
-			return magic_enum::enum_count< T >();
-		}
-	} // namespace Enum
-
-
 	namespace detail {
 
 		template < size_t I, typename T, typename TupleType >
@@ -131,6 +99,11 @@ namespace slc {
 				return IndexFunction< I + 1, T, TupleType >();
 		}
 	} // namespace detail
+
+
+	/* 
+		A type list for inspecting a list of types.
+	*/
 
 	template < typename... Ts >
 	struct TypeList
@@ -153,6 +126,15 @@ namespace slc {
 		template < size_t I >
 		using Traits = TypeTraits< typename std::tuple_element< I, TupleType >::type >;
 	};
+
+
+
+	/*
+		General purpose conceptzs
+	*/
+
+	template < typename T >
+	concept IsEnum = TypeTraits< T >::IsEnum;
 
 	template < typename T, typename Base >
 	concept DerivedFromOnly = std::derived_from< T, Base > and not std::same_as< T, Base >;
@@ -208,6 +190,19 @@ namespace slc {
 
 	template < typename Func, typename... TArgs >
 	concept IsPredicate = IsFunc< Func, bool, TArgs... >;
+
+
+	template < typename H, typename Key >
+	concept Hash =
+		std::regular_invocable< const H&, const Key& > &&
+		std::convertible_to< std::invoke_result_t< const H&, const Key& >, std::size_t >;
+
+
+
+
+	/*
+		Function Traits for inspecting a function type
+	*/
 
 	template < typename T >
 	struct FunctionTraits;
@@ -272,6 +267,10 @@ namespace slc {
 		using Arguments = TypeList< Args... >;
 	};
 
+
+	/*
+		Property Traits for inspecting a data member
+	*/
 
 	template < typename T >
 	struct PropertyTraits;

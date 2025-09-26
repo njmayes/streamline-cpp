@@ -18,6 +18,12 @@ namespace slc {
 		return detail::EnumDefaultMatchCaseHandler< F >{ std::forward< F >( f ) };
 	}
 
+	inline detail::EnumDefaultMatchCaseHandler< void ( * )() > MatchDefault()
+	{
+		static auto NoOp = +[] {};
+		return detail::EnumDefaultMatchCaseHandler< void ( * )() >{ NoOp };
+	}
+
 	template < auto Enum, typename Underlying = std::monostate >
 		requires std::is_enum_v< decltype( Enum ) >
 	struct Case
@@ -65,7 +71,7 @@ namespace slc {
 
 		static consteval bool AllCasesUniqueAndValid()
 		{
-			constexpr bool AllValidCases = ( ... and detail::EnumCase< Cases > );
+			constexpr bool AllValidCases = ( ... and IsCase< Cases >::value );
 			if constexpr ( not AllValidCases )
 			{
 				static_assert( false, "All types must be Case<E, Underlying> specializations" );
@@ -321,7 +327,9 @@ namespace slc {
 		constexpr decltype( auto ) GetValue( this Self&& self )
 		{
 			static_assert( HasType< Element >, "Element type must not be empty to unwrap" );
-			return *std::get_if< detail::EnumTag< Element >::Index >( std::addressof( std::forward< Self >( self ).mValueData ) );
+			constexpr auto Index = detail::EnumTag< Element >::Index;
+
+			return std::get< Index >( std::forward< Self >( self ).mValueData );
 		}
 
 		constexpr Enum GetEnum() const

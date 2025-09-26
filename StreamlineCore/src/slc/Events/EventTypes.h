@@ -37,6 +37,9 @@ namespace slc {
 			MouseMoved			= MakeBit( 13 ),
 			MouseScrolled		= MakeBit( 14 ),
 
+			NetworkIn			= MakeBit( 15 ),
+			NetworkOut			= MakeBit( 16 ),
+
 			/// <summary>
 			/// <para>
 			/// Use this as starting point when declaring a user-defined event flags enum for custom events.
@@ -61,7 +64,7 @@ namespace slc {
 			/// }
 			/// </para>
 			/// </summary>
-			NewEventStart = MakeBit( 15 ),
+			NewEventStart = MakeBit( 17 ),
 
 			//  Example:
 			//	enum CustomEvents : EventTypeFlag
@@ -84,15 +87,15 @@ namespace slc {
 				return ( ... | flags );
 			}
 		}
+
+		static constexpr EventTypeFlag EVENT_CATEGORY_APP = EventType::WindowClose | EventType::WindowResize | EventType::WindowFocus | EventType::WindowLostFocus | EventType::WindowMoved | EventType::AppTick | EventType::AppUpdate | EventType::AppRender;
+
+		static constexpr EventTypeFlag EVENT_CATEGORY_KEY = EventType::KeyPressed | EventType::KeyReleased | EventType::KeyTyped;
+
+		static constexpr EventTypeFlag EVENT_CATEGORY_MOUSE = EventType::MouseButtonPressed | EventType::MouseButtonReleased | EventType::MouseMoved | EventType::MouseScrolled;
+
+		static constexpr EventTypeFlag EVENT_CATEGORY_INPUT = EVENT_CATEGORY_KEY | EVENT_CATEGORY_MOUSE;
 	} // namespace EventType
-
-	static constexpr EventTypeFlag EVENT_CATEGORY_APP = EventType::WindowClose | EventType::WindowResize | EventType::WindowFocus | EventType::WindowLostFocus | EventType::WindowMoved | EventType::AppTick | EventType::AppUpdate | EventType::AppRender;
-
-	static constexpr EventTypeFlag EVENT_CATEGORY_KEY = EventType::KeyPressed | EventType::KeyReleased | EventType::KeyTyped;
-
-	static constexpr EventTypeFlag EVENT_CATEGORY_MOUSE = EventType::MouseButtonPressed | EventType::MouseButtonReleased | EventType::MouseMoved | EventType::MouseScrolled;
-
-	static constexpr EventTypeFlag EVENT_CATEGORY_INPUT = EVENT_CATEGORY_KEY | EVENT_CATEGORY_MOUSE;
 
 #define EVENT_DATA_TYPE( type )          \
 	static EventTypeFlag GetStaticType() \

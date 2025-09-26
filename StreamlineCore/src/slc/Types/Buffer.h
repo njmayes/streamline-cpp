@@ -10,6 +10,7 @@
 namespace slc {
 
 	class BufferView;
+	class ConstBufferView;
 
 	class Buffer
 	{
@@ -111,14 +112,14 @@ namespace slc {
 		{
 			if ( offset > mSize )
 				throw std::runtime_error( "Data access out of bounds." );
-			return Data( offset );
+			return mData.get() + offset;
 		}
 
 		const Byte* Data( std::size_t offset = 0 ) const
 		{
 			if ( offset > mSize )
 				throw std::runtime_error( "Data access out of bounds." );
-			return Data( offset );
+			return mData.get() + offset;
 		}
 
 		std::size_t Size() const
@@ -147,6 +148,8 @@ namespace slc {
 			mSize += bytes.size();
 		}
 
+		void Append( ConstBufferView const& view );
+
 		// operator[]
 		Byte& operator[]( std::size_t index )
 		{
@@ -169,6 +172,50 @@ namespace slc {
 
 		// Non-owning view
 		BufferView View( std::size_t offset = 0, std::size_t size = Limits< std::size_t >::Max );
+		ConstBufferView View( std::size_t offset = 0, std::size_t size = Limits< std::size_t >::Max ) const;
+
+		template < typename range_t >
+			requires std::ranges::range< range_t > and std::convertible_to< std::ranges::range_value_t< range_t >, ConstBufferView >
+		static Buffer Concat( range_t&& ranges, std::optional< char > terminator = {}, std::optional< char > delimiter = {} )
+		{
+			auto terminator_size = terminator.has_value() ? 1 : 0;
+			auto delimiter_size = delimiter.has_value() ? 1 : 0;
+			
+			auto sizes = ranges | std::views::transform( [ delimiter_size ]( auto const& buffer ) { return buffer.Size() + delimiter_size; } );
+			auto size = std::ranges::fold_left( sizes, 0, std::plus{} ) + terminator_size;
+
+			Buffer result{};
+			result.Reserve( size );
+
+			for ( auto const& element : ranges )
+			{
+				result.Append( element );
+				if ( delimiter )
+					result.Push( *delimiter );
+			}
+
+			if ( terminator )
+				result.Push( *terminator );
+
+			return result;
+		}
+
+		auto begin()
+		{
+			return Data();
+		}
+		auto end()
+		{
+			return Data( mSize );
+		}
+		auto begin() const
+		{
+			return Data();
+		}
+		auto end() const
+		{
+			return Data( mSize );
+		}
 
 	private:
 		void EnsureCapacity( std::size_t required )
@@ -293,4 +340,73 @@ namespace slc {
 		std::span< Byte > mData;
 	};
 
+
+	class ConstBufferView
+	{
+	public:
+		ConstBufferView() = default;
+		ConstBufferView( void const* data, std::size_t size )
+			: mData( static_cast< Byte const* >( data ), size )
+		{}
+
+		ConstBufferView( ConstBufferView const& ) = default;
+		ConstBufferView( ConstBufferView&& ) = default;
+
+		ConstBufferView& operator=( ConstBufferView const& ) = default;
+		ConstBufferView& operator=( ConstBufferView&& ) = default;
+
+		virtual ~ConstBufferView() = default;
+
+		ConstBufferView( Buffer const& buffer, std::size_t offset = 0, std::size_t size = Limits< std::size_t >::Max )
+		{
+			if ( offset > buffer.Size() )
+				throw std::runtime_error( "View offset out of bounds" );
+
+			auto data = buffer.Data( offset );
+			auto actual_size = std::min( size, buffer.Size() - offset );
+			mData = std::span{ data, actual_size };
+		}
+
+		const Byte* Data( std::size_t offset = 0 ) const
+		{
+			if ( offset > mData.size() )
+				throw std::runtime_error( "Data access out of bounds." );
+			return mData.data() + offset;
+		}
+
+		std::size_t Size() const
+		{
+			return mData.size();
+		}
+
+		template < IsStandard T >
+		const T* As( std::size_t offset = 0 ) const
+		{
+			if ( offset + sizeof( T ) > mData.size() )
+				throw std::runtime_error( "ConstBufferView access out of bounds" );
+			if ( reinterpret_cast< uintptr_t >( Data( offset ) ) % alignof( T ) != 0 )
+				throw std::runtime_error( "ConstBufferView access misaligned" );
+			return reinterpret_cast< const T* >( Data( offset ) );
+		}
+
+		template < IsStandard T >
+		T const& Read( std::size_t offset = 0 ) const
+		{
+			return *As< T >( offset );
+		}
+
+		ConstBufferView View( std::size_t offset = 0, std::size_t size = Limits< std::size_t >::Max ) const
+		{
+			auto actual_size = std::min( size, Size() - offset );
+			return ConstBufferView( Data( offset ), actual_size );
+		}
+
+		explicit operator bool() const
+		{
+			return mData.data() and mData.size();
+		}
+
+	private:
+		std::span< const Byte > mData;
+	};
 } // namespace slc

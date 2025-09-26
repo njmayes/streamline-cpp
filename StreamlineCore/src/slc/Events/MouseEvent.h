@@ -8,10 +8,10 @@ namespace slc {
 
 	struct MouseMovedEvent : public EventBase
 	{
-		float mouseX, mouseY;
+		float mouse_x, mouse_y;
 
 		MouseMovedEvent( float x, float y )
-			: mouseX( x ), mouseY( y )
+			: mouse_x( x ), mouse_y( y )
 		{}
 
 		EVENT_DATA_TYPE( MouseMoved )
@@ -19,10 +19,10 @@ namespace slc {
 
 	struct MouseScrolledEvent : public EventBase
 	{
-		float xOffset, yOffset;
+		float x_offset, y_offset;
 
 		MouseScrolledEvent( float x, float y )
-			: xOffset( x ), yOffset( y )
+			: x_offset( x ), y_offset( y )
 		{}
 
 		EVENT_DATA_TYPE( MouseScrolled )

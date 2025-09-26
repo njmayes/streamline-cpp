@@ -26,6 +26,8 @@ namespace slc::fs {
 			std::span< Byte > AsSpan( std::size_t offset = 0, std::size_t size = Limits< std::size_t >::Max );
 			std::span< const Byte > AsSpan( std::size_t offset = 0, std::size_t size = Limits< std::size_t >::Max ) const;
 
+			BufferView AsBufferView( std::size_t offset = 0, std::size_t size = Limits< std::size_t >::Max );
+
 		private:
 			Byte* mBasePtr{};
 			Byte* mDataPtr{};

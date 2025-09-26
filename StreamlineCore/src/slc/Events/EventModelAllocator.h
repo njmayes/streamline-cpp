@@ -5,6 +5,7 @@
 #include "ApplicationEvent.h"
 #include "KeyEvent.h"
 #include "MouseEvent.h"
+#include "NetworkEvent.h"
 
 #include "slc/Allocators/LinearAllocator.h"
 
@@ -30,7 +31,11 @@ namespace slc {
 			MouseButtonPressedEvent,
 			MouseButtonReleasedEvent,
 			MouseMovedEvent,
-			MouseScrolledEvent >;
+			MouseScrolledEvent,
+
+			NetworkInEvent,
+			NetworkOutEvent
+		>;
 	}
 
 	/// <summary>
@@ -97,7 +102,16 @@ namespace slc {
 		}
 
 		EventModelAllocator( const EventModelAllocator& ) = delete;
-		auto operator=( const EventModelAllocator& ) = delete;
+		EventModelAllocator& operator=( const EventModelAllocator& ) = delete;
+
+		EventModelAllocator( EventModelAllocator&& ) = default;
+		EventModelAllocator& operator=( EventModelAllocator&& ) = default;
+
+		void swap(EventModelAllocator& other) noexcept
+		{
+			std::swap( mModelAllocators, other.mModelAllocators );
+			std::swap( mOverflowPointers, other.mOverflowPointers );
+		}
 
 	public:
 		/// <summary>

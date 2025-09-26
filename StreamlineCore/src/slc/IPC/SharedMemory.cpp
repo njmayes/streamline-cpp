@@ -37,7 +37,7 @@ namespace slc::ipc {
 		auto constexpr offset = sizeof( BufferHeader );
 		auto const true_size = offset + size;
 		auto const lo_order_size = static_cast< DWORD >( true_size & 0xffffffff );
-		auto const hi_order_size = 0; // static_cast< DWORD >( ( size_  >> 32 ) & 0xffffffff );
+		auto const hi_order_size = static_cast< DWORD >( ( true_size >> 32 ) & 0xffffffff );
 
 		FileDescriptor desc{};
 

@@ -215,6 +215,11 @@ namespace slc::fs {
 		return std::span< const Byte >{ mDataPtr + offset, std::min( mDataSize, size ) };
 	}
 
+	BufferView SharedFile::Region::AsBufferView( std::size_t offset, std::size_t size )
+	{
+		return BufferView( mDataPtr + offset, std::min( mDataSize, size ) );
+	}
+
 	struct SharedFile::Impl
 	{
 		FileDescriptor desc;

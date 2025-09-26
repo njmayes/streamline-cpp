@@ -1,7 +1,8 @@
 #include "ChatClient.h"
 
-#include "slc/Logging/Log.h"
 #include "slc/Common/Time.h"
+#include "slc/Logging/Log.h"
+#include "slc/ImGui/Widgets.h"
 
 #include <iostream>
 
@@ -17,69 +18,93 @@ static std::string GetTimestamp()
 	return timestamp;
 }
 
-ChatClient::ChatClient( slc::net::ClientContextOptions const& opts )
-	: mContext( opts )
+void ChatLayer::OnAttach()
 {
+	using slc::Widgets;
+
+	auto on_render = [ this ] {
+		Widgets::StringEdit("Please enter your username...", mUsernameEntry); 
+	};
+
+	auto on_complete = [ this ] {
+		mUsername = std::move( mUsernameEntry );
+	};
+
+	slc::Application::OpenModal< slc::InlineModal >( "No username", slc::ModalButtons::OK, on_render, on_complete );
 }
 
-void ChatClient::Connect( std::string const& host, std::uint16_t port )
+void ChatLayer::OnOverlayRender()
 {
-	mContext.Connect( host, port, [ = ]( slc::net::ConnectionPtr connection ) {
-		slc::log::Info( "Client connected to {}:{}", host, port );
+	using slc::Widgets;
 
-		mServerConnection = connection;
+	Widgets::BeginWindow( "Chat Client", {}, ImGuiWindowFlags_NoTitleBar );
 
-		mServerConnection->OnConnect( [ this ] {
-			mEntryThread = std::thread( std::bind( &ChatClient::ListenForInput, this ) );
-			slc::log::Info( "Please enter your name..." );
-		} );
 
-		mServerConnection->OnRead( [ this ]( slc::net::Payload const& msg ) { Receive( msg ); } );
-		mServerConnection->Start();
-	} );
-}
+	Widgets::BeginChild( "Messages", slc::Vector2f{ 0, -20.f } );
 
-void ChatClient::Run()
-{
-	mContext.Run();
-}
-
-void ChatClient::Receive( slc::net::Payload msg )
-{
-	std::string_view message( msg.As< char >(), msg.Size() );
-	std::cout << message << '\n';
-}
-
-void ChatClient::ListenForInput()
-{
-	try
+	for ( auto const& line : mRecentMessages )
 	{
-		for ( ;; )
-		{
-			std::string line; // = GenRandomString( 128 );
-			if ( !std::getline( std::cin, line ) )
-				break;
-
-			if (mUsername.empty())
-			{
-				mUsername = std::move( line );
-				slc::log::Info( "Welcome {}!", mUsername );
-			}
-			else if ( mServerConnection and not line.empty() )
-			{
-				auto timestamp = GetTimestamp();
-				auto text = std::format( "{}: [{}] {}", timestamp, mUsername, line );
-
-				slc::net::Payload msg{};
-				msg.Reserve( text.size() + 1 );
-				msg.Append( text );
-				msg.Push( '\0' );
-				mServerConnection->AddToQueue( std::move( msg ) );
-			}
-		}
+		auto message = std::string_view{ line.As< char >(), line.Size() };
+		Widgets::Label( message );
 	}
-	catch ( std::exception& e )
-	{
-		slc::log::Error( "Input Exception: {}", e.what() );
-	}
+
+	Widgets::EndChild();
+
+	Widgets::BeginChild( "Input" );
+
+	int flags = ImGuiInputTextFlags_EnterReturnsTrue;
+	if ( mUsername.empty() )
+		flags |= ImGuiInputTextFlags_ReadOnly;
+
+	Widgets::StringEdit("Message", mCurrentText, flags, [ this ] { SendMessage(); } );
+
+	Widgets::EndChild();
+
+
+	Widgets::EndWindow();
+}
+
+void ChatLayer::OnUpdate( slc::Timestep )
+{
+}
+
+bool ChatLayer::OnMessageReceived( slc::NetworkInEvent& e )
+{
+	mRecentMessages.emplace_back( e.data );
+	return true;
+}
+
+bool ChatLayer::SendMessage()
+{
+	if ( mUsername.empty() )
+		return false;
+
+	auto timestamp = GetTimestamp();
+	auto timestamp_view = std::string_view{ timestamp.data(), timestamp.size() - 1 };
+
+	auto text = std::format( "{}: [{:<20}] {}", timestamp_view, mUsername, mCurrentText );
+
+	slc::net::Payload msg{};
+	msg.Reserve( text.size() + 1 );
+	msg.Append( text );
+	msg.Push( '\0' );
+
+	slc::EventManager::Post< slc::NetworkOutEvent >( msg );
+
+	mCurrentText.clear();
+	slc::Utils::ReloadUserBuffers();
+
+	return false;
+}
+
+ClientLayer::ClientLayer( slc::net::ClientContextOptions const& opts )
+	: slc::net::ClientLayer( opts )
+{
+}
+
+ChatClient::ChatClient( slc::Box< slc::ApplicationSpecification > spec, slc::net::ClientContextOptions const& opts )
+	: Application( std::move( spec ) )
+{
+	PushLayer< ClientLayer >( opts );
+	AddLogTarget< slc::ConsoleLogTarget >( slc::LogLevel::Info );
 }

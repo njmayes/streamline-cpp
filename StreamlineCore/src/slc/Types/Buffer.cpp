@@ -89,11 +89,23 @@ namespace slc {
 		return Buffer( mData.get() + offset, size );
 	}
 
+	void Buffer::Append( ConstBufferView const& view )
+	{
+		EnsureCapacity( mSize + view.Size() );
+		std::memcpy( mData.get() + mSize, view.Data(), view.Size() );
+		mSize += view.Size();
+	}
+
 	// ----- View -----
 
 	BufferView Buffer::View( size_t offset, size_t size )
 	{
 		return BufferView( *this, offset, size );
+	}
+
+	ConstBufferView Buffer::View( size_t offset, size_t size ) const
+	{
+		return ConstBufferView( *this, offset, size );
 	}
 
 } // namespace slc

@@ -58,7 +58,6 @@ filter "system:windows"
 
 filter {}
 
-
 include "StreamlineCore"
 include "TestApp"
 

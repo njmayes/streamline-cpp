@@ -18,6 +18,9 @@ namespace slc {
 		if ( !mSpecification->workingDir.empty() )
 			std::filesystem::current_path( mSpecification->workingDir );
 
+		if ( mSpecification->headless )
+			return;
+
 		mWindow = Window::Create( WindowProperties( mSpecification->name, mSpecification->resolution, mSpecification->fullscreen ) );
 
 		mImGuiController = ImGuiController::Create( mWindow->GetNativeWindow() );
@@ -103,22 +106,28 @@ namespace slc {
 				for ( auto* layer : sInstance->mLayerStack )
 					layer->OnUpdate( timestep );
 
-				for ( auto* layer : sInstance->mLayerStack )
-					layer->OnRender();
+				if ( not sInstance->mSpecification->headless )
+				{
+					for ( auto* layer : sInstance->mLayerStack )
+						layer->OnRender();
+				}
 			}
 
-			// Begin ImGui rendering
-			sInstance->mImGuiController->StartFrame();
+			if ( not sInstance->mSpecification->headless )
+			{
+				// Begin ImGui rendering
+				sInstance->mImGuiController->StartFrame();
 
-			// Render each ImGui controls in each layer
-			for ( ApplicationLayer* layer : sInstance->mLayerStack )
-				layer->OnOverlayRender();
+				// Render each ImGui controls in each layer
+				for ( ApplicationLayer* layer : sInstance->mLayerStack )
+					layer->OnOverlayRender();
 
-			// End ImGui rendering
-			sInstance->mImGuiController->EndFrame();
+				// End ImGui rendering
+				sInstance->mImGuiController->EndFrame();
 
-			// Poll GLFW events to populate queue and swap buffers
-			sInstance->mWindow->OnUpdate();
+				// Poll GLFW events to populate queue and swap buffers
+				sInstance->mWindow->OnUpdate();
+			}
 		}
 
 		delete sInstance;
@@ -126,6 +135,9 @@ namespace slc {
 
 	void Application::Close()
 	{
+		if ( !sInstance )
+			return;
+
 		if ( !sInstance->mState.blockExit )
 			sInstance->mState.running = false;
 	}
@@ -137,6 +149,9 @@ namespace slc {
 
 	void Application::BlockEvents( bool block )
 	{
+		if ( sInstance->mSpecification->headless )
+			return;
+
 		sInstance->mImGuiController->BlockEvents( block );
 	}
 } // namespace slc

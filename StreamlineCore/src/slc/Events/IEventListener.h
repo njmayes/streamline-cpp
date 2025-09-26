@@ -44,13 +44,15 @@ namespace slc {
 		Predicate<> mAcceptCondition = []() { return true; };
 	};
 
-#define LISTENING_EVENTS( ... )                                                \
-	static constexpr ::slc::EventTypeFlag GetStaticType()                      \
-	{                                                                          \
-		return ::slc::EventType::BuildEventTypeMask( __VA_ARGS__ );            \
-	}                                                                          \
-	virtual constexpr ::slc::EventTypeFlag GetListeningEvents() const override \
-	{                                                                          \
-		return GetStaticType();                                                \
+#define MAKE_EVENT_FLAG( event ) ::slc::EventType::event
+
+#define LISTENING_EVENTS( ... )                                                                                     \
+	static constexpr ::slc::EventTypeFlag GetStaticType()                                                           \
+	{                                                                                                               \
+		return ::slc::EventType::BuildEventTypeMask( SLC_FOR_EACH_SEP( MAKE_EVENT_FLAG, SLC_COMMA, __VA_ARGS__ ) ); \
+	}                                                                                                               \
+	virtual constexpr ::slc::EventTypeFlag GetListeningEvents() const override                                      \
+	{                                                                                                               \
+		return GetStaticType();                                                                                     \
 	}
 } // namespace slc

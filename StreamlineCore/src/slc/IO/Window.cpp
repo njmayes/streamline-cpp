@@ -195,6 +195,6 @@ namespace slc {
 		{
 			glfwTerminate();
 		}
-		log::Info("Shutdown complete");
+		log::Info("Window shutdown complete");
 	}
 }
