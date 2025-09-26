@@ -8,7 +8,7 @@ namespace slc {
 	bool Utils::IsKeyPressed( KeyCode key )
 	{
 		ImGuiIO io = ImGui::GetIO();
-		return io.KeysDown[ key ];
+		return io.KeysData[ key ].Down;
 	}
 
 	bool Utils::IsMouseDown( MouseCode button )
@@ -104,7 +104,7 @@ namespace slc {
 
 	float Utils::FontSize()
 	{
-		return GImGui->Font->FontSize;
+		return GImGui->Font->LegacySize;
 	}
 
 	ImVec2 Utils::FramePadding()
@@ -119,7 +119,7 @@ namespace slc {
 
 	float Utils::LineHeight()
 	{
-		return GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
+		return GImGui->Font->LegacySize + GImGui->Style.FramePadding.y * 2.0f;
 	}
 
 	float Utils::WindowWidth()

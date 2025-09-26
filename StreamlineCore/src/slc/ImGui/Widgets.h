@@ -115,8 +115,8 @@ namespace slc {
 		static void Label( std::string_view fmt );
 		static void LabelWrapped( std::string_view fmt );
 
-		static void StringEdit( std::string_view label, std::string& field );
-		static void PathEdit( std::string_view label, std::filesystem::path& field );
+		static void StringEdit( std::string_view label, std::string& field, bool editable = true );
+		static void PathEdit( std::string_view label, std::filesystem::path& field, bool editable = true );
 
 		template < std::signed_integral T >
 		static void IntEdit( std::string_view label, T& field )
@@ -256,17 +256,17 @@ namespace slc {
 		}
 
 		template < VecSized< ImVec2 > T, IsAction Func >
-		static void ImageButton( uintptr_t image, const T& size, Func&& action = {} )
+		static void ImageButton( std::string_view id, uintptr_t image, const T& size, Func&& action = {} )
 		{
-			if ( ImageButtonInternal( ( ImTextureID )image, Utils::ToImVec< ImVec2 >( size ) ) && action )
+			if ( ImageButtonInternal( id, ( ImTextureID )image, Utils::ToImVec< ImVec2 >( size ) ) && action )
 			{
 				action();
 			}
 		}
 		template < VecSized< ImVec2 > T, IsAction Func >
-		static void ImageButton( uintptr_t image, const T& size, Func&& action, const T& uv0, const T& uv1, int padding = -1 )
+		static void ImageButton( std::string_view id, uintptr_t image, const T& size, Func&& action, const T& uv0, const T& uv1, int padding = -1 )
 		{
-			if ( ImageButtonInternal( ( ImTextureID )image, Utils::ToImVec< ImVec2 >( size ), Utils::ToImVec< ImVec2 >( uv0 ), Utils::ToImVec< ImVec2 >( uv1 ), padding ) )
+			if ( ImageButtonInternal( id, ( ImTextureID )image, Utils::ToImVec< ImVec2 >( size ), Utils::ToImVec< ImVec2 >( uv0 ), Utils::ToImVec< ImVec2 >( uv1 ), padding ) )
 			{
 				action();
 			}
@@ -308,7 +308,7 @@ namespace slc {
 
 		static void Checkbox( std::string_view label, bool& value, IsAction auto&& action = {} )
 		{
-			if ( CheckboxInternal( label, value ) and action )
+			if ( CheckboxInternal( label, value ) )
 			{
 				action();
 			}
@@ -317,7 +317,7 @@ namespace slc {
 		template < IsAction Func >
 		static void Button( std::string_view label, Func&& action = {} )
 		{
-			if ( ButtonInternal( label ) && action )
+			if ( ButtonInternal( label ) )
 			{
 				action();
 			}
@@ -326,7 +326,7 @@ namespace slc {
 			requires VecSized< ImVec2, T >
 		static void Button( const T& size, std::string_view label, Func&& action = {} )
 		{
-			if ( ButtonInternal( label, Utils::ToImVec< ImVec2 >( size ) ) && action )
+			if ( ButtonInternal( label, Utils::ToImVec< ImVec2 >( size ) ) )
 			{
 				action();
 			}
@@ -409,7 +409,7 @@ namespace slc {
 		static void ColourEditInternal( std::string_view label, ImVec4& colour );
 
 		static void ImageInternal( ImTextureID image, const ImVec2& size, float rotation = 0.0f, const ImVec2& uv0 = { 0.0f, 0.0f }, const ImVec2& uv1 = { 1.0f, 1.0f } );
-		static bool ImageButtonInternal( ImTextureID image, const ImVec2& size, const ImVec2& uv0 = { 0.0f, 0.0f }, const ImVec2& uv1 = { 1.0f, 1.0f }, int padding = -1 );
+		static bool ImageButtonInternal( std::string_view id, ImTextureID image, const ImVec2& size, const ImVec2& uv0 = { 0.0f, 0.0f }, const ImVec2& uv1 = { 1.0f, 1.0f } );
 
 		static bool BeginDragDropSourceInternal();
 		static void EndDragDropSourceInternal( std::string_view strID, const void* data, size_t size );
