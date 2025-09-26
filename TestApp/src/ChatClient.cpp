@@ -18,29 +18,15 @@ static std::string GetTimestamp()
 	return timestamp;
 }
 
-void ChatLayer::OnAttach()
-{
-	using slc::Widgets;
-
-	auto on_render = [ this ] {
-		Widgets::StringEdit("Please enter your username...", mUsernameEntry); 
-	};
-
-	auto on_complete = [ this ] {
-		mUsername = std::move( mUsernameEntry );
-	};
-
-	slc::Application::OpenModal< slc::InlineModal >( "No username", slc::ModalButtons::OK, on_render, on_complete );
-}
-
 void ChatLayer::OnOverlayRender()
 {
 	using slc::Widgets;
 
 	Widgets::BeginWindow( "Chat Client", {}, ImGuiWindowFlags_NoTitleBar );
 
+	Widgets::BeginChild( "Messages", slc::Vec2f{ 0, -34.f } );
 
-	Widgets::BeginChild( "Messages", slc::Vector2f{ 0, -20.f } );
+	slc::Utils::SetWindowFontScale( 2.0f );
 
 	for ( auto const& line : mRecentMessages )
 	{
@@ -52,11 +38,13 @@ void ChatLayer::OnOverlayRender()
 
 	Widgets::BeginChild( "Input" );
 
+	slc::Utils::SetWindowFontScale( 2.0f );
+
 	int flags = ImGuiInputTextFlags_EnterReturnsTrue;
-	if ( mUsername.empty() )
+	if ( mUsername.empty() or mInUsernameModal )
 		flags |= ImGuiInputTextFlags_ReadOnly;
 
-	Widgets::StringEdit("Message", mCurrentText, flags, [ this ] { SendMessage(); } );
+	Widgets::StringEdit( "Message", mCurrentText, flags, [ this ] { SendMessage(); } );
 
 	Widgets::EndChild();
 
@@ -66,6 +54,7 @@ void ChatLayer::OnOverlayRender()
 
 void ChatLayer::OnUpdate( slc::Timestep )
 {
+	OpenUsernameEntryIfNeeded();
 }
 
 bool ChatLayer::OnMessageReceived( slc::NetworkInEvent& e )
@@ -82,7 +71,7 @@ bool ChatLayer::SendMessage()
 	auto timestamp = GetTimestamp();
 	auto timestamp_view = std::string_view{ timestamp.data(), timestamp.size() - 1 };
 
-	auto text = std::format( "{}: [{:<20}] {}", timestamp_view, mUsername, mCurrentText );
+	auto text = std::format( "{}: [{}] {}", timestamp_view, mUsername, mCurrentText );
 
 	slc::net::Payload msg{};
 	msg.Reserve( text.size() + 1 );
@@ -92,9 +81,31 @@ bool ChatLayer::SendMessage()
 	slc::EventManager::Post< slc::NetworkOutEvent >( msg );
 
 	mCurrentText.clear();
-	slc::Utils::ReloadUserBuffers();
+	slc::Utils::ReloadCurrentBuffer();
+	slc::Utils::SetKeyboardFocusHere();
 
 	return false;
+}
+
+void ChatLayer::OpenUsernameEntryIfNeeded()
+{
+	if ( !mUsername.empty() or mInUsernameModal )
+		return;
+
+	using slc::Widgets;
+
+	mInUsernameModal = true;
+
+	auto on_render = [ this ] {
+		slc::Utils::SetWindowFontScale( 2.0f );
+		Widgets::StringEdit( "Please enter your username...", mUsername );
+	};
+
+	auto on_complete = [ this ] {
+		mInUsernameModal = false;
+	};
+
+	slc::Application::OpenModal< slc::InlineModal >( "No username", slc::ModalButtons::OK, on_render, on_complete );
 }
 
 ClientLayer::ClientLayer( slc::net::ClientContextOptions const& opts )

@@ -132,6 +132,11 @@ namespace slc {
 		return ImGui::GetWindowHeight();
 	}
 
+	void Utils::SetWindowFontScale( float scale )
+	{
+		ImGui::SetWindowFontScale( scale );
+	}
+
 	bool Utils::ItemFocused()
 	{
 		return ImGui::IsItemFocused();
@@ -207,9 +212,14 @@ namespace slc {
 		return ImGui::IsMouseDoubleClicked( ImGuiMouseButton_Left );
 	}
 
-	void Utils::ReloadUserBuffers()
+	void Utils::ReloadCurrentBuffer()
 	{
 		if ( ImGuiInputTextState * state{ ImGui::GetInputTextState( ImGui::GetItemID() ) } )
 			state->ReloadUserBufAndSelectAll();
+	}
+
+	void Utils::SetKeyboardFocusHere()
+	{
+		ImGui::SetKeyboardFocusHere( -1 );
 	}
 } // namespace slc

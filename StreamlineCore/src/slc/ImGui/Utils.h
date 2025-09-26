@@ -129,6 +129,8 @@ namespace slc {
 		static float WindowWidth();
 		static float WindowHeight();
 
+		static void SetWindowFontScale( float scale );
+
 		static bool ItemFocused();
 		static bool ItemHovered();
 
@@ -151,7 +153,9 @@ namespace slc {
 		static bool IsLeftMouseClicked();
 		static bool IsLeftMouseDoubleClicked();
 
-		static void ReloadUserBuffers();
+		static void ReloadCurrentBuffer();
+
+		static void SetKeyboardFocusHere();
 
 	private:
 		static ImVec2 CursorPosInternal();

@@ -11,7 +11,8 @@ class ChatLayer : public slc::ApplicationLayer
 public:
 	LISTENING_EVENTS( NetworkIn );
 
-	void OnAttach() override;
+	void OnAttach() override
+	{}
 	void OnDetach() override
 	{}
 
@@ -29,10 +30,13 @@ private:
 	bool OnMessageReceived( slc::NetworkInEvent& e );
 	bool SendMessage();
 
+	void OpenUsernameEntryIfNeeded();
+
 private:
 	std::string mUsername;
-	std::string mUsernameEntry;
 	std::string mCurrentText;
+
+	bool mInUsernameModal{};
 
 	enum
 	{
