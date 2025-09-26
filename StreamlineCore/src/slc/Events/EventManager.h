@@ -2,7 +2,10 @@
 
 #include "EventModelAllocator.h"
 
-#include <mutex>
+#include "ApplicationEvent.h"
+#include "KeyEvent.h"
+#include "MouseEvent.h"
+#include "NetworkEvent.h"
 
 namespace slc {
 
@@ -10,10 +13,33 @@ namespace slc {
 
 	namespace detail {
 
+		using AllEvents = TypeList<
+			WindowCloseEvent,
+			WindowResizeEvent,
+			WindowFocusEvent,
+			WindowFocusLostEvent,
+			WindowMovedEvent,
+
+			AppTickEvent,
+			AppUpdateEvent,
+			AppRenderEvent,
+
+			KeyPressedEvent,
+			KeyReleasedEvent,
+			KeyTypedEvent,
+
+			MouseButtonPressedEvent,
+			MouseButtonReleasedEvent,
+			MouseMovedEvent,
+			MouseScrolledEvent,
+
+			NetworkInEvent,
+			NetworkOutEvent >;
+
 		struct EventQueue
 		{
 			std::vector< Event > events;
-			EventModelAllocator allocator;
+			ModelAllocator< AllEvents > allocator;
 		};
 
 		struct EventManagerState

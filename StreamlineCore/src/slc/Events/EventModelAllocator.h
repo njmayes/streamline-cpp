@@ -2,71 +2,45 @@
 
 #include "Event.h"
 
-#include "ApplicationEvent.h"
-#include "KeyEvent.h"
-#include "MouseEvent.h"
-#include "NetworkEvent.h"
-
 #include "slc/Allocators/LinearAllocator.h"
 
 namespace slc {
 
-	namespace EventList {
-
-		using All = TypeList<
-			WindowCloseEvent,
-			WindowResizeEvent,
-			WindowFocusEvent,
-			WindowFocusLostEvent,
-			WindowMovedEvent,
-
-			AppTickEvent,
-			AppUpdateEvent,
-			AppRenderEvent,
-
-			KeyPressedEvent,
-			KeyReleasedEvent,
-			KeyTypedEvent,
-
-			MouseButtonPressedEvent,
-			MouseButtonReleasedEvent,
-			MouseMovedEvent,
-			MouseScrolledEvent,
-
-			NetworkInEvent,
-			NetworkOutEvent
-		>;
-	}
+	template < typename T >
+	class ModelAllocator;
 
 	/// <summary>
 	/// Allocates and constructs event models for any given event type.
 	/// </summary>
-	class EventModelAllocator
+	template < typename... Args >
+	class ModelAllocator< TypeList< Args... > >
 	{
 	private:
+		using SupportedModels = TypeList< Args... >;
+
 		using TypeName = std::string_view;
 		SCONSTEXPR size_t DefaultModelChunkSize = 4;
 
-		struct ModelAllocator
+		struct SingleModelAllocator
 		{
 			Box< IAllocator > allocator = nullptr;
 			size_t remaining = 0;
 
 			template < IsEvent T >
-			ModelAllocator( Box< LinearAllocator< EventModel< T > > > alloc )
+			SingleModelAllocator( Box< LinearAllocator< EventModel< T > > > alloc )
 				: allocator( std::move( alloc ) ), remaining( allocator->MaxSize() )
 			{}
 		};
 
-		using InternalAllocatorElement = std::pair< TypeName, ModelAllocator >;
-		using InternalAllocatorArray = std::array< InternalAllocatorElement, EventList::All::Size >;
-		using InternalAllocatorMap = std::map< TypeName, ModelAllocator >;
+		using InternalAllocatorElement = std::pair< TypeName, SingleModelAllocator >;
+		using InternalAllocatorArray = std::array< InternalAllocatorElement, SupportedModels::Size >;
+		using InternalAllocatorMap = std::map< TypeName, SingleModelAllocator >;
 
 		template < size_t I >
-			requires( I < EventList::All::Size )
+			requires( I < SupportedModels::Size )
 		static InternalAllocatorElement BuildEventAllocator()
 		{
-			using Type = EventList::All::Type< I >;
+			using Type = typename SupportedModels::template Type< I >;
 			return std::make_pair( TypeTraits< Type >::Name, MakeBox< LinearAllocator< EventModel< Type > > >( DefaultModelChunkSize ) );
 		}
 
@@ -78,7 +52,7 @@ namespace slc {
 
 		inline static InternalAllocatorArray BuildInternalEventAllocators()
 		{
-			return BuildAllEventAllocators( std::make_index_sequence< EventList::All::Size >() );
+			return BuildAllEventAllocators( std::make_index_sequence< SupportedModels::Size >() );
 		}
 
 		inline static InternalAllocatorMap ConstructAllocatorMap()
@@ -92,22 +66,22 @@ namespace slc {
 		}
 
 	public:
-		EventModelAllocator()
+		ModelAllocator()
 			: mModelAllocators( ConstructAllocatorMap() )
 		{
 		}
-		~EventModelAllocator()
+		~ModelAllocator()
 		{
 			CleanupDefaultNewPointers();
 		}
 
-		EventModelAllocator( const EventModelAllocator& ) = delete;
-		EventModelAllocator& operator=( const EventModelAllocator& ) = delete;
+		ModelAllocator( const ModelAllocator& ) = delete;
+		ModelAllocator& operator=( const ModelAllocator& ) = delete;
 
-		EventModelAllocator( EventModelAllocator&& ) = default;
-		EventModelAllocator& operator=( EventModelAllocator&& ) = default;
+		ModelAllocator( ModelAllocator&& ) = default;
+		ModelAllocator& operator=( ModelAllocator&& ) = default;
 
-		void swap(EventModelAllocator& other) noexcept
+		void swap( ModelAllocator& other ) noexcept
 		{
 			std::swap( mModelAllocators, other.mModelAllocators );
 			std::swap( mOverflowPointers, other.mOverflowPointers );
@@ -186,7 +160,7 @@ namespace slc {
 
 		template < IsEvent T, typename... Args >
 			requires std::constructible_from< T, Args... >
-		static EventModel< T >& ConstructModel( ModelAllocator& model, Args&&... args )
+		static EventModel< T >& ConstructModel( SingleModelAllocator& model, Args&&... args )
 		{
 			EventModel< T >* ptr = model.allocator->Alloc< EventModel< T > >( std::forward< Args >( args )... );
 			model.remaining--;
@@ -197,4 +171,6 @@ namespace slc {
 		InternalAllocatorMap mModelAllocators;
 		std::vector< EventConcept* > mOverflowPointers;
 	};
+
+	using DefaultModelAllocator = ModelAllocator< TypeList<> >;
 } // namespace slc

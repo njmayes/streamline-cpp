@@ -97,6 +97,8 @@ namespace slc {
 	class Event
 	{
 	public:
+		Event() = default;
+
 		template < IsEvent T >
 		Event( EventModel< T >& event )
 			: mImpl( &event )
