@@ -12,6 +12,9 @@ obj/
 **.csproj
 **.csproj.user
 
+#Cached files
+cache/
+
 #Makefiles
 Makefile
 Makefile.in
