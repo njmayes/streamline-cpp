@@ -11,8 +11,8 @@ else:
     raise ImportError("Unsupported platform")
 
 class VulkanConfiguration:
-    requiredVulkanVersion = "1.3."
-    installVulkanVersion = "1.3.216.0"
+    requiredVulkanVersion = "1.4."
+    installVulkanVersion = "1.4.321.1"
 
     @classmethod
     def Validate(cls):
@@ -44,7 +44,7 @@ class VulkanConfiguration:
 
     @classmethod
     def __InstallVulkanSDK(cls):
-        install_job = lambda _: Utils.InstallVulkan(cls.installVulkanVersion)
+        install_job = lambda: Utils.InstallVulkan(cls.installVulkanVersion)
 
         Common.PromptUserForTask( "Would you like to install VulkanSDK {0:s}? [Y/N]: ".format(cls.installVulkanVersion), install_job)
 

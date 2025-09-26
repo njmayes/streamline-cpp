@@ -2,6 +2,7 @@ from re import T
 import sys
 import os
 import winreg
+import shutil
 
 import requests
 import time
@@ -129,19 +130,19 @@ def UnpackFile(filepath, filter, deleteZipFile=True):
 
 
 def InstallVulkan(version):
-    vulkanDirectory = "./streamline-cpp/dependencies/VulkanSDK"
+    vulkanDirectory = "./temp"
     vulkanFilename = "vulkan_sdk.exe"
     vulkanExecPath = f"{vulkanDirectory}/VulkanSDK-{version}-Installer.exe"
     
 
     vulkanInstallURL = f"https://sdk.lunarg.com/sdk/download/{version}/windows/{vulkanFilename}"
-    vulkanInstallPath = f"{vulkanDirectory}/{vulkanFilename}"
-    print("Downloading {0:s} to {1:s}".format(vulkanInstallURL, vulkanInstallPath))
-    DownloadFile(vulkanInstallURL, vulkanInstallPath)
+    print("Downloading {0:s} to {1:s}".format(vulkanInstallURL, vulkanExecPath))
+    DownloadFile(vulkanInstallURL, vulkanExecPath)
     print("Running Vulkan SDK installer...")        
     
     os.startfile(os.path.abspath(vulkanExecPath))
-    print("Re-run this script after installation!")
+    input("Re-run this script after installation! Press enter to continue.")
+    shutil.rmtree( os.path.abspath(vulkanDirectory))
 
 
 def __CheckOpenSSLDevDir(root):
