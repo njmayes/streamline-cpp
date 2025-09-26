@@ -1,22 +1,38 @@
 #pragma once
 
-#include "IModalWindow.h"
+#include "IModal.h"
+
+#include "slc/Types/Math.h"
 
 namespace slc {
+
+	struct ModalConstructionData
+	{
+		static constexpr Vec2f DefaultSize = { 600, 400 };
+		static constexpr Vec2f DefaultButtonSize = { 60, 40 };
+		static constexpr float DefaultFontScale = 2.0f;
+
+		std::string_view heading;
+
+		Vec2f size = DefaultSize;
+		Vec2f button_size = DefaultButtonSize;
+		float font_scale = DefaultFontScale;
+
+		ModalButtons button_type = ModalButtons::OKCancel;
+	};
 
 	class ModalManager
 	{
 	private:
 		struct ModalEntry
 		{
-			std::string_view heading;
-			Box< IModalWindow > modal = nullptr;
-			ModalButtons type = ModalButtons::OKCancel;
+			ModalConstructionData init_data{};
+			Box< IModal > modal = nullptr;
 
 			bool open = true;
 
-			ModalEntry( std::string_view h, ModalButtons t )
-				: heading( h ), type( t )
+			ModalEntry( ModalConstructionData data )
+				: init_data( data )
 			{}
 
 			template < typename T, typename... Args >
@@ -27,27 +43,18 @@ namespace slc {
 		};
 
 	public:
-		template < IsEditorModal T, typename... Args >
-		void Open( std::string_view title, ModalButtons type, Args&&... args )
+		template < IsModal T, typename... Args >
+		void Open( ModalConstructionData const& init_data, Args&&... args )
 		{
-			if ( Contains( title ) )
+			if ( Contains( init_data.heading ) )
 			{
 				log::Error( "Modal already open!" );
 				return;
 			}
 
-			ModalEntry& entry = mEditorModals.emplace_back( title, type );
+			ModalEntry& entry = mEditorModals.emplace_back( init_data );
 			entry.Init< T >( std::forward< Args >( args )... );
-			mLastAdded = entry.heading;
-		}
-
-		void OpenInline( std::string_view title, ModalButtons type, Action<>&& on_overlay_render, Action<>&& on_complete = [] {} )
-		{
-			Open< InlineModal >( title, type, std::move( on_overlay_render ), std::move( on_complete ) );
-		}
-		void OpenWarning( std::string_view title, const std::string& msg )
-		{
-			Open< WarningModal >( title, ModalButtons::OK, msg );
+			mLastAdded = entry.init_data.heading;
 		}
 
 		void AddCallback( std::function< void() > function )
@@ -62,7 +69,7 @@ namespace slc {
 
 		auto Find( std::string_view key )
 		{
-			return std::ranges::find_if( mEditorModals, [ &key ]( const ModalEntry& panel ) { return key == panel.heading; } );
+			return std::ranges::find_if( mEditorModals, [ &key ]( const ModalEntry& panel ) { return key == panel.init_data.heading; } );
 		}
 
 		bool Contains( std::string_view key )

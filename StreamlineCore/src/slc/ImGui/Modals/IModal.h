@@ -14,11 +14,11 @@ namespace slc {
 		Custom
 	};
 
-	class IModalWindow : public RefCounted
+	class IModal : public RefCounted
 	{
 	public:
-		IModalWindow();
-		virtual ~IModalWindow();
+		IModal();
+		virtual ~IModal();
 
 	private:
 		virtual void OnOverlayRender() = 0;
@@ -34,23 +34,9 @@ namespace slc {
 	};
 
 	template < typename T >
-	concept IsEditorModal = DerivedFromOnly< T, IModalWindow >;
+	concept IsModal = DerivedFromOnly< T, IModal >;
 
-	class WarningModal : public IModalWindow
-	{
-	public:
-		WarningModal( const std::string& msg )
-			: IModalWindow(), mMessage( msg )
-		{}
-
-	private:
-		void OnOverlayRender() override;
-
-	private:
-		std::string mMessage;
-	};
-
-	class InlineModal : public IModalWindow
+	class InlineModal : public IModal
 	{
 	public:
 		InlineModal( Action<>&& on_overlay_render, Action<>&& on_complete )

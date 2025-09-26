@@ -1,23 +1,18 @@
-#include "IModalWindow.h"
+#include "IModal.h"
 
 #include "slc/Common/Application.h"
 #include "slc/ImGui/Widgets.h"
 
 namespace slc {
 
-	IModalWindow::IModalWindow()
+	IModal::IModal()
 	{
 		Application::BlockEsc();
 	}
 
-	IModalWindow::~IModalWindow()
+	IModal::~IModal()
 	{
 		Application::BlockEsc( false );
-	}
-
-	void WarningModal::OnOverlayRender()
-	{
-		Widgets::Label( mMessage );
 	}
 
 } // namespace slc

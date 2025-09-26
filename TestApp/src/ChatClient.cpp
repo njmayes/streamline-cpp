@@ -97,7 +97,6 @@ void ChatLayer::OpenUsernameEntryIfNeeded()
 	mInUsernameModal = true;
 
 	auto on_render = [ this ] {
-		slc::Utils::SetWindowFontScale( 2.0f );
 		Widgets::StringEdit( "Please enter your username...", mUsername );
 	};
 
@@ -105,7 +104,11 @@ void ChatLayer::OpenUsernameEntryIfNeeded()
 		mInUsernameModal = false;
 	};
 
-	slc::Application::OpenModal< slc::InlineModal >( "No username", slc::ModalButtons::OK, on_render, on_complete );
+	auto cd = slc::ModalConstructionData{};
+	cd.heading = "No username";
+	cd.button_type = slc::ModalButtons::OK;
+
+	slc::Application::OpenModal< slc::InlineModal >( cd, on_render, on_complete );
 }
 
 ClientLayer::ClientLayer( slc::net::ClientContextOptions const& opts )

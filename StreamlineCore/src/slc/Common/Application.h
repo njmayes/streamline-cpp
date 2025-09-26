@@ -165,8 +165,8 @@ namespace slc {
 			return static_cast< float >( sInstance->mWindow->GetHeight() );
 		}
 
-		template < IsEditorModal T, typename... Args >
-		static void OpenModal(std::string_view title, ModalButtons type, Args&&... args)
+		template < IsModal T, typename... Args >
+		static void OpenModal( ModalConstructionData const& init_data, Args&&... args)
 		{
 			if ( !sInstance )
 				return;
@@ -174,7 +174,19 @@ namespace slc {
 			if ( !sInstance->mImGuiController )
 				return;
 
-			sInstance->mImGuiController->OpenModal< T >( title, type, std::forward< Args >( args )... ); 
+			sInstance->mImGuiController->OpenModal< T >( init_data, std::forward< Args >( args )... ); 
+		}
+
+		template < IsPanel T, typename... Args >
+		static void OpenPanel( PanelConstructionData const& init_data, Args&&... args )
+		{
+			if ( !sInstance )
+				return;
+
+			if ( !sInstance->mImGuiController )
+				return;
+
+			sInstance->mImGuiController->OpenPanel< T >( init_data, std::forward< Args >( args )... );
 		}
 
 	private:
