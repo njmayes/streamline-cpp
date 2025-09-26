@@ -103,8 +103,6 @@ namespace slc {
 		{
 		}
 
-		~Event() = default;
-
 		/// <summary>
 		/// Pass a predicate invocable object that takes an event type reference
 		/// as a parameter. Use the SLC_BIND_EVENT_FUNC macro for assistance

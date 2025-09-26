@@ -16,10 +16,13 @@ namespace slc {
 		std::erase_if( sState.generic_listeners, [ & ]( const IEventListener* listener ) { return std::ranges::contains( sState.old_listeners, listener ); } );
 		sState.old_listeners.clear();
 
-		std::swap( sState.queue, sState.new_queue );
+		auto dispatching = sState.dispatching.test_and_set();
+		ASSERT( not dispatching, "Somehow we are dispatching from two places at once." );
+
+		auto events = MergeThreadQueues();
 
 		// Distribute events in the queue
-		for ( Event& e : sState.queue.events )
+		for ( Event& e : events )
 		{
 			// Handle app events first
 			DispatchAppListener( e );
@@ -32,8 +35,10 @@ namespace slc {
 		}
 
 		// Clear down event queue and reset event model allocators.
-		sState.queue.events.clear();
-		sState.queue.allocator.Flush();
+		CleanupThreadQueues();
+
+		sState.dispatching.clear();
+		sState.dispatching.notify_all();
 	}
 
 	void EventManager::DispatchAppListener( Event& e )
@@ -58,6 +63,30 @@ namespace slc {
 	{
 		for ( IEventListener* listener : sState.generic_listeners | std::views::filter( [ & ]( IEventListener* listener ) { return listener->Accept( e ); } ) )
 			listener->OnEvent( e );
+	}
+
+	std::vector< Event > EventManager::MergeThreadQueues()
+	{
+		auto all_events = std::vector< Event >{};
+
+		std::unique_lock lock( sState.queue_lock );
+		for ( auto queue : sState.queue_registry )
+		{
+			for ( auto e : queue->events )
+				all_events.push_back( e );
+		}
+
+		return all_events;
+	}
+
+	void EventManager::CleanupThreadQueues()
+	{
+		std::unique_lock lock( sState.queue_lock );
+		for (auto queue : sState.queue_registry)
+		{
+			queue->events.clear();
+			queue->allocator.Flush();
+		}
 	}
 
 	void EventManager::RegisterListener( IEventListener* listener, ListenerType type )

@@ -2,6 +2,8 @@
 
 #include "EventModelAllocator.h"
 
+#include <mutex>
+
 namespace slc {
 
 	class IEventListener;
@@ -12,18 +14,14 @@ namespace slc {
 		{
 			std::vector< Event > events;
 			EventModelAllocator allocator;
-
-			void swap(EventQueue& other) noexcept
-			{
-				std::swap( events, other.events );
-				std::swap( allocator, other.allocator );
-			}
 		};
 
 		struct EventManagerState
 		{
-			EventQueue queue;
-			EventQueue new_queue;
+			std::atomic_flag dispatching;
+
+			std::mutex queue_lock;
+			std::vector< EventQueue* > queue_registry{};
 
 			IEventListener* app_listener = nullptr;
 			IEventListener* imgui_listener = nullptr;
@@ -32,7 +30,7 @@ namespace slc {
 			std::vector< IEventListener* > new_listeners;
 			std::vector< IEventListener* > old_listeners;
 		};
-	}
+	} // namespace detail
 
 	/// <summary>
 	/// The interface by which events are queued and handled. Use the Post(...) method to submit an event
@@ -59,17 +57,36 @@ namespace slc {
 		template < IsEvent TEvent, typename... TArgs >
 		static void Post( TArgs&&... args )
 		{
-			// Get event model instance from allocator. Event will be constructed in place inside model.
-			EventModel< TEvent >& event_model = sState.new_queue.allocator.NewModel< TEvent >( std::forward< TArgs >( args )... );
+			thread_local Box< detail::EventQueue > queue = MakeThreadEventQueue();
 
-			// Add event to queue
-			sState.new_queue.events.emplace_back( event_model );
+			// Wait in case we're currently dispatching events.
+			sState.dispatching.wait( true );
+
+			// Get event model instance from allocator. Event will be constructed in place inside model.
+			EventModel< TEvent >& event_model = queue->allocator.NewModel< TEvent >( std::forward< TArgs >( args )... );
+
+			// Add event to thread local queue
+			queue->events.emplace_back( event_model );
 		}
 
 		static void Dispatch();
 		static void DispatchAppListener( Event& e );
 		static void DispatchImguiListener( Event& e );
 		static void DispatchGenericListeners( Event& e );
+
+	private:
+		static Box< detail::EventQueue > MakeThreadEventQueue()
+		{
+			Box< detail::EventQueue > queue = MakeBox< detail::EventQueue >();
+
+			std::unique_lock lock( sState.queue_lock );
+			sState.queue_registry.push_back( queue.get() );
+
+			return queue;
+		}
+
+		static std::vector< Event > MergeThreadQueues();
+		static void CleanupThreadQueues();
 
 	private:
 		inline static detail::EventManagerState sState{};
