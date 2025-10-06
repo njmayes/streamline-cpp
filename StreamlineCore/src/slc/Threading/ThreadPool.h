@@ -23,6 +23,8 @@ namespace slc {
 		ThreadPool& operator=( const ThreadPool& ) = delete;
 		ThreadPool& operator=( ThreadPool&& ) = default;
 
+		void Shutdown();
+
 		// Enqueue task for execution by the thread pool
 		template < typename Function, typename... Args >
 		auto Queue( Function&& f, Args&&... args ) -> std::future< std::invoke_result_t< Function, Args&&... > >

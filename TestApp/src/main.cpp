@@ -193,6 +193,8 @@ slc::Application* CreateApplication( int argc, char** argv )
 		return NetServerTest( argc - 1, &argv[ 1 ] );
 	else if ( std::string( argv[ 1 ] ) == "client" )
 		return NetClientTest( argc - 1, &argv[ 1 ] );
+
+	return nullptr;
 }
 
 // static auto constexpr Filename = "measurements.txt";

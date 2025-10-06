@@ -4,6 +4,7 @@
 
 namespace slc {
 
+	template < typename T >
 	class StackAllocator : public IAllocator
 	{
 	public:
@@ -12,8 +13,10 @@ namespace slc {
 			std::size_t size;
 		};
 
+		static constexpr size_t HeaderSize = sizeof( AllocHeader );
+
 		StackAllocator( std::size_t size )
-			: mMaxSize( size ), mMemBlock( static_cast< Byte* >( ::operator new( mMaxSize ) ) ), mHead( mMemBlock )
+			: mMaxSize( size ), mMemBlock( ::operator new( mMaxSize ) ), mHead( mMemBlock )
 		{}
 
 		~StackAllocator() override
@@ -39,21 +42,19 @@ namespace slc {
 			mHead = other.mHead;
 		}
 
-		std::size_t MaxSize() const override
+		bool CanAllocate() const override
 		{
-			return mMaxSize;
+			return ( mHead + HeaderSize + sizeof( T ) ) >= mMemBlock + mMaxSize;
 		}
+
 		void ForceReallocate() override
 		{
 			Reallocate();
 		}
 
-	protected:
-		void* AllocImpl( size_t size ) override
+		void* Alloc( size_t size ) override
 		{
-			constexpr size_t HeaderSize = sizeof( AllocHeader );
-
-			if ( ( mHead + size + HeaderSize ) >= mMemBlock + mMaxSize )
+			if ( CanAllocate() )
 				Reallocate();
 
 			std::memcpy( mHead, &size, HeaderSize );
@@ -65,9 +66,8 @@ namespace slc {
 			return memblock;
 		}
 
-		void FreeImpl( void* ptr ) override
+		void Free( void* ptr ) override
 		{
-			constexpr size_t HeaderSize = sizeof( AllocHeader );
 			Byte* bytes = reinterpret_cast< Byte* >( ptr );
 
 			AllocHeader header{};
@@ -94,7 +94,7 @@ namespace slc {
 	private:
 		std::size_t mMaxSize = 0;
 
-		Byte* mMemBlock = nullptr;
-		Byte* mHead = nullptr;
+		T* mMemBlock = nullptr;
+		T* mHead = nullptr;
 	};
 } // namespace slc

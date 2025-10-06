@@ -45,7 +45,7 @@ namespace slc {
 
 	public:
 		void OnEvent( Event& e );
-		LISTENING_EVENTS( EVENT_CATEGORY_MOUSE, EVENT_CATEGORY_KEY )
+		SLC_LISTENING_EVENTS( EVENT_CATEGORY_MOUSE, EVENT_CATEGORY_KEY )
 
 		void BlockEvents( bool block )
 		{

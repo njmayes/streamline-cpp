@@ -1,6 +1,7 @@
 #pragma once
 
 #include "slc/Events/IEventListener.h"
+#include "slc/Events/EventRuntime.h"
 #include "slc/IO/Window.h"
 #include "slc/ImGui/Controller.h"
 #include "slc/Logging/Logger.h"
@@ -59,17 +60,19 @@ namespace slc {
 	{
 		bool running = true;
 		bool minimised = false;
-		bool blockExit = false;
-		float lastFrameTime = 0.0f;
+		bool block_exit = false;
+		float last_frame_time = 0.0f;
 
-		std::vector< Action<> > mainThreadQueue;
-		std::mutex mainThreadQueueMutex;
+		EventRuntime event_runtime;
+
+		std::mutex main_thread_queue_mutex;
+		std::vector< Action<> > main_thread_queue;
 	};
 
 	class Application : public IEventListener
 	{
 	public:
-		LISTENING_EVENTS( WindowClose, WindowResize )
+		SLC_LISTENING_EVENTS( WindowClose, WindowResize )
 
 	public:
 		Application( Box< ApplicationSpecification > spec );
@@ -141,9 +144,9 @@ namespace slc {
 		template < IsAction Func >
 		static void SubmitActionToMainThread( Func&& function )
 		{
-			std::scoped_lock< std::mutex > lock( sInstance->mState.mainThreadQueueMutex );
+			std::scoped_lock< std::mutex > lock( sInstance->mState.main_thread_queue_mutex );
 
-			sInstance->mState.mainThreadQueue.emplace_back( std::move( function ) );
+			sInstance->mState.main_thread_queue.emplace_back( std::move( function ) );
 		}
 
 		static void ExecuteQueuedJobs();
@@ -165,8 +168,17 @@ namespace slc {
 			return static_cast< float >( sInstance->mWindow->GetHeight() );
 		}
 
+		template < IsEvent TEvent, typename... TArgs >
+		static void PostEvent( TArgs&&... args )
+		{
+			if ( not sInstance )
+				return;
+
+			sInstance->mState.event_runtime.Post< TEvent >( std::forward< TArgs >( args )... );
+		}
+
 		template < IsModal T, typename... Args >
-		static void OpenModal( ModalConstructionData const& init_data, Args&&... args)
+		static void OpenModal( ModalConstructionData const& init_data, Args&&... args )
 		{
 			if ( !sInstance )
 				return;
@@ -174,7 +186,7 @@ namespace slc {
 			if ( !sInstance->mImGuiController )
 				return;
 
-			sInstance->mImGuiController->OpenModal< T >( init_data, std::forward< Args >( args )... ); 
+			sInstance->mImGuiController->OpenModal< T >( init_data, std::forward< Args >( args )... );
 		}
 
 		template < IsPanel T, typename... Args >

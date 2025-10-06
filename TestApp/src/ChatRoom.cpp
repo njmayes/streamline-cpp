@@ -25,7 +25,7 @@ void ServerLayer::OnMessage( slc::net::Payload const& msg )
 	while ( mRecentMessages.size() > max_recent_msgs )
 		mRecentMessages.pop_front();
 
-	slc::EventManager::Post< slc::NetworkOutEvent >( new_msg );
+	slc::Application::PostEvent< slc::NetworkOutEvent >( new_msg );
 }
 
 ChatServer::ChatServer( slc::Box< slc::ApplicationSpecification > spec, slc::net::ServerContextOptions const& opts )

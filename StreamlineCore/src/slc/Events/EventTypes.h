@@ -6,73 +6,29 @@ namespace slc {
 
 	using EventTypeFlag = size_t;
 
-	// Use enum in namespace over enum class so they can be used in bitwise operations but remain properly scoped.
+
+#define SLC_MAKE_EVENT_FLAG_BITS( i, event ) event = MakeBit( i )
+#define SLC_MAKE_EVENT_FLAGS( ... )                                                \
+	namespace EventType {                                                          \
+		enum : ::slc::EventTypeFlag                                                \
+		{                                                                          \
+			SLC_FOR_EACH_I_SEP( SLC_MAKE_EVENT_FLAG_BITS, SLC_COMMA, __VA_ARGS__ ) \
+		};                                                                         \
+	}
+
 	namespace EventType {
+		enum : EventTypeFlag
+		{
+			None = 0,
+		};
+	}
+
+	namespace detail {
 
 		static constexpr EventTypeFlag NextEventFlag( EventTypeFlag last )
 		{
 			return last << 1;
 		}
-
-		enum Flag : EventTypeFlag
-		{
-			None = 0,
-
-			WindowClose			= MakeBit( 0 ),
-			WindowResize		= MakeBit( 1 ),
-			WindowFocus			= MakeBit( 2 ),
-			WindowLostFocus		= MakeBit( 3 ),
-			WindowMoved			= MakeBit( 4 ),
-
-			AppTick				= MakeBit( 5 ),
-			AppUpdate			= MakeBit( 6 ),
-			AppRender			= MakeBit( 7 ),
-
-			KeyPressed			= MakeBit( 8 ),
-			KeyReleased			= MakeBit( 9 ),
-			KeyTyped			= MakeBit( 10 ),
-
-			MouseButtonPressed	= MakeBit( 11 ),
-			MouseButtonReleased	= MakeBit( 12 ),
-			MouseMoved			= MakeBit( 13 ),
-			MouseScrolled		= MakeBit( 14 ),
-
-			NetworkIn			= MakeBit( 15 ),
-			NetworkOut			= MakeBit( 16 ),
-
-			/// <summary>
-			/// <para>
-			/// Use this as starting point when declaring a user-defined event flags enum for custom events.
-			/// Event flags beyond this can be defined using the NextEventFlag function.
-			/// </para>
-			/// <para>
-			/// E.g.
-			/// </para>
-			/// <para>
-			/// enum MyEvents : EventTypeFlag
-			/// </para>
-			/// <para>
-			/// {
-			/// </para>
-			/// <para>
-			/// CustomEventA = NewEventStart,
-			/// </para>
-			/// <para>
-			/// CustomEventB = NextEventFlag(CustomEventA)
-			/// </para>
-			/// <para>
-			/// }
-			/// </para>
-			/// </summary>
-			NewEventStart = MakeBit( 17 ),
-
-			//  Example:
-			//	enum CustomEvents : EventTypeFlag
-			//	{
-			//		CustomEventA = NewEventStart,
-			//		CustomEventB = NextEventFlag(CustomEventA),
-			//	};
-		};
 
 		template < typename... T >
 			requires( ... and std::convertible_to< T, EventTypeFlag > )
@@ -87,6 +43,18 @@ namespace slc {
 				return ( ... | flags );
 			}
 		}
+	} // namespace detail
+	
+	SLC_MAKE_EVENT_FLAGS(
+		WindowClose, WindowResize, WindowFocus, WindowLostFocus, WindowMoved,
+		AppTick, AppUpdate, AppRender,
+		KeyPressed, KeyReleased, KeyTyped,
+		MouseButtonPressed, MouseButtonReleased, MouseMoved, MouseScrolled,
+		NetworkIn, NetworkOut,
+		NewEventStart
+	);
+
+	namespace EventType {
 
 		static constexpr EventTypeFlag EVENT_CATEGORY_APP = EventType::WindowClose | EventType::WindowResize | EventType::WindowFocus | EventType::WindowLostFocus | EventType::WindowMoved | EventType::AppTick | EventType::AppUpdate | EventType::AppRender;
 
@@ -97,9 +65,9 @@ namespace slc {
 		static constexpr EventTypeFlag EVENT_CATEGORY_INPUT = EVENT_CATEGORY_KEY | EVENT_CATEGORY_MOUSE;
 	} // namespace EventType
 
-#define EVENT_DATA_TYPE( type )          \
-	static EventTypeFlag GetStaticType() \
-	{                                    \
-		return EventType::type;          \
+#define SLC_EVENT_DATA_TYPE( type )             \
+	static ::slc::EventTypeFlag GetStaticType() \
+	{                                           \
+		return EventType::type;                 \
 	}
 } // namespace slc

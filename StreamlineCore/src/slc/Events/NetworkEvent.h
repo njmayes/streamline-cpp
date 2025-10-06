@@ -14,7 +14,7 @@ namespace slc {
 			: data( std::move( payload ) )
 		{}
 
-		EVENT_DATA_TYPE( NetworkIn )
+		SLC_EVENT_DATA_TYPE( NetworkIn )
 	};
 
 	struct NetworkOutEvent : public EventBase
@@ -25,7 +25,7 @@ namespace slc {
 			: data( std::move( payload ) )
 		{}
 
-		EVENT_DATA_TYPE( NetworkOut )
+		SLC_EVENT_DATA_TYPE( NetworkOut )
 	};
 
 }

@@ -14,7 +14,7 @@ namespace slc {
 			: mouse_x( x ), mouse_y( y )
 		{}
 
-		EVENT_DATA_TYPE( MouseMoved )
+		SLC_EVENT_DATA_TYPE( MouseMoved )
 	};
 
 	struct MouseScrolledEvent : public EventBase
@@ -25,7 +25,7 @@ namespace slc {
 			: x_offset( x ), y_offset( y )
 		{}
 
-		EVENT_DATA_TYPE( MouseScrolled )
+		SLC_EVENT_DATA_TYPE( MouseScrolled )
 	};
 
 	struct MouseButtonPressedEvent : public EventBase
@@ -36,7 +36,7 @@ namespace slc {
 			: button( mouse )
 		{}
 
-		EVENT_DATA_TYPE( MouseButtonPressed )
+		SLC_EVENT_DATA_TYPE( MouseButtonPressed )
 	};
 
 	struct MouseButtonReleasedEvent : public EventBase
@@ -47,6 +47,6 @@ namespace slc {
 			: button( mouse )
 		{}
 
-		EVENT_DATA_TYPE( MouseButtonReleased )
+		SLC_EVENT_DATA_TYPE( MouseButtonReleased )
 	};
 } // namespace slc

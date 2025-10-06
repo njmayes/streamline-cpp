@@ -11,7 +11,7 @@ namespace slc::net {
 	class NetLayer : public ApplicationLayer
 	{
 	public:
-		LISTENING_EVENTS( NetworkOut );
+		SLC_LISTENING_EVENTS( NetworkOut );
 
 		template < ContextOptionsType options_t >
 		NetLayer( options_t const& options )

@@ -15,7 +15,6 @@
 namespace slc {
 
 	ImGuiController::ImGuiController( GLFWwindow* window )
-		: IEventListener( EventManager::ListenerType::ImGui )
 	{
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();

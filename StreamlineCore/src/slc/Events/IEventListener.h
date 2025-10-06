@@ -1,6 +1,6 @@
 #pragma once
 
-#include "EventManager.h"
+#include "EventRuntime.h"
 
 namespace slc {
 
@@ -9,11 +9,11 @@ namespace slc {
 	public:
 		IEventListener()
 		{
-			EventManager::RegisterListener( this, mType );
+			EventRuntime::RegisterListener( this );
 		}
 		virtual ~IEventListener()
 		{
-			EventManager::DeregisterListener( this, mType );
+			EventRuntime::DeregisterListener( this );
 		}
 
 		virtual constexpr EventTypeFlag GetListeningEvents() const = 0;
@@ -25,34 +25,23 @@ namespace slc {
 
 		bool Accept( Event& event ) const
 		{
-			//   Not already handled		Valid Event Type				Satisfies additional condition
+			//   Not already handled				Valid Event Type				 Satisfies optional extra condition
 			return !event.IsHandled() && ( GetListeningEvents() & event.GetType() ) && mAcceptCondition();
 		}
 
 	private:
-		IEventListener( EventManager::ListenerType type )
-			: mType( type )
-		{
-			EventManager::RegisterListener( this, mType );
-		}
-
-		friend class Application;
-		friend class ImGuiController;
-
-	private:
-		EventManager::ListenerType mType = EventManager::ListenerType::Generic;
 		Predicate<> mAcceptCondition = []() { return true; };
 	};
 
-#define MAKE_EVENT_FLAG( event ) ::slc::EventType::event
+#define SLC_MAKE_EVENT_FLAG( event ) ::slc::EventType::event
 
-#define LISTENING_EVENTS( ... )                                                                                     \
-	static constexpr ::slc::EventTypeFlag GetStaticType()                                                           \
-	{                                                                                                               \
-		return ::slc::EventType::BuildEventTypeMask( SLC_FOR_EACH_SEP( MAKE_EVENT_FLAG, SLC_COMMA, __VA_ARGS__ ) ); \
-	}                                                                                                               \
-	virtual constexpr ::slc::EventTypeFlag GetListeningEvents() const override                                      \
-	{                                                                                                               \
-		return GetStaticType();                                                                                     \
+#define SLC_LISTENING_EVENTS( ... )                                                                                  \
+	static constexpr ::slc::EventTypeFlag GetStaticType()                                                            \
+	{                                                                                                                \
+		return ::slc::detail::BuildEventTypeMask( SLC_FOR_EACH_SEP( SLC_MAKE_EVENT_FLAG, SLC_COMMA, __VA_ARGS__ ) ); \
+	}                                                                                                                \
+	virtual constexpr ::slc::EventTypeFlag GetListeningEvents() const override                                       \
+	{                                                                                                                \
+		return GetStaticType();                                                                                      \
 	}
 } // namespace slc

@@ -19,11 +19,11 @@ namespace slc {
 
 	/// <summary>
 	/// Event types must derive from EventBase and implement a static function
-	/// that returns the event's type. Use the EVENT_DATA_TYPE(type) macro
+	/// that returns the event's type. Use the SLC_EVENT_DATA_TYPE(type) macro
 	/// to help implement this.
 	/// </summary>
 	template < typename T >
-	concept IsEvent = std::derived_from< T, EventBase > and requires {
+	concept IsEvent = DerivedFromOnly< T, EventBase > and requires {
 		{ T::GetStaticType() } -> std::same_as< EventTypeFlag >;
 	};
 
@@ -132,6 +132,11 @@ namespace slc {
 		EventTypeFlag GetType() const
 		{
 			return mImpl->Type();
+		}
+
+		operator bool() const
+		{
+			return mImpl != nullptr;
 		}
 
 	private:

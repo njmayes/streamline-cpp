@@ -1,6 +1,6 @@
 #include "NetworkLayer.h"
 
-#include "slc/Events/EventManager.h"
+#include "slc/Common/Application.h"
 #include "slc/Logging/Log.h"
 
 namespace slc::net {
@@ -46,7 +46,7 @@ namespace slc::net {
 
 			mServerConnection->OnRead( [ this ]( slc::net::Payload const& msg ) {
 				OnMessage( msg );
-				EventManager::Post< NetworkInEvent >( msg );
+				Application::PostEvent< NetworkInEvent >( msg );
 			} );
 
 			mServerConnection->Start();
@@ -109,7 +109,7 @@ namespace slc::net {
 
 			connection->OnRead( [ this ]( slc::net::Payload const& msg ) {
 				OnMessage( msg );
-				EventManager::Post< NetworkInEvent >( msg );
+				Application::PostEvent< NetworkInEvent >( msg );
 			} );
 
 			connection->Start();

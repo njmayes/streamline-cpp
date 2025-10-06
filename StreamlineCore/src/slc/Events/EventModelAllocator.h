@@ -6,59 +6,41 @@
 
 namespace slc {
 
-	template < typename T >
-	class ModelAllocator;
-
 	/// <summary>
 	/// Allocates and constructs event models for any given event type.
 	/// </summary>
-	template < typename... Args >
-	class ModelAllocator< TypeList< Args... > >
+	class ModelAllocator
 	{
 	private:
-		using SupportedModels = TypeList< Args... >;
-
 		using TypeName = std::string_view;
 		SCONSTEXPR size_t DefaultModelChunkSize = 4;
 
-		struct SingleModelAllocator
+		struct ModelState
 		{
-			Box< IAllocator > allocator = nullptr;
-			size_t remaining = 0;
-
-			template < IsEvent T >
-			SingleModelAllocator( Box< LinearAllocator< EventModel< T > > > alloc )
-				: allocator( std::move( alloc ) ), remaining( allocator->MaxSize() )
-			{}
+			Box< IAllocator > allocator;
+			std::vector< EventConcept* > overflow;
 		};
 
-		using InternalAllocatorElement = std::pair< TypeName, SingleModelAllocator >;
-		using InternalAllocatorArray = std::array< InternalAllocatorElement, SupportedModels::Size >;
-		using InternalAllocatorMap = std::map< TypeName, SingleModelAllocator >;
+		using InternalAllocatorElement = std::pair< TypeName, ModelState >;
+		using InternalAllocatorMap = std::map< TypeName, ModelState >;
 
-		template < size_t I >
-			requires( I < SupportedModels::Size )
+		template < typename T >
 		static InternalAllocatorElement BuildEventAllocator()
 		{
-			using Type = typename SupportedModels::template Type< I >;
-			return std::make_pair( TypeTraits< Type >::Name, MakeBox< LinearAllocator< EventModel< Type > > >( DefaultModelChunkSize ) );
+			return std::make_pair( TypeTraits< T >::Name, ModelState{ MakeBox< LinearAllocator< EventModel< T > > >( DefaultModelChunkSize ), {} } );
 		}
 
-		template < size_t... Is >
-		static InternalAllocatorArray BuildAllEventAllocators( std::index_sequence< Is... > )
+		template < typename... Args >
+		static std::array< InternalAllocatorElement, sizeof...( Args ) > BuildAllEventAllocators( TypeList< Args... > default_types )
 		{
-			return { { BuildEventAllocator< Is >()... } };
+			return { { BuildEventAllocator< Args >()... } };
 		}
 
-		inline static InternalAllocatorArray BuildInternalEventAllocators()
-		{
-			return BuildAllEventAllocators( std::make_index_sequence< SupportedModels::Size >() );
-		}
-
-		inline static InternalAllocatorMap ConstructAllocatorMap()
+		template < typename... Args >
+		inline static InternalAllocatorMap ConstructAllocatorMap( TypeList< Args... > default_types )
 		{
 			InternalAllocatorMap result;
-			for ( auto&& [ type, allocator ] : BuildInternalEventAllocators() )
+			for ( auto&& [ type, allocator ] : BuildAllEventAllocators( default_types ) )
 			{
 				result.emplace( type, std::move( allocator ) );
 			}
@@ -67,12 +49,24 @@ namespace slc {
 
 	public:
 		ModelAllocator()
-			: mModelAllocators( ConstructAllocatorMap() )
 		{
 		}
+
+		template < typename... Args >
+		ModelAllocator( TypeList< Args... > default_types )
+			: mModelAllocators( ConstructAllocatorMap( default_types ) )
+		{
+		}
+
 		~ModelAllocator()
 		{
-			CleanupDefaultNewPointers();
+			for ( auto& [ type, model ] : mModelAllocators )
+			{
+				for ( auto ptr : model.overflow )
+				{
+					delete ptr;
+				}
+			}
 		}
 
 		ModelAllocator( const ModelAllocator& ) = delete;
@@ -84,7 +78,6 @@ namespace slc {
 		void swap( ModelAllocator& other ) noexcept
 		{
 			std::swap( mModelAllocators, other.mModelAllocators );
-			std::swap( mOverflowPointers, other.mOverflowPointers );
 		}
 
 	public:
@@ -106,17 +99,17 @@ namespace slc {
 
 			auto& model = mModelAllocators.at( EventType::Name );
 
-			// If there is no more space in pool allocator, just use default allocator.
+			// If there is no more space in allocator, just use default allocator.
 			// Pointer will be saved to be cleared up on flush at which point the pool
 			// will be enlarged. Don't do it here so we don't invalidate Events in queue.
-			if ( model.remaining == 0 )
+			if ( not model.allocator->CanAllocate( 1 ) )
 			{
 				EventModel< T >* overflow = new EventModel< T >( std::forward< Args >( args )... );
-				mOverflowPointers.push_back( overflow );
+				model.overflow.push_back( overflow );
 				return *overflow;
 			}
 
-			return ConstructModel< T >( model, std::forward< Args >( args )... );
+			return ConstructModel< T >( model.allocator, std::forward< Args >( args )... );
 		}
 
 		/// <summary>
@@ -127,18 +120,17 @@ namespace slc {
 		{
 			for ( auto& [ type, model ] : mModelAllocators )
 			{
-				model.allocator->Reset();
-
 				// The allocator completely filled up during this frame. Reallocate larger to compensate.
-				if ( model.remaining == 0 )
+				if ( not model.overflow.empty() )
 				{
 					model.allocator->ForceReallocate();
 				}
 
-				model.remaining = model.allocator->MaxSize();
+				for ( auto ptr : model.overflow )
+				{
+					delete ptr;
+				}
 			}
-
-			CleanupDefaultNewPointers();
 		}
 
 	private:
@@ -149,28 +141,16 @@ namespace slc {
 			mModelAllocators.try_emplace( EventType::Name, MakeBox< LinearAllocator< EventModel< T > > >( DefaultModelChunkSize ) );
 		}
 
-		void CleanupDefaultNewPointers()
-		{
-			for ( EventConcept* ptr : mOverflowPointers )
-			{
-				delete ptr;
-			}
-			mOverflowPointers.clear();
-		}
-
 		template < IsEvent T, typename... Args >
 			requires std::constructible_from< T, Args... >
-		static EventModel< T >& ConstructModel( SingleModelAllocator& model, Args&&... args )
+		static EventModel< T >& ConstructModel( Box< IAllocator >& allocator, Args&&... args )
 		{
-			EventModel< T >* ptr = model.allocator->Alloc< EventModel< T > >( std::forward< Args >( args )... );
-			model.remaining--;
-			return *ptr;
+			auto memory = static_cast< EventModel< T >* >( allocator->Alloc( sizeof( EventModel< T > ) ) );
+			std::construct_at( memory, std::forward< Args >( args )... );
+			return *memory;
 		}
 
 	private:
 		InternalAllocatorMap mModelAllocators;
-		std::vector< EventConcept* > mOverflowPointers;
 	};
-
-	using DefaultModelAllocator = ModelAllocator< TypeList<> >;
 } // namespace slc

@@ -78,7 +78,7 @@ bool ChatLayer::SendMessage()
 	msg.Append( text );
 	msg.Push( '\0' );
 
-	slc::EventManager::Post< slc::NetworkOutEvent >( msg );
+	slc::Application::PostEvent< slc::NetworkOutEvent >( msg );
 
 	mCurrentText.clear();
 	slc::Utils::ReloadCurrentBuffer();

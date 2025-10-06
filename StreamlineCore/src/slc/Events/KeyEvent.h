@@ -15,7 +15,7 @@ namespace slc {
 			: key_code( key ), repeat( repeated )
 		{}
 
-		EVENT_DATA_TYPE( KeyPressed )
+		SLC_EVENT_DATA_TYPE( KeyPressed )
 	};
 
 	struct KeyReleasedEvent : public EventBase
@@ -26,7 +26,7 @@ namespace slc {
 			: key_code( key )
 		{}
 
-		EVENT_DATA_TYPE( KeyReleased )
+		SLC_EVENT_DATA_TYPE( KeyReleased )
 	};
 
 	struct KeyTypedEvent : public EventBase
@@ -37,6 +37,6 @@ namespace slc {
 			: key_code( key )
 		{}
 
-		EVENT_DATA_TYPE( KeyTyped )
+		SLC_EVENT_DATA_TYPE( KeyTyped )
 	};
 } // namespace slc

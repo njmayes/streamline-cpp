@@ -9,7 +9,7 @@
 class ChatLayer : public slc::ApplicationLayer
 {
 public:
-	LISTENING_EVENTS( NetworkIn );
+	SLC_LISTENING_EVENTS( NetworkIn );
 
 	void OnAttach() override
 	{}

@@ -6,7 +6,7 @@
 namespace slc {
 
 	Application::Application( Box< ApplicationSpecification > spec )
-		: IEventListener( EventManager::ListenerType::App ), mSpecification( std::move( spec ) )
+		: mSpecification( std::move( spec ) )
 	{
 		if ( sInstance )
 		{
@@ -14,6 +14,9 @@ namespace slc {
 			return;
 		}
 		sInstance = this;
+
+		// Manually call register again as there was no runtime instance to register with in IEventListener constructor as runtime was initialised after.
+		EventRuntime::RegisterListener( this );
 
 		if ( !mSpecification->workingDir.empty() )
 			std::filesystem::current_path( mSpecification->workingDir );
@@ -70,12 +73,12 @@ namespace slc {
 
 	void Application::ExecuteQueuedJobs()
 	{
-		std::scoped_lock< std::mutex > lock( sInstance->mState.mainThreadQueueMutex );
+		std::scoped_lock< std::mutex > lock( sInstance->mState.main_thread_queue_mutex );
 
-		for ( auto& func : sInstance->mState.mainThreadQueue )
+		for ( auto& func : sInstance->mState.main_thread_queue )
 			func();
 
-		sInstance->mState.mainThreadQueue.clear();
+		sInstance->mState.main_thread_queue.clear();
 	}
 
 	void Application::Run( int argc, char** argv )
@@ -91,14 +94,14 @@ namespace slc {
 		while ( sInstance->mState.running )
 		{
 			float time = Timestep::Now();
-			Timestep timestep = time - sInstance->mState.lastFrameTime;
-			sInstance->mState.lastFrameTime = time;
+			Timestep timestep = time - sInstance->mState.last_frame_time;
+			sInstance->mState.last_frame_time = time;
 
 			// Process any queued tasks that could not be performed within main loop.
 			sInstance->ExecuteQueuedJobs();
 
 			// Process any events in the event queue
-			EventManager::Dispatch();
+			sInstance->mState.event_runtime.Dispatch();
 
 			// Run update and render method for each frame
 			if ( !sInstance->mState.minimised )
@@ -138,13 +141,13 @@ namespace slc {
 		if ( !sInstance )
 			return;
 
-		if ( !sInstance->mState.blockExit )
+		if ( !sInstance->mState.block_exit )
 			sInstance->mState.running = false;
 	}
 
 	void Application::BlockEsc( bool block )
 	{
-		sInstance->mState.blockExit = block;
+		sInstance->mState.block_exit = block;
 	}
 
 	void Application::BlockEvents( bool block )

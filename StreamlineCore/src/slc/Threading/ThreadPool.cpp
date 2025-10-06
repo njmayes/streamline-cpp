@@ -4,7 +4,7 @@ namespace slc {
 
 	ThreadPool::ThreadPool( size_t num_threads )
 	{
-		auto threadQueuer = [ this ] {
+		auto thread_queuer = [ this ] {
 			while ( true )
 			{
 				std::move_only_function< void() > task;
@@ -30,11 +30,16 @@ namespace slc {
 
 		for ( size_t i = 0; i < num_threads; ++i )
 		{
-			mThreads.emplace_back( threadQueuer );
+			mThreads.emplace_back( thread_queuer );
 		}
 	}
 
 	ThreadPool::~ThreadPool()
+	{
+		Shutdown();
+	}
+
+	void ThreadPool::Shutdown()
 	{
 		{
 			std::unique_lock< std::mutex > lock( mQueueMutex );

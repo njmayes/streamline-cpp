@@ -42,33 +42,28 @@ namespace slc {
 			mHead = other.mHead;
 		}
 
-		std::size_t MaxSize() const override
+		bool CanAllocate( std::size_t size ) const override
 		{
-			return mMaxSize;
+			return ( mHead + size ) >= ( mMemBlock + mMaxSize );
 		}
+
 		void ForceReallocate() override
 		{
 			Reallocate();
 		}
 
-		void Reset()
+		void* Alloc( size_t size ) override
 		{
-			mHead = mMemBlock;
-		}
-
-	protected:
-		void* AllocImpl( size_t size ) override
-		{
-			if ( size != sizeof( T ) )
+			if ( size % sizeof( T ) != 0 )
 				return nullptr;
 
-			if ( mHead == ( mMemBlock + mMaxSize ) )
+			if ( not CanAllocate( size ) )
 				Reallocate();
 
-			return mHead++;
+			return mHead += size;
 		}
 
-		void FreeImpl( void* = nullptr ) override
+		void Free( void* = nullptr ) override
 		{
 			mHead = mMemBlock;
 		}
