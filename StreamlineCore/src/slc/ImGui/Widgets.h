@@ -29,11 +29,11 @@ namespace slc {
 		static void BeginDockspace();
 		static void EndDockspace();
 
-		static bool BeginWindow( std::string_view heading, bool* open = nullptr, ImGuiWindowFlags flags = 0 );
+		static bool BeginWindow( std::string_view heading, ImGuiWindowFlags flags = 0, bool* open = nullptr );
 		static void EndWindow();
 
 		template < typename T >
-			requires VecSized< ImVec2, T > && requires( T a ) { T( 0, 0 ); }
+			requires VecSized< ImVec2, T > and requires( T a ) { T( 0, 0 ); }
 		static void BeginChild( std::string_view strID, const T& size = T( 0, 0 ), bool border = false )
 		{
 			BeginChildInternal( strID, Utils::ToImVec< ImVec2 >( size ), border );

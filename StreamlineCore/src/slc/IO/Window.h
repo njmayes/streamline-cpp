@@ -7,52 +7,65 @@ struct GLFWwindow;
 
 namespace slc {
 
-    class Event; 
+	class Event;
 
 	struct Resolution
 	{
 		unsigned width, height;
 
-		std::string ToString() const { return std::format("{}x{}", width, height); }
+		std::string ToString() const
+		{
+			return std::format( "{}x{}", width, height );
+		}
 	};
 
-	struct WindowProperties {
+	struct WindowProperties
+	{
 		std::string title;
 		unsigned width;
 		unsigned height;
 		bool fullscreen;
 
-		WindowProperties(std::string_view t = "Labyrinth Engine",
-			const Resolution& r = { 1600, 900 },
-			bool f = false)
-			: title(t), width(r.width), height(r.height), fullscreen(f) {}
+		WindowProperties( std::string_view t = "Labyrinth Engine", const Resolution& r = { 1600, 900 }, bool f = false )
+			: title( t ), width( r.width ), height( r.height ), fullscreen( f )
+		{}
 	};
 
 	class Window
 	{
 	public:
-		Window(const WindowProperties& props);
+		Window( const WindowProperties& props = {} );
 		virtual ~Window();
 
 		void OnUpdate();
 
-		unsigned GetWidth() const { return mData.width; }
-		unsigned GetHeight() const { return mData.height; }
+		unsigned GetWidth() const
+		{
+			return mData.width;
+		}
+		unsigned GetHeight() const
+		{
+			return mData.height;
+		}
 
-		Vec2f GetSize() const { return { mData.width, mData.height }; }
+		Vec2f GetSize() const
+		{
+			return { mData.width, mData.height };
+		}
 
-		void SetTitle(std::string_view title);
+		void SetTitle( std::string_view title );
 
-		//Attributes
-		void SetVSync(bool enabled);
+		// Attributes
+		void SetVSync( bool enabled );
 		bool IsVSync() const;
 
-		GLFWwindow* GetNativeWindow() const { return mWindow; }
-
-		static Box<Window> Create(const WindowProperties& props = WindowProperties());
+		GLFWwindow* GetNativeWindow() const
+		{
+			return mWindow;
+		}
 
 	private:
-		void Init(const WindowProperties& props);
+		void Init( const WindowProperties& props );
 		void Shutdown();
 
 	private:
@@ -68,4 +81,4 @@ namespace slc {
 		WindowData mData;
 	};
 
-}
+} // namespace slc

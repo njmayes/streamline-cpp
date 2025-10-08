@@ -70,13 +70,13 @@ namespace slc {
 
 	void EventRuntime::RegisterListener( IEventListener* listener )
 	{
-		for ( auto runtime : sRegistry.runtimes )
-			runtime->mState.new_listeners.push_back( listener );
+		std::scoped_lock lk( mState.queue_lock );
+		mState.new_listeners.push_back( listener );
 	}
 
 	void EventRuntime::DeregisterListener( IEventListener* listener )
 	{
-		for ( auto runtime : sRegistry.runtimes )
-			runtime->mState.old_listeners.push_back( listener );
+		std::scoped_lock lk( mState.queue_lock );
+		mState.old_listeners.push_back( listener );
 	}
 } // namespace slc

@@ -17,6 +17,12 @@ namespace slc {
 		friend struct EventConcept;
 	};
 
+#define SLC_EVENT_DATA_TYPE( type )             \
+	static ::slc::EventTypeFlag GetStaticType() \
+	{                                           \
+		return EventType::type;                 \
+	}
+
 	/// <summary>
 	/// Event types must derive from EventBase and implement a static function
 	/// that returns the event's type. Use the SLC_EVENT_DATA_TYPE(type) macro
@@ -75,6 +81,7 @@ namespace slc {
 	struct EventModel final : public EventConcept
 	{
 		template < typename... Args >
+			requires std::constructible_from< T, Args... >
 		EventModel( Args&&... args )
 			: EventConcept( &object ), object( std::forward< Args >( args )... )
 		{

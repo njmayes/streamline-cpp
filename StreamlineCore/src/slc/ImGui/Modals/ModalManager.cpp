@@ -20,7 +20,7 @@ namespace slc {
 
 			Utils::SetNextWindowSize( modal_data.init_data.size );
 			Utils::SetNextWindowPos( Utils::GetMainWindowCentre< Vec2f >(), Vec2f{ 0.5f, 0.5f } );
-			if ( Widgets::BeginWindow( modal_data.init_data.heading, &modal_data.open, ImGuiWindowFlags_NoDocking ) )
+			if ( Widgets::BeginWindow( modal_data.init_data.heading, ImGuiWindowFlags_NoDocking, &modal_data.open ) )
 			{
 				Widgets::BeginChild( "ModalBody", Vec2f{ 0, -modal_data.init_data.button_size.y - 5.0f } );
 				slc::Utils::SetWindowFontScale( modal_data.init_data.font_scale );

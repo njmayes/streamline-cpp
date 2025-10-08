@@ -148,7 +148,7 @@ slc::Application* NetServerTest( int argc, char* argv[] )
 
 	auto spec = slc::MakeBox< slc::ApplicationSpecification >();
 	spec->headless = true;
-	spec->workingDir = "C:/Users/NMayes/Desktop/Reference/streamline-cpp/TestApp";
+	spec->working_dir = "C:/Users/NMayes/Desktop/Reference/streamline-cpp/TestApp";
 
 	slc::net::ServerContextOptions opts{};
 	opts.num_threads = 5;
@@ -174,7 +174,7 @@ slc::Application* NetClientTest( int argc, char* argv[] )
 	}
 
 	auto spec = slc::MakeBox< slc::ApplicationSpecification >();
-	spec->workingDir = "C:/Users/NMayes/Desktop/Reference/streamline-cpp/TestApp";
+	spec->working_dir = "C:/Users/NMayes/Desktop/Reference/streamline-cpp/TestApp";
 
 	slc::net::ClientContextOptions opts{};
 

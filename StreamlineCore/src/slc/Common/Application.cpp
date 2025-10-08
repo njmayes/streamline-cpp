@@ -15,25 +15,27 @@ namespace slc {
 		}
 		sInstance = this;
 
-		// Manually call register again as there was no runtime instance to register with in IEventListener constructor as runtime was initialised after.
-		EventRuntime::RegisterListener( this );
+		// Manually call RegisterListener for system event runtime as Application is not created via CreateListener
+		mState.event_runtime.RegisterListener( this );
 
-		if ( !mSpecification->workingDir.empty() )
-			std::filesystem::current_path( mSpecification->workingDir );
+		if ( !mSpecification->working_dir.empty() )
+			std::filesystem::current_path( mSpecification->working_dir );
 
 		if ( mSpecification->headless )
 			return;
 
-		mWindow = Window::Create( WindowProperties( mSpecification->name, mSpecification->resolution, mSpecification->fullscreen ) );
+		auto window_props = WindowProperties( mSpecification->name, mSpecification->resolution, mSpecification->fullscreen );
+		mWindow = MakeBox< Window >( window_props );
 
-		mImGuiController = ImGuiController::Create( mWindow->GetNativeWindow() );
+		auto imgui_controller_ptr = mState.event_runtime.CreateListener< ImGuiController >( mWindow->GetNativeWindow() );
+		mImGuiController = Box< ImGuiController >( imgui_controller_ptr ); // Wrap in Box for automatic memory management
 
 		RegisterSystem< Renderer >();
 	}
 
 	Application::~Application()
 	{
-		for ( ApplicationLayer* layer : mLayerStack )
+		for ( auto& layer : mLayerStack )
 		{
 			layer->OnDetach();
 			delete layer;
@@ -106,12 +108,12 @@ namespace slc {
 			// Run update and render method for each frame
 			if ( !sInstance->mState.minimised )
 			{
-				for ( auto* layer : sInstance->mLayerStack )
+				for ( auto& layer : sInstance->mLayerStack )
 					layer->OnUpdate( timestep );
 
 				if ( not sInstance->mSpecification->headless )
 				{
-					for ( auto* layer : sInstance->mLayerStack )
+					for ( auto& layer : sInstance->mLayerStack )
 						layer->OnRender();
 				}
 			}
@@ -122,7 +124,7 @@ namespace slc {
 				sInstance->mImGuiController->StartFrame();
 
 				// Render each ImGui controls in each layer
-				for ( ApplicationLayer* layer : sInstance->mLayerStack )
+				for ( auto& layer : sInstance->mLayerStack )
 					layer->OnOverlayRender();
 
 				// End ImGui rendering

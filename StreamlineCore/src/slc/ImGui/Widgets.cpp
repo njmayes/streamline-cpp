@@ -97,7 +97,7 @@ namespace slc {
 		ImGui::End();
 	}
 
-	bool Widgets::BeginWindow( std::string_view heading, bool* open, ImGuiWindowFlags flags )
+	bool Widgets::BeginWindow( std::string_view heading, ImGuiWindowFlags flags, bool* open )
 	{
 		return ImGui::Begin( heading.data(), open, flags );
 	}

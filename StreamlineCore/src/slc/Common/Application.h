@@ -23,9 +23,6 @@ extern slc::Application* CreateApplication( int argc, char** argv );
 
 namespace slc {
 
-	template < typename T, typename... Args >
-	concept AppSystem = requires( Args&&... args ) { T::Init(std::forward<Args>(args)...); T::Shutdown(); };
-
 	class ApplicationLayer : public IEventListener
 	{
 	public:
@@ -38,35 +35,44 @@ namespace slc {
 		virtual void OnOverlayRender() = 0;
 	};
 
-	template < typename T >
-	concept IsLayer = std::derived_from< T, ApplicationLayer >;
+	namespace detail {
 
-	using LayerStack = std::vector< ApplicationLayer* >;
-	using ApplicationSystems = std::vector< Action<> >;
+		template < typename T >
+		concept IsLayer = DerivedFromOnly< T, ApplicationLayer >;
+
+		using LayerStack = std::vector< ApplicationLayer* >;
+
+
+		template < typename T, typename... Args >
+		concept AppSystem = requires( Args&&... args ) { T::Init(std::forward<Args>(args)...); T::Shutdown(); };
+
+		using AppSystemCleanups = std::vector< Action<> >;
+
+
+		struct ApplicationState
+		{
+			bool running = true;
+			bool minimised = false;
+			bool block_exit = false;
+			float last_frame_time = 0.0f;
+
+			EventRuntime event_runtime;
+
+			std::mutex main_thread_queue_mutex;
+			std::vector< Action<> > main_thread_queue;
+		};
+	} // namespace detail
 
 	struct ApplicationSpecification
 	{
 		std::string name = "Streamline Application";
 		Resolution resolution = { 1600, 900 };
-		std::filesystem::path workingDir;
+		std::filesystem::path working_dir;
 		bool fullscreen = false;
 		bool headless = false;
 
 		virtual ~ApplicationSpecification()
 		{}
-	};
-
-	struct ApplicationState
-	{
-		bool running = true;
-		bool minimised = false;
-		bool block_exit = false;
-		float last_frame_time = 0.0f;
-
-		EventRuntime event_runtime;
-
-		std::mutex main_thread_queue_mutex;
-		std::vector< Action<> > main_thread_queue;
 	};
 
 	class Application : public IEventListener
@@ -85,21 +91,16 @@ namespace slc {
 			return *mWindow;
 		}
 
-		template < IsLayer T, typename... Args >
+		template < detail::IsLayer T, typename... Args >
 		void PushLayer( Args&&... args )
 		{
-			T* layer = new T( std::forward< Args >( args )... );
-			PushLayer( layer );
-		}
-
-		void PushLayer( IsLayer auto* layer )
-		{
+			auto layer = mState.event_runtime.CreateListener< T >( std::forward< Args >( args )... );
 			mLayerStack.emplace_back( layer );
 			layer->OnAttach();
 		}
 
 		template < typename T, typename... Args >
-			requires AppSystem< T, Args... >
+			requires detail::AppSystem< T, Args... >
 		void RegisterSystem( Args&&... args )
 		{
 			T::Init( std::forward< Args >( args )... );
@@ -168,6 +169,15 @@ namespace slc {
 			return static_cast< float >( sInstance->mWindow->GetHeight() );
 		}
 
+		template < IsEventListener T, typename... Args >
+		static Ref< T > CreateEventListener( Args&&... args )
+		{
+			if ( not sInstance )
+				return nullptr;
+
+			return sInstance->mState.event_runtime.CreateListener< T >( std::forward< Args >( args )... );
+		}
+
 		template < IsEvent TEvent, typename... TArgs >
 		static void PostEvent( TArgs&&... args )
 		{
@@ -208,11 +218,11 @@ namespace slc {
 		Box< ApplicationSpecification > mSpecification;
 
 	private:
-		ApplicationState mState;
+		detail::ApplicationState mState;
 		Box< Window > mWindow;
 		Box< ImGuiController > mImGuiController;
-		LayerStack mLayerStack;
-		ApplicationSystems mAppSystems;
+		detail::LayerStack mLayerStack;
+		detail::AppSystemCleanups mAppSystems;
 
 	private:
 		inline static Application* sInstance = nullptr;

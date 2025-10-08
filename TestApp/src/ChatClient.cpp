@@ -22,7 +22,7 @@ void ChatLayer::OnOverlayRender()
 {
 	using slc::Widgets;
 
-	Widgets::BeginWindow( "Chat Client", {}, ImGuiWindowFlags_NoTitleBar );
+	Widgets::BeginWindow( "Chat Client", ImGuiWindowFlags_NoTitleBar );
 
 	Widgets::BeginChild( "Messages", slc::Vec2f{ 0, -34.f } );
 

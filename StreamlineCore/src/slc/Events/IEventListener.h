@@ -1,20 +1,13 @@
 #pragma once
 
-#include "EventRuntime.h"
+#include "Event.h"
 
 namespace slc {
 
-	class IEventListener
+	class IEventListener : public RefCounted
 	{
 	public:
-		IEventListener()
-		{
-			EventRuntime::RegisterListener( this );
-		}
-		virtual ~IEventListener()
-		{
-			EventRuntime::DeregisterListener( this );
-		}
+		virtual ~IEventListener();
 
 		virtual constexpr EventTypeFlag GetListeningEvents() const = 0;
 		virtual void OnEvent( Event& e ) = 0;
@@ -25,13 +18,19 @@ namespace slc {
 
 		bool Accept( Event& event ) const
 		{
-			//   Not already handled				Valid Event Type				 Satisfies optional extra condition
+			//   Not already handled			  Correct Event Type				 Satisfies optional extra condition
 			return !event.IsHandled() && ( GetListeningEvents() & event.GetType() ) && mAcceptCondition();
 		}
 
 	private:
 		Predicate<> mAcceptCondition = []() { return true; };
+
+		friend class EventRuntime;
+		EventRuntime* mRuntime = nullptr;
 	};
+
+	template < typename T >
+	concept IsEventListener = DerivedFromOnly< T, IEventListener >;
 
 #define SLC_MAKE_EVENT_FLAG( event ) ::slc::EventType::event
 

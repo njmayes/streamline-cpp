@@ -1,6 +1,7 @@
 #pragma once
 
 #include "EventQueue.h"
+#include "IEventListener.h"
 
 #include "ApplicationEvent.h"
 #include "KeyEvent.h"
@@ -8,8 +9,6 @@
 #include "NetworkEvent.h"
 
 namespace slc {
-
-	class IEventListener;
 
 	/// <summary>
 	/// The interface by which events are queued and handled. Use the Post(...) method to submit an event
@@ -35,32 +34,15 @@ namespace slc {
 			std::vector< IEventListener* > old_listeners;
 		};
 
-		struct EventRuntimeRegistry
+		template < IsEventListener T, typename... Args >
+			requires std::constructible_from< T, Args... >
+		T* CreateListener( Args&&... args )
 		{
-			std::mutex mutex;
-			std::vector< EventRuntime* > runtimes;
-		};
-
-		EventRuntime()
-		{
-			std::scoped_lock lk( sRegistry.mutex );
-			sRegistry.runtimes.push_back( this );
+			auto listener = new T( std::forward< Args >( args )... );
+			listener->mRuntime = this;
+			RegisterListener( listener );
+			return listener;
 		}
-
-		~EventRuntime()
-		{
-			std::scoped_lock lk( sRegistry.mutex );
-			std::erase( sRegistry.runtimes, this );
-		}
-
-		EventRuntime( const EventRuntime& ) = delete;
-		EventRuntime& operator=( const EventRuntime& ) = delete;
-
-		EventRuntime( EventRuntime&& ) = default;
-		EventRuntime& operator=( EventRuntime&& ) = default;
-
-		static void RegisterListener( IEventListener* listener );
-		static void DeregisterListener( IEventListener* listener );
 
 		template < IsEvent TEvent, typename... TArgs >
 		void Post( TArgs&&... args )
@@ -85,9 +67,13 @@ namespace slc {
 		std::vector< Event > MergeThreadQueues();
 		void CleanupThreadQueues();
 
+		void RegisterListener( IEventListener* listener );
+		void DeregisterListener( IEventListener* listener );
+
+		friend class IEventListener;
+		friend class Application;
+
 	private:
 		EventRuntimeState mState{};
-
-		inline static EventRuntimeRegistry sRegistry;
 	};
 } // namespace slc

@@ -5,7 +5,7 @@
 
 namespace slc {
 
-	class IPanel : public IEventListener, public RefCounted
+	class IPanel : public IEventListener
 	{
 	public:
 		virtual ~IPanel() = default;

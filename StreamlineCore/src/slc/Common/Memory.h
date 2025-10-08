@@ -254,12 +254,16 @@ namespace slc {
 	public:
 		WeakRef() = default;
 
-		WeakRef( Ref< T > ref )
+		template< typename U = T >
+			requires std::derived_from< U, T >
+		WeakRef( Ref< U > ref )
 		{
 			mData = ref.Data();
 		}
 
-		WeakRef( T* instance )
+		template < typename U = T >
+			requires std::derived_from< U, T >
+		WeakRef( U* instance )
 		{
 			mData = instance;
 		}
@@ -293,7 +297,7 @@ namespace slc {
 
 		Ref< T > Lock() const
 		{
-			return Ref< T >( mData );
+			return Valid() ? Ref< T >( mData ) : nullptr;
 		}
 
 	private:

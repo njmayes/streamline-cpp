@@ -7,13 +7,15 @@
 namespace slc {
 
 	/// <summary>
-	/// Allocates and constructs event models for any given event type.
+	/// Allocates and constructs event models for any given event types. It will check that there is space in the allocator before allocation,
+	/// and use the default allocator is not. This is because rellocation will invalidate already existing event models.
+	/// When the events are ready to be cleaned up (i.e. after per-frame dispatch), the allocator will expand if it was filled up that cycle.
 	/// </summary>
 	class ModelAllocator
 	{
 	private:
 		using TypeName = std::string_view;
-		SCONSTEXPR size_t DefaultModelChunkSize = 4;
+		SCONSTEXPR size_t DefaultModelChunkSize = 16;
 
 		struct ModelState
 		{
@@ -21,42 +23,8 @@ namespace slc {
 			std::vector< EventConcept* > overflow;
 		};
 
-		using InternalAllocatorElement = std::pair< TypeName, ModelState >;
-		using InternalAllocatorMap = std::map< TypeName, ModelState >;
-
-		template < typename T >
-		static InternalAllocatorElement BuildEventAllocator()
-		{
-			return std::make_pair( TypeTraits< T >::Name, ModelState{ MakeBox< LinearAllocator< EventModel< T > > >( DefaultModelChunkSize ), {} } );
-		}
-
-		template < typename... Args >
-		static std::array< InternalAllocatorElement, sizeof...( Args ) > BuildAllEventAllocators( TypeList< Args... > default_types )
-		{
-			return { { BuildEventAllocator< Args >()... } };
-		}
-
-		template < typename... Args >
-		inline static InternalAllocatorMap ConstructAllocatorMap( TypeList< Args... > default_types )
-		{
-			InternalAllocatorMap result;
-			for ( auto&& [ type, allocator ] : BuildAllEventAllocators( default_types ) )
-			{
-				result.emplace( type, std::move( allocator ) );
-			}
-			return result;
-		}
-
 	public:
-		ModelAllocator()
-		{
-		}
-
-		template < typename... Args >
-		ModelAllocator( TypeList< Args... > default_types )
-			: mModelAllocators( ConstructAllocatorMap( default_types ) )
-		{
-		}
+		ModelAllocator() = default;
 
 		~ModelAllocator()
 		{
@@ -151,6 +119,7 @@ namespace slc {
 		}
 
 	private:
+		using InternalAllocatorMap = std::map< TypeName, ModelState >;
 		InternalAllocatorMap mModelAllocators;
 	};
 } // namespace slc
