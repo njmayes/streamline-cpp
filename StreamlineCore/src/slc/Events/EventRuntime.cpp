@@ -16,8 +16,7 @@ namespace slc {
 		std::erase_if( mState.listeners, [ & ]( const IEventListener* listener ) { return std::ranges::contains( mState.old_listeners, listener ); } );
 		mState.old_listeners.clear();
 
-		auto dispatching = mState.dispatching.test_and_set();
-		ASSERT( not dispatching, "Somehow we are dispatching from two places at once." );
+		mState.dispatching.Lock();
 
 		auto events = MergeThreadQueues();
 
@@ -30,9 +29,6 @@ namespace slc {
 
 		// Clear down event queue and reset event model allocators.
 		CleanupThreadQueues();
-
-		mState.dispatching.clear();
-		mState.dispatching.notify_all();
 	}
 
 	Box< EventQueue > EventRuntime::MakeThreadEventQueue()
@@ -52,8 +48,12 @@ namespace slc {
 		std::unique_lock lock( mState.queue_lock );
 		for ( auto queue : mState.queue_registry )
 		{
+			auto lock = queue->Lock();
+
 			for ( auto e : queue->events )
 				all_events.push_back( e );
+
+			queue->events.clear();
 		}
 
 		return all_events;
@@ -64,7 +64,8 @@ namespace slc {
 		std::unique_lock lock( mState.queue_lock );
 		for ( auto queue : mState.queue_registry )
 		{
-			queue->events.clear();
+			auto lock = queue->Lock();
+			queue->allocator.Flush();
 		}
 	}
 

@@ -44,7 +44,7 @@ namespace slc {
 
 		bool CanAllocate( std::size_t size ) const override
 		{
-			return ( mHead + size ) >= ( mMemBlock + mMaxSize );
+			return ( mHead + size ) < ( mMemBlock + mMaxSize );
 		}
 
 		void ForceReallocate() override
@@ -57,10 +57,13 @@ namespace slc {
 			if ( size % sizeof( T ) != 0 )
 				return nullptr;
 
-			if ( not CanAllocate( size ) )
+			auto count = size / sizeof( T );
+			if ( not CanAllocate( count ) )
 				Reallocate();
 
-			return mHead += size;
+			auto result = mHead;
+			mHead += count;
+			return result;
 		}
 
 		void Free( void* = nullptr ) override

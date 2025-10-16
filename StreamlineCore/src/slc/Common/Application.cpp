@@ -15,8 +15,9 @@ namespace slc {
 		}
 		sInstance = this;
 
-		// Manually call RegisterListener for system event runtime as Application is not created via CreateListener
-		mState.event_runtime.RegisterListener( this );
+		mEventRuntime = MakeBox< EventRuntime >();
+		// Manually call RegisterListener for Application it is not created via EventRuntime::CreateListener
+		mEventRuntime->RegisterListener( this );
 
 		if ( !mSpecification->working_dir.empty() )
 			std::filesystem::current_path( mSpecification->working_dir );
@@ -27,8 +28,7 @@ namespace slc {
 		auto window_props = WindowProperties( mSpecification->name, mSpecification->resolution, mSpecification->fullscreen );
 		mWindow = MakeBox< Window >( window_props );
 
-		auto imgui_controller_ptr = mState.event_runtime.CreateListener< ImGuiController >( mWindow->GetNativeWindow() );
-		mImGuiController = Box< ImGuiController >( imgui_controller_ptr ); // Wrap in Box for automatic memory management
+		mImGuiController = mEventRuntime->CreateListener< ImGuiController >( mWindow->GetNativeWindow() );
 
 		RegisterSystem< Renderer >();
 	}
@@ -38,10 +38,11 @@ namespace slc {
 		for ( auto& layer : mLayerStack )
 		{
 			layer->OnDetach();
-			delete layer;
+			layer.Reset();
 		}
 
-		mImGuiController.reset();
+		mImGuiController.Reset();
+		mEventRuntime.reset();
 		mWindow.reset();
 
 		for ( const auto& shutdownTask : mAppSystems | std::views::reverse )
@@ -103,7 +104,7 @@ namespace slc {
 			sInstance->ExecuteQueuedJobs();
 
 			// Process any events in the event queue
-			sInstance->mState.event_runtime.Dispatch();
+			sInstance->mEventRuntime->Dispatch();
 
 			// Run update and render method for each frame
 			if ( !sInstance->mState.minimised )

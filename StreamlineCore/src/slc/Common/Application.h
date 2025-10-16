@@ -40,7 +40,7 @@ namespace slc {
 		template < typename T >
 		concept IsLayer = DerivedFromOnly< T, ApplicationLayer >;
 
-		using LayerStack = std::vector< ApplicationLayer* >;
+		using LayerStack = std::vector< Ref< ApplicationLayer > >;
 
 
 		template < typename T, typename... Args >
@@ -55,8 +55,6 @@ namespace slc {
 			bool minimised = false;
 			bool block_exit = false;
 			float last_frame_time = 0.0f;
-
-			EventRuntime event_runtime;
 
 			std::mutex main_thread_queue_mutex;
 			std::vector< Action<> > main_thread_queue;
@@ -94,7 +92,7 @@ namespace slc {
 		template < detail::IsLayer T, typename... Args >
 		void PushLayer( Args&&... args )
 		{
-			auto layer = mState.event_runtime.CreateListener< T >( std::forward< Args >( args )... );
+			auto layer = mEventRuntime->CreateListener< T >( std::forward< Args >( args )... );
 			mLayerStack.emplace_back( layer );
 			layer->OnAttach();
 		}
@@ -175,7 +173,7 @@ namespace slc {
 			if ( not sInstance )
 				return nullptr;
 
-			return sInstance->mState.event_runtime.CreateListener< T >( std::forward< Args >( args )... );
+			return sInstance->mEventRuntime->CreateListener< T >( std::forward< Args >( args )... );
 		}
 
 		template < IsEvent TEvent, typename... TArgs >
@@ -184,7 +182,7 @@ namespace slc {
 			if ( not sInstance )
 				return;
 
-			sInstance->mState.event_runtime.Post< TEvent >( std::forward< TArgs >( args )... );
+			sInstance->mEventRuntime->Post< TEvent >( std::forward< TArgs >( args )... );
 		}
 
 		template < IsModal T, typename... Args >
@@ -220,9 +218,11 @@ namespace slc {
 	private:
 		detail::ApplicationState mState;
 		Box< Window > mWindow;
-		Box< ImGuiController > mImGuiController;
+		Ref< ImGuiController > mImGuiController;
 		detail::LayerStack mLayerStack;
 		detail::AppSystemCleanups mAppSystems;
+
+		Box< EventRuntime > mEventRuntime;
 
 	private:
 		inline static Application* sInstance = nullptr;

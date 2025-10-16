@@ -35,7 +35,7 @@ namespace slc::net {
 						ssl_ctx.load_verify_file( *client_options.cert_file );
 					else
 						ssl_ctx.set_default_verify_paths();
-					ssl_ctx.set_verify_mode( asio::ssl::verify_none );
+					ssl_ctx.set_verify_mode( asio::ssl::verify_peer );
 					break;
 				}
 				case InstanceType::Server:

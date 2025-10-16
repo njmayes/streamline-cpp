@@ -88,6 +88,8 @@ namespace slc {
 		{
 			for ( auto& [ type, model ] : mModelAllocators )
 			{
+				model.allocator->Free();
+
 				// The allocator completely filled up during this frame. Reallocate larger to compensate.
 				if ( not model.overflow.empty() )
 				{
@@ -98,6 +100,8 @@ namespace slc {
 				{
 					delete ptr;
 				}
+
+				model.overflow.clear();
 			}
 		}
 

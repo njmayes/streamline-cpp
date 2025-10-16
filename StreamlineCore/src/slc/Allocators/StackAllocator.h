@@ -44,7 +44,7 @@ namespace slc {
 
 		bool CanAllocate() const override
 		{
-			return ( mHead + HeaderSize + sizeof( T ) ) >= mMemBlock + mMaxSize;
+			return ( mHead + HeaderSize + sizeof( T ) ) < mMemBlock + mMaxSize;
 		}
 
 		void ForceReallocate() override
