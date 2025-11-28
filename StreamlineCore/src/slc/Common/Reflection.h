@@ -5,37 +5,53 @@
 #include <functional>
 #include <variant>
 #include <string_view>
+#include <source_location>
 
-#if defined(__GNUC__) || (defined(__MWERKS__) && (__MWERKS__ >= 0x3000)) || (defined(__ICC) && (__ICC >= 600)) || defined(__ghs__)
-#    define SLC_FUNC_SIGNATURE __PRETTY_FUNCTION__
-#    define SLC_FUNC_SIGNATURE_PREFIX '='
-#    define SLC_FUNC_SIGNATURE_SUFFIX ']'
-#elif defined(__DMC__) && (__DMC__ >= 0x810)
-#    define SLC_FUNC_SIGNATURE __PRETTY_FUNCTION__
-#    define SLC_FUNC_SIGNATURE_PREFIX '='
-#    define SLC_FUNC_SIGNATURE_SUFFIX ']'
-#elif (defined(__FUNCSIG__) || (_MSC_VER))
-#    define SLC_FUNC_SIGNATURE __FUNCSIG__
-#    define SLC_FUNC_SIGNATURE_PREFIX '<'
-#    define SLC_FUNC_SIGNATURE_SUFFIX '>'
-#else
-#   error SLC_FUNC_SIGNATURE "SLC_FUNC_SIGNATURE unknown!"
-#endif
-
-#define SLC_FUNC_SIG_STRING std::string_view { std::source_location::current().function_name() }
+#define SLC_FUNC_SIG_STRING                             \
+	std::string_view                                    \
+	{                                                   \
+		std::source_location::current().function_name() \
+	}
 
 namespace slc {
 
 	namespace detail {
 
-#if defined SLC_FUNC_SIGNATURE_PREFIX
+		static consteval std::string_view Extract( std::string_view sv, std::string_view prefix, std::string_view suffix )
+		{
+			auto start = sv.find( prefix );
+
+			if ( start == std::string_view::npos )
+				start = 0;
+			else
+				start += prefix.size();
+
+			auto end = sv.rfind( suffix );
+			if ( suffix.empty() || end == std::string_view::npos || end <= start )
+				end = sv.size();
+
+			return sv.substr( start, end - start );
+		}
+
 		template < typename Type >
 		static consteval auto GetLongName() noexcept
 		{
-			std::string_view pretty_function{ SLC_FUNC_SIGNATURE };
-			auto first = pretty_function.find_first_not_of( ' ', pretty_function.find_first_of( SLC_FUNC_SIGNATURE_PREFIX ) + 1 );
-			auto value = pretty_function.substr( first, pretty_function.find_last_of( SLC_FUNC_SIGNATURE_SUFFIX ) - first );
-			return value;
+#if defined( __clang__ ) || defined( __GNUC__ )
+			// Example GCC/Clang __PRETTY_FUNCTION__:
+			// "consteval std::string_view detail::GetLongName() [with T = Foo]"
+			constexpr std::string_view prefix = "T = ";
+			constexpr std::string_view suffix = "]";
+			return Extract( SLC_FUNC_SIG_STRING, prefix, suffix );
+
+#elif defined( _MSC_VER )
+			// Example MSVC __FUNCSIG__:
+			// "consteval std::string_view __cdecl detail::GetLongName<struct Foo>(void)"
+			constexpr std::string_view prefix1 = "GetLongName<";
+			constexpr std::string_view prefix2 = "class ";
+			constexpr std::string_view prefix3 = "struct ";
+			constexpr std::string_view suffix = ">(void)";
+			return Extract( Extract( Extract( SLC_FUNC_SIG_STRING, prefix1, suffix ), prefix2, {} ), prefix3, {} );
+#endif
 		}
 
 		template < typename Type >
@@ -49,12 +65,7 @@ namespace slc {
 				first++;
 			return long_name.substr( first, long_name.length() - first );
 		}
-#endif
 	} // namespace detail
-
-
-
-
 
 	/*
 		Type Traits for inspecting a given type
@@ -63,10 +74,10 @@ namespace slc {
 	template < typename T >
 	struct TypeTraits
 	{
-#if defined SLC_FUNC_SIGNATURE_PREFIX
-		static constexpr auto Name = detail::GetLongName< T >();
-		static constexpr auto BaseName = detail::GetLongName< std::remove_cvref_t< T > >();
-#endif
+		static constexpr auto QualifiedName = detail::GetLongName< T >();
+		static constexpr auto Name = detail::GetName< T >();
+		static constexpr auto BaseName = detail::GetName< std::remove_cvref_t< T > >();
+
 		static constexpr bool IsObject = std::is_class_v< T >;
 		static constexpr bool IsReference = std::is_reference_v< T >;
 		static constexpr bool IsLValueReference = std::is_lvalue_reference_v< T >;
@@ -101,7 +112,7 @@ namespace slc {
 	} // namespace detail
 
 
-	/* 
+	/*
 		A type list for inspecting a list of types.
 	*/
 
@@ -126,7 +137,6 @@ namespace slc {
 		template < size_t I >
 		using Traits = TypeTraits< typename std::tuple_element< I, TupleType >::type >;
 	};
-
 
 
 	/*
@@ -196,8 +206,6 @@ namespace slc {
 	concept Hash =
 		std::regular_invocable< const H&, const Key& > &&
 		std::convertible_to< std::invoke_result_t< const H&, const Key& >, std::size_t >;
-
-
 
 
 	/*
