@@ -2,7 +2,7 @@
 
 #include <SL/Core/Collections/StaticMap.h>
 
-namespace slc {
+namespace sl {
 
 	template < typename T, Numeric KeyType = int >
 	struct TableValue
@@ -62,7 +62,7 @@ namespace slc {
 		}
 
 	private:
-		slc::StaticMap< MapValueType, N > mTable;
+		sl::StaticMap< MapValueType, N > mTable;
 	};
 
 	template < typename T, std::size_t N, Numeric KeyType = int >
@@ -70,4 +70,4 @@ namespace slc {
 	{
 		return RangeTable< T, N, KeyType >( items );
 	}
-} // namespace slc
+} // namespace sl

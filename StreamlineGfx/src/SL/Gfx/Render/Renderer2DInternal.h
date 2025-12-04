@@ -10,7 +10,7 @@
 #include "Texture.h"
 #include "UniformBuffer.h"
 
-namespace slc {
+namespace sl {
 
 	struct QuadVertex
 	{
@@ -105,4 +105,4 @@ namespace slc {
 		CameraData camera_matrix;
 		Ref< UniformBuffer > camera_uniform_buffer;
 	};
-} // namespace slc
+} // namespace sl

@@ -5,7 +5,7 @@
 
 #include <ranges>
 
-namespace slc {
+namespace sl {
 
 	void ILogTarget::SetInitialBufferSize( std::size_t size )
 	{
@@ -64,4 +64,4 @@ namespace slc {
 		mBuffer[ mToWrite ] = c;
 		mToWrite++;
 	}
-} // namespace slc
+} // namespace sl

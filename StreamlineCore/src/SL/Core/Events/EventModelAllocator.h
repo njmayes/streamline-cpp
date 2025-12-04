@@ -4,7 +4,7 @@
 
 #include "SL/Core/Allocators/LinearAllocator.h"
 
-namespace slc {
+namespace sl {
 
 	/// <summary>
 	/// Allocates and constructs event models for any given event types. It will check that there is space in the allocator before allocation,
@@ -126,4 +126,4 @@ namespace slc {
 		using InternalAllocatorMap = std::map< TypeName, ModelState >;
 		InternalAllocatorMap mModelAllocators;
 	};
-} // namespace slc
+} // namespace sl

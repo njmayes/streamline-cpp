@@ -7,16 +7,16 @@
 
 namespace {
 
-	static slc::Logger& MakeErrorLogger()
+	static sl::Logger& MakeErrorLogger()
 	{
-		static slc::Logger logger;
-		logger.AddLogTarget< slc::FileLogTarget >( "log_error.log", slc::LogLevel::Error );
+		static sl::Logger logger;
+		logger.AddLogTarget< sl::FileLogTarget >( "log_error.log", sl::LogLevel::Error );
 		return logger;
 	}
 } // namespace
 
 
-namespace slc {
+namespace sl {
 
 	Logger& Logger::GetGlobalLogger()
 	{
@@ -133,7 +133,7 @@ namespace slc {
 		}
 	}
 
-	void slc::Logger::Flush()
+	void sl::Logger::Flush()
 	{
 		SLC_PROFILE_FUNCTION();
 
@@ -220,4 +220,4 @@ namespace slc {
 			std::strftime( mTimestampCache.format_string.data(), mTimestampCache.format_string.size(), "%F %T", &time );
 		}
 	}
-} // namespace slc
+} // namespace sl

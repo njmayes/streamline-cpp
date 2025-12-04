@@ -6,7 +6,7 @@
 
 #include "stb_image.h"
 
-namespace slc {
+namespace sl {
 
 	Texture2D::Texture2D( int width, int height )
 		: mWidth( width ), mHeight( height )
@@ -103,4 +103,4 @@ namespace slc {
 		glGetTextureImage( mRendererID, GL_TEXTURE_2D, mDataFormat, GL_UNSIGNED_BYTE, size, buffer.Data() );
 		return buffer;
 	}
-} // namespace slc
+} // namespace sl

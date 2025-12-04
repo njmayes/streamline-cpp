@@ -9,7 +9,7 @@
 
 #define SLC_FUNC_SIG_STRING std::string_view{ std::source_location::current().function_name() }
 
-namespace slc {
+namespace sl {
 
 	namespace detail {
 
@@ -286,4 +286,4 @@ namespace slc {
 		using ObjectType = O;
 		using PropType = P;
 	};
-} // namespace slc
+} // namespace sl

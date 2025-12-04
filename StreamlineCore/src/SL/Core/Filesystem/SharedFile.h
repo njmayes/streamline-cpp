@@ -2,7 +2,7 @@
 
 #include "SL/Core/Types/Buffer.h"
 
-namespace slc::fs {
+namespace sl::fs {
 
 	class SharedFile
 	{
@@ -54,4 +54,4 @@ namespace slc::fs {
 		struct Impl;
 		Box< Impl > mImpl;
 	};
-} // namespace slc::ipc
+} // namespace sl::ipc

@@ -3,7 +3,7 @@
 #include <SL/Core/Common/Base.h>
 #include <SL/Core/Events/IEventListener.h>
 
-namespace slc {
+namespace sl {
 
 	class IPanel : public IEventListener
 	{

@@ -2,7 +2,7 @@
 
 #include <SL/Core/Common/Base.h>
 
-namespace slc {
+namespace sl {
 
 	namespace detail {
 
@@ -351,4 +351,4 @@ namespace slc {
 	private:
 		Element mData[ N ];
 	};
-} // namespace slc
+} // namespace sl

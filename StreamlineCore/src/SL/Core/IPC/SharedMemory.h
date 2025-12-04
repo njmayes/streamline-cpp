@@ -4,7 +4,7 @@
 
 #include "SharedBuffer.h"
 
-namespace slc::ipc {
+namespace sl::ipc {
 
 	class SharedMemory
 	{
@@ -31,4 +31,4 @@ namespace slc::ipc {
 		struct Impl;
 		Box< Impl > mImpl;
 	};
-} // namespace slc::ipc
+} // namespace sl::ipc

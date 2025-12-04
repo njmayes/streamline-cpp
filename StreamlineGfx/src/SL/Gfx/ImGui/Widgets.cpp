@@ -5,7 +5,7 @@
 #include "imgui.h"
 #include "imgui_internal.h"
 
-namespace slc {
+namespace sl {
 
 	void Widgets::NewLine()
 	{
@@ -377,71 +377,71 @@ namespace slc {
 		ImGui::PopID();
 	}
 
-	void Widgets::Vector3EditInternalRef( std::string_view label, ImVec3& values, float resetVal, float colWidth )
-	{
-		ImGuiIO& io = ImGui::GetIO();
-		auto bold_font = io.Fonts->Fonts[ 0 ];
+	//void Widgets::Vector3EditInternalRef( std::string_view label, ImVec3& values, float resetVal, float colWidth )
+	//{
+	//	ImGuiIO& io = ImGui::GetIO();
+	//	auto bold_font = io.Fonts->Fonts[ 0 ];
 
-		ImGui::PushID( label.data() );
+	//	ImGui::PushID( label.data() );
 
-		ImGui::Columns( 2 );
-		ImGui::SetColumnWidth( 0, colWidth );
-		ImGui::TextUnformatted( label.data() );
-		ImGui::NextColumn();
+	//	ImGui::Columns( 2 );
+	//	ImGui::SetColumnWidth( 0, colWidth );
+	//	ImGui::TextUnformatted( label.data() );
+	//	ImGui::NextColumn();
 
-		ImGui::PushMultiItemsWidths( 3, ImGui::CalcItemWidth() );
-		ImGui::PushStyleVar( ImGuiStyleVar_ItemSpacing, ImVec2{ 0, 0 } );
+	//	ImGui::PushMultiItemsWidths( 3, ImGui::CalcItemWidth() );
+	//	ImGui::PushStyleVar( ImGuiStyleVar_ItemSpacing, ImVec2{ 0, 0 } );
 
-		float line_height = GImGui->Font->LegacySize + GImGui->Style.FramePadding.y * 2.0f;
-		ImVec2 button_size = { line_height + 3.0f, line_height };
+	//	float line_height = GImGui->Font->LegacySize + GImGui->Style.FramePadding.y * 2.0f;
+	//	ImVec2 button_size = { line_height + 3.0f, line_height };
 
-		ImGui::PushStyleColor( ImGuiCol_Button, ImVec4{ 0.8f, 0.1f, 0.15f, 1.0f } );
-		ImGui::PushStyleColor( ImGuiCol_ButtonHovered, ImVec4{ 0.9f, 0.2f, 0.2f, 1.0f } );
-		ImGui::PushStyleColor( ImGuiCol_ButtonActive, ImVec4{ 0.8f, 0.1f, 0.15f, 1.0f } );
-		ImGui::PushFont( bold_font );
-		if ( ImGui::Button( "X", button_size ) )
-			values.x = resetVal;
-		ImGui::PopFont();
-		ImGui::PopStyleColor( 3 );
+	//	ImGui::PushStyleColor( ImGuiCol_Button, ImVec4{ 0.8f, 0.1f, 0.15f, 1.0f } );
+	//	ImGui::PushStyleColor( ImGuiCol_ButtonHovered, ImVec4{ 0.9f, 0.2f, 0.2f, 1.0f } );
+	//	ImGui::PushStyleColor( ImGuiCol_ButtonActive, ImVec4{ 0.8f, 0.1f, 0.15f, 1.0f } );
+	//	ImGui::PushFont( bold_font );
+	//	if ( ImGui::Button( "X", button_size ) )
+	//		values.x = resetVal;
+	//	ImGui::PopFont();
+	//	ImGui::PopStyleColor( 3 );
 
-		ImGui::SameLine();
-		ImGui::DragFloat( "##X", &values.x, 0.1f, 0.0f, 0.0f, "%.2f" );
-		ImGui::PopItemWidth();
-		ImGui::SameLine();
+	//	ImGui::SameLine();
+	//	ImGui::DragFloat( "##X", &values.x, 0.1f, 0.0f, 0.0f, "%.2f" );
+	//	ImGui::PopItemWidth();
+	//	ImGui::SameLine();
 
-		ImGui::PushStyleColor( ImGuiCol_Button, ImVec4{ 0.2f, 0.7f, 0.2f, 1.0f } );
-		ImGui::PushStyleColor( ImGuiCol_ButtonHovered, ImVec4{ 0.3f, 0.8f, 0.3f, 1.0f } );
-		ImGui::PushStyleColor( ImGuiCol_ButtonActive, ImVec4{ 0.2f, 0.7f, 0.2f, 1.0f } );
-		ImGui::PushFont( bold_font );
-		if ( ImGui::Button( "Y", button_size ) )
-			values.y = resetVal;
-		ImGui::PopFont();
-		ImGui::PopStyleColor( 3 );
+	//	ImGui::PushStyleColor( ImGuiCol_Button, ImVec4{ 0.2f, 0.7f, 0.2f, 1.0f } );
+	//	ImGui::PushStyleColor( ImGuiCol_ButtonHovered, ImVec4{ 0.3f, 0.8f, 0.3f, 1.0f } );
+	//	ImGui::PushStyleColor( ImGuiCol_ButtonActive, ImVec4{ 0.2f, 0.7f, 0.2f, 1.0f } );
+	//	ImGui::PushFont( bold_font );
+	//	if ( ImGui::Button( "Y", button_size ) )
+	//		values.y = resetVal;
+	//	ImGui::PopFont();
+	//	ImGui::PopStyleColor( 3 );
 
-		ImGui::SameLine();
-		ImGui::DragFloat( "##Y", &values.y, 0.1f, 0.0f, 0.0f, "%.2f" );
-		ImGui::PopItemWidth();
-		ImGui::SameLine();
+	//	ImGui::SameLine();
+	//	ImGui::DragFloat( "##Y", &values.y, 0.1f, 0.0f, 0.0f, "%.2f" );
+	//	ImGui::PopItemWidth();
+	//	ImGui::SameLine();
 
-		ImGui::PushStyleColor( ImGuiCol_Button, ImVec4{ 0.1f, 0.25f, 0.8f, 1.0f } );
-		ImGui::PushStyleColor( ImGuiCol_ButtonHovered, ImVec4{ 0.2f, 0.35f, 0.9f, 1.0f } );
-		ImGui::PushStyleColor( ImGuiCol_ButtonActive, ImVec4{ 0.1f, 0.25f, 0.8f, 1.0f } );
-		ImGui::PushFont( bold_font );
-		if ( ImGui::Button( "Z", button_size ) )
-			values.z = resetVal;
-		ImGui::PopFont();
-		ImGui::PopStyleColor( 3 );
+	//	ImGui::PushStyleColor( ImGuiCol_Button, ImVec4{ 0.1f, 0.25f, 0.8f, 1.0f } );
+	//	ImGui::PushStyleColor( ImGuiCol_ButtonHovered, ImVec4{ 0.2f, 0.35f, 0.9f, 1.0f } );
+	//	ImGui::PushStyleColor( ImGuiCol_ButtonActive, ImVec4{ 0.1f, 0.25f, 0.8f, 1.0f } );
+	//	ImGui::PushFont( bold_font );
+	//	if ( ImGui::Button( "Z", button_size ) )
+	//		values.z = resetVal;
+	//	ImGui::PopFont();
+	//	ImGui::PopStyleColor( 3 );
 
-		ImGui::SameLine();
-		ImGui::DragFloat( "##Z", &values.z, 0.1f, 0.0f, 0.0f, "%.2f" );
-		ImGui::PopItemWidth();
+	//	ImGui::SameLine();
+	//	ImGui::DragFloat( "##Z", &values.z, 0.1f, 0.0f, 0.0f, "%.2f" );
+	//	ImGui::PopItemWidth();
 
-		ImGui::PopStyleVar();
+	//	ImGui::PopStyleVar();
 
-		ImGui::Columns( 1 );
+	//	ImGui::Columns( 1 );
 
-		ImGui::PopID();
-	}
+	//	ImGui::PopID();
+	//}
 
 	void Widgets::Vector4EditInternalRef( std::string_view label, ImVec4& values, float resetVal, float colWidth )
 	{
@@ -577,73 +577,73 @@ namespace slc {
 		return values;
 	}
 
-	ImVec3 Widgets::Vector3EditInternal( std::string_view label, ImVec3 values, float resetVal, float colWidth )
-	{
-		ImGuiIO& io = ImGui::GetIO();
-		auto bold_font = io.Fonts->Fonts[ 0 ];
+	//ImVec3 Widgets::Vector3EditInternal( std::string_view label, ImVec3 values, float resetVal, float colWidth )
+	//{
+	//	ImGuiIO& io = ImGui::GetIO();
+	//	auto bold_font = io.Fonts->Fonts[ 0 ];
 
-		ImGui::PushID( label.data() );
+	//	ImGui::PushID( label.data() );
 
-		ImGui::Columns( 2 );
-		ImGui::SetColumnWidth( 0, colWidth );
-		ImGui::TextUnformatted( label.data() );
-		ImGui::NextColumn();
+	//	ImGui::Columns( 2 );
+	//	ImGui::SetColumnWidth( 0, colWidth );
+	//	ImGui::TextUnformatted( label.data() );
+	//	ImGui::NextColumn();
 
-		ImGui::PushMultiItemsWidths( 3, ImGui::CalcItemWidth() );
-		ImGui::PushStyleVar( ImGuiStyleVar_ItemSpacing, ImVec2{ 0, 0 } );
+	//	ImGui::PushMultiItemsWidths( 3, ImGui::CalcItemWidth() );
+	//	ImGui::PushStyleVar( ImGuiStyleVar_ItemSpacing, ImVec2{ 0, 0 } );
 
-		float line_height = GImGui->Font->LegacySize + GImGui->Style.FramePadding.y * 2.0f;
-		ImVec2 button_size = { line_height + 3.0f, line_height };
+	//	float line_height = GImGui->Font->LegacySize + GImGui->Style.FramePadding.y * 2.0f;
+	//	ImVec2 button_size = { line_height + 3.0f, line_height };
 
-		ImGui::PushStyleColor( ImGuiCol_Button, ImVec4{ 0.8f, 0.1f, 0.15f, 1.0f } );
-		ImGui::PushStyleColor( ImGuiCol_ButtonHovered, ImVec4{ 0.9f, 0.2f, 0.2f, 1.0f } );
-		ImGui::PushStyleColor( ImGuiCol_ButtonActive, ImVec4{ 0.8f, 0.1f, 0.15f, 1.0f } );
-		ImGui::PushFont( bold_font );
-		if ( ImGui::Button( "X", button_size ) )
-			values.x = resetVal;
-		ImGui::PopFont();
-		ImGui::PopStyleColor( 3 );
+	//	ImGui::PushStyleColor( ImGuiCol_Button, ImVec4{ 0.8f, 0.1f, 0.15f, 1.0f } );
+	//	ImGui::PushStyleColor( ImGuiCol_ButtonHovered, ImVec4{ 0.9f, 0.2f, 0.2f, 1.0f } );
+	//	ImGui::PushStyleColor( ImGuiCol_ButtonActive, ImVec4{ 0.8f, 0.1f, 0.15f, 1.0f } );
+	//	ImGui::PushFont( bold_font );
+	//	if ( ImGui::Button( "X", button_size ) )
+	//		values.x = resetVal;
+	//	ImGui::PopFont();
+	//	ImGui::PopStyleColor( 3 );
 
-		ImGui::SameLine();
-		ImGui::DragFloat( "##X", &values.x, 0.1f, 0.0f, 0.0f, "%.2f" );
-		ImGui::PopItemWidth();
-		ImGui::SameLine();
+	//	ImGui::SameLine();
+	//	ImGui::DragFloat( "##X", &values.x, 0.1f, 0.0f, 0.0f, "%.2f" );
+	//	ImGui::PopItemWidth();
+	//	ImGui::SameLine();
 
-		ImGui::PushStyleColor( ImGuiCol_Button, ImVec4{ 0.2f, 0.7f, 0.2f, 1.0f } );
-		ImGui::PushStyleColor( ImGuiCol_ButtonHovered, ImVec4{ 0.3f, 0.8f, 0.3f, 1.0f } );
-		ImGui::PushStyleColor( ImGuiCol_ButtonActive, ImVec4{ 0.2f, 0.7f, 0.2f, 1.0f } );
-		ImGui::PushFont( bold_font );
-		if ( ImGui::Button( "Y", button_size ) )
-			values.y = resetVal;
-		ImGui::PopFont();
-		ImGui::PopStyleColor( 3 );
+	//	ImGui::PushStyleColor( ImGuiCol_Button, ImVec4{ 0.2f, 0.7f, 0.2f, 1.0f } );
+	//	ImGui::PushStyleColor( ImGuiCol_ButtonHovered, ImVec4{ 0.3f, 0.8f, 0.3f, 1.0f } );
+	//	ImGui::PushStyleColor( ImGuiCol_ButtonActive, ImVec4{ 0.2f, 0.7f, 0.2f, 1.0f } );
+	//	ImGui::PushFont( bold_font );
+	//	if ( ImGui::Button( "Y", button_size ) )
+	//		values.y = resetVal;
+	//	ImGui::PopFont();
+	//	ImGui::PopStyleColor( 3 );
 
-		ImGui::SameLine();
-		ImGui::DragFloat( "##Y", &values.y, 0.1f, 0.0f, 0.0f, "%.2f" );
-		ImGui::PopItemWidth();
-		ImGui::SameLine();
+	//	ImGui::SameLine();
+	//	ImGui::DragFloat( "##Y", &values.y, 0.1f, 0.0f, 0.0f, "%.2f" );
+	//	ImGui::PopItemWidth();
+	//	ImGui::SameLine();
 
-		ImGui::PushStyleColor( ImGuiCol_Button, ImVec4{ 0.1f, 0.25f, 0.8f, 1.0f } );
-		ImGui::PushStyleColor( ImGuiCol_ButtonHovered, ImVec4{ 0.2f, 0.35f, 0.9f, 1.0f } );
-		ImGui::PushStyleColor( ImGuiCol_ButtonActive, ImVec4{ 0.1f, 0.25f, 0.8f, 1.0f } );
-		ImGui::PushFont( bold_font );
-		if ( ImGui::Button( "Z", button_size ) )
-			values.z = resetVal;
-		ImGui::PopFont();
-		ImGui::PopStyleColor( 3 );
+	//	ImGui::PushStyleColor( ImGuiCol_Button, ImVec4{ 0.1f, 0.25f, 0.8f, 1.0f } );
+	//	ImGui::PushStyleColor( ImGuiCol_ButtonHovered, ImVec4{ 0.2f, 0.35f, 0.9f, 1.0f } );
+	//	ImGui::PushStyleColor( ImGuiCol_ButtonActive, ImVec4{ 0.1f, 0.25f, 0.8f, 1.0f } );
+	//	ImGui::PushFont( bold_font );
+	//	if ( ImGui::Button( "Z", button_size ) )
+	//		values.z = resetVal;
+	//	ImGui::PopFont();
+	//	ImGui::PopStyleColor( 3 );
 
-		ImGui::SameLine();
-		ImGui::DragFloat( "##Z", &values.z, 0.1f, 0.0f, 0.0f, "%.2f" );
-		ImGui::PopItemWidth();
+	//	ImGui::SameLine();
+	//	ImGui::DragFloat( "##Z", &values.z, 0.1f, 0.0f, 0.0f, "%.2f" );
+	//	ImGui::PopItemWidth();
 
-		ImGui::PopStyleVar();
+	//	ImGui::PopStyleVar();
 
-		ImGui::Columns( 1 );
+	//	ImGui::Columns( 1 );
 
-		ImGui::PopID();
+	//	ImGui::PopID();
 
-		return values;
-	}
+	//	return values;
+	//}
 
 	ImVec4 Widgets::Vector4EditInternal( std::string_view label, ImVec4 values, float resetVal, float colWidth )
 	{
@@ -788,4 +788,4 @@ namespace slc {
 	{
 		ImGui::EndCombo();
 	}
-} // namespace slc
+} // namespace sl

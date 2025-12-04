@@ -4,7 +4,7 @@
 
 #include <fstream>
 
-namespace slc {
+namespace sl {
 
 	class FileLogTarget : public ILogTarget
 	{
@@ -19,4 +19,4 @@ namespace slc {
 	private:
 		std::ofstream mFile;
 	};
-} // namespace slc
+} // namespace sl

@@ -4,7 +4,7 @@
 
 struct GLFWwindow;
 
-namespace slc {
+namespace sl {
 
 	class GraphicsContext
 	{
@@ -23,4 +23,4 @@ namespace slc {
 		GLFWwindow* mWindowHandle;
 	};
 
-} // namespace slc
+} // namespace sl

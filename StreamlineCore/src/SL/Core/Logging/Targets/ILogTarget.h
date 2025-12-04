@@ -4,7 +4,7 @@
 
 #include <vector>
 
-namespace slc {
+namespace sl {
 
 	class ILogTarget
 	{
@@ -59,4 +59,4 @@ namespace slc {
 	private:
 		LogLevel mLogLevel;
 	};
-} // namespace slc
+} // namespace sl

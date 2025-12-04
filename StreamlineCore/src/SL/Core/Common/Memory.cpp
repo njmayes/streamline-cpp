@@ -2,7 +2,7 @@
 
 #include "Macros.h"
 
-namespace slc::detail {
+namespace sl::detail {
 
 	bool RefTracker::IsTracked( void* data )
 	{
@@ -22,4 +22,4 @@ namespace slc::detail {
 		ASSERT( sRefSet.contains( data ), "Ref not being tracked!" );
 		sRefSet.erase( data );
 	}
-} // namespace slc::detail
+} // namespace sl::detail

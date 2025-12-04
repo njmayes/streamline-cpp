@@ -3,7 +3,7 @@
 #include "SL/Core/Common/Application.h"
 #include "SL/Core/Logging/Log.h"
 
-namespace slc::net {
+namespace sl::net {
 
 	/*
 		Client
@@ -34,8 +34,8 @@ namespace slc::net {
 
 	void ClientLayer::Connect( std::string const& host, std::uint16_t port )
 	{
-		mContext.Connect( host, port, [ = ]( slc::net::ConnectionPtr connection ) {
-			slc::log::Info( "Client connected to {}:{}", host, port );
+		mContext.Connect( host, port, [ = ]( sl::net::ConnectionPtr connection ) {
+			sl::log::Info( "Client connected to {}:{}", host, port );
 
 			mServerConnection = connection;
 
@@ -44,7 +44,7 @@ namespace slc::net {
 			} );
 			mServerConnection->OnDisconnect( [ this, connection ] { OnDisconnect( connection ); } );
 
-			mServerConnection->OnRead( [ this ]( slc::net::Payload const& msg ) {
+			mServerConnection->OnRead( [ this ]( sl::net::Payload const& msg ) {
 				OnMessage( msg );
 				Application::PostEvent< NetworkInEvent >( msg );
 			} );
@@ -93,9 +93,9 @@ namespace slc::net {
 
 	void ServerLayer::AddPort( std::uint16_t port )
 	{
-		slc::log::Info( "Starting listener on port {}", port );
-		auto handle = mContext.Listen( port, [ this ]( slc::net::ConnectionPtr connection ) {
-			slc::log::Info( "Connection received from {}", connection->GetRemoteAddress() );
+		sl::log::Info( "Starting listener on port {}", port );
+		auto handle = mContext.Listen( port, [ this ]( sl::net::ConnectionPtr connection ) {
+			sl::log::Info( "Connection received from {}", connection->GetRemoteAddress() );
 
 			connection->OnConnect( [ this, connection ] {
 				mConnections.insert( connection );
@@ -107,7 +107,7 @@ namespace slc::net {
 				OnDisconnect( connection );
 			} );
 
-			connection->OnRead( [ this ]( slc::net::Payload const& msg ) {
+			connection->OnRead( [ this ]( sl::net::Payload const& msg ) {
 				OnMessage( msg );
 				Application::PostEvent< NetworkInEvent >( msg );
 			} );
@@ -127,4 +127,4 @@ namespace slc::net {
 
 		return false;
 	}
-} // namespace slc::net
+} // namespace sl::net

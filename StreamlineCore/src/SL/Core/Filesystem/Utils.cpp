@@ -4,7 +4,7 @@
 
 #include <fstream>
 
-namespace slc::fs {
+namespace sl::fs {
 
 	Buffer ReadToBuffer( const std::filesystem::path& filepath )
 	{
@@ -141,4 +141,4 @@ namespace slc::fs {
 
 		std::filesystem::remove_all( filepath );
 	}
-} // namespace slc::file
+} // namespace sl::file

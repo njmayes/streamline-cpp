@@ -32,6 +32,12 @@ if (MSVC)
     add_compile_options(/Zc:preprocessor)
 endif()
 
+if ("${CMAKE_GENERATOR}" MATCHES "Visual Studio*")
+	get_filename_component(smartCmdArgJsonFile "project.args.json" ABSOLUTE)
+	MESSAGE(STATUS "Path to json file: " ${smartCmdArgJsonFile})
+
+	set_property(TARGET SimpleCmake PROPERTY VS_GLOBAL_SmartCmdArgJsonFile ${smartCmdArgJsonFile})
+endif()
 
 add_subdirectory(StreamlineCore)
 

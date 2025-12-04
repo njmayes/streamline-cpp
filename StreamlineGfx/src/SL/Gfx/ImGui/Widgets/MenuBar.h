@@ -2,7 +2,7 @@
 
 #include "SL/Core/Common/Base.h"
 
-namespace slc::ui {
+namespace sl::ui {
 
 	enum class MenuItemType
 	{
@@ -54,4 +54,4 @@ namespace slc::ui {
 	private:
 		std::vector< MenuHeading > mMenuItems;
 	};
-} // namespace slc::ui
+} // namespace sl::ui

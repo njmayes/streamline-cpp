@@ -7,7 +7,7 @@
 #include <type_traits>
 #include <utility>
 
-namespace slc {
+namespace sl {
 
 	class BufferView;
 	class ConstBufferView;
@@ -409,4 +409,4 @@ namespace slc {
 	private:
 		std::span< const Byte > mData;
 	};
-} // namespace slc
+} // namespace sl

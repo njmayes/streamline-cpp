@@ -14,7 +14,7 @@
 #include "SL/Core/Logging/Log.h"
 #include "SL/Core/Types/Timer.h"
 
-namespace slc {
+namespace sl {
 
 	namespace Utils {
 
@@ -416,4 +416,4 @@ namespace slc {
 		mUniformLocCache[ name ] = location;
 		return location;
 	}
-} // namespace slc
+} // namespace sl

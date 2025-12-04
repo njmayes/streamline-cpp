@@ -2,7 +2,7 @@
 
 #include <SL/Core/Common/Base.h>
 
-namespace slc::detail {
+namespace sl::detail {
 
 	template < auto E >
 		requires std::is_scoped_enum_v< decltype( E ) >

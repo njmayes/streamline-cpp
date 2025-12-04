@@ -1,9 +1,9 @@
 #include "IModal.h"
 
+#include "SL/Gfx/ImGui/Widgets.h"
 #include "SL/Core/Common/Application.h"
-#include "SL/Core/ImGui/Widgets.h"
 
-namespace slc {
+namespace sl {
 
 	IModal::IModal()
 	{
@@ -15,4 +15,4 @@ namespace slc {
 		Application::BlockEsc( false );
 	}
 
-} // namespace slc
+} // namespace sl

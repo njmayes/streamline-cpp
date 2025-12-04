@@ -4,7 +4,7 @@
 
 #include "Connection.h"
 
-namespace slc::net {
+namespace sl::net {
 
 	struct ContextOptions
 	{
@@ -64,4 +64,4 @@ namespace slc::net {
 		struct Impl;
 		Box< Impl > mImpl;
 	};
-} // namespace slc::net
+} // namespace sl::net

@@ -4,7 +4,7 @@
 
 #include <SL/Core/Common/Base.h>
 
-namespace slc {
+namespace sl {
 
 	template < std::integral T >
 	struct Coordinate
@@ -163,4 +163,4 @@ namespace slc {
 	private:
 		std::vector< Type > mData;
 	};
-} // namespace slc
+} // namespace sl

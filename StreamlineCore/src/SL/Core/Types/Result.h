@@ -2,7 +2,7 @@
 
 #include "Enum.h"
 
-namespace slc {
+namespace sl {
 	template < typename T >
 	class Option;
 
@@ -228,7 +228,7 @@ namespace slc {
 		template < typename... Cases >
 		decltype( auto ) Match( Cases&&... cases )
 		{
-			auto matcher = ::slc::detail::Overload{ std::forward< Cases >( cases )... };
+			auto matcher = ::sl::detail::Overload{ std::forward< Cases >( cases )... };
 			using Matcher = decltype( matcher );
 
 			if ( mResult )
@@ -340,7 +340,7 @@ namespace slc {
 		}
 
 		template < auto O, typename... Args >
-		constexpr Result< T, E > operator()( ::slc::detail::EnumTag< O > error, Args&&... args ) const noexcept
+		constexpr Result< T, E > operator()( ::sl::detail::EnumTag< O > error, Args&&... args ) const noexcept
 		{
 			return Result< T, E >( E( error, std::forward< Args >( args )... ) );
 		}
@@ -352,4 +352,4 @@ namespace slc {
 	template < typename T >
 	constexpr ErrorFunctor< T > Err;
 
-} // namespace slc
+} // namespace sl

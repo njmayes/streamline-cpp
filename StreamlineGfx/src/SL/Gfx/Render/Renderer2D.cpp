@@ -2,7 +2,7 @@
 
 #include "Renderer.h"
 
-namespace slc {
+namespace sl {
 
 	void Renderer2D::Init()
 	{
@@ -328,4 +328,4 @@ namespace slc {
 	{
 		return sRenderData->stats;
 	}
-} // namespace slc
+} // namespace sl

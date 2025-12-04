@@ -2,7 +2,7 @@
 #include "Property.h"
 #include "Method.h"
 
-namespace slc {
+namespace sl {
 
 	std::vector< Type > Type::GetBaseClasses() const
 	{
@@ -48,4 +48,4 @@ namespace slc {
 		auto&& base_classes = GetBaseClasses();
 		return std::any_of( std::ranges::begin(base_classes), std::ranges::end(base_classes), [ other ]( auto const& type ) { return type == other; } );
 	}
-} // namespace slc
+} // namespace sl

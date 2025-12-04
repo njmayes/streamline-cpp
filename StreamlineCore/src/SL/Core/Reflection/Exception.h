@@ -5,7 +5,7 @@
 #include <exception>
 #include <sstream>
 
-namespace slc {
+namespace sl {
 
 	class BadReflectionCastException : public std::exception
 	{
@@ -49,4 +49,4 @@ namespace slc {
 	private:
 		std::string msg;
 	};
-} // namespace slc
+} // namespace sl

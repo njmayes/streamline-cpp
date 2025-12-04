@@ -1,11 +1,17 @@
 #include "Timestep.h"
 
-#include <GLFW/glfw3.h>
+#include <chrono>
 
-namespace slc {
+namespace sl {
+	
+	using clock = std::chrono::steady_clock;
+	static const auto start = clock::now();
 
-	float slc::Timestep::Now()
+	float Timestep::Now()
 	{
-		return ( float )glfwGetTime();
+		const auto now = clock::now();
+
+		std::chrono::duration< float > elapsed = now - start;
+		return elapsed.count();
 	}
-} // namespace slc
+} // namespace sl

@@ -2,7 +2,7 @@
 
 #include "Allocator.h"
 
-namespace slc {
+namespace sl {
 
 	template < typename T >
 	class StackAllocator : public IAllocator
@@ -97,4 +97,4 @@ namespace slc {
 		T* mMemBlock = nullptr;
 		T* mHead = nullptr;
 	};
-} // namespace slc
+} // namespace sl

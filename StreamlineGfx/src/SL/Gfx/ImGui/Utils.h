@@ -6,10 +6,10 @@
 #include "SL/Core/IO/KeyCodes.h"
 #include "SL/Core/IO/MouseCodes.h"
 
-namespace slc {
+namespace sl {
 
 	template < typename T >
-	concept ImVecType = std::same_as< T, ImVec2 > || std::same_as< T, ImVec3 > || std::same_as< T, ImVec4 >;
+	concept ImVecType = std::same_as< T, ImVec2 > || std::same_as< T, ImVec4 >;
 
 	template < typename Vec, typename T >
 	concept VecSized = std::is_trivially_copyable_v< T > && sizeof( Vec ) == sizeof( T );
@@ -166,4 +166,4 @@ namespace slc {
 
 		static void SetButtonColourInternal( const ImVec4& colour );
 	};
-} // namespace slc
+} // namespace sl

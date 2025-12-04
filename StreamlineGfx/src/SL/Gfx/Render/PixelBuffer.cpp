@@ -2,7 +2,7 @@
 
 #include "glad/glad.h"
 
-namespace slc {
+namespace sl {
 
 #define MAP( x, y ) ( ( y * mWidth ) + x )
 
@@ -75,4 +75,4 @@ namespace slc {
 		ASSERT( mLocked, "Buffer must be locked!" );
 		std::fill_n( mPixels + offset, size, colour );
 	}
-} // namespace slc
+} // namespace sl

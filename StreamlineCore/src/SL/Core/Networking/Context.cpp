@@ -16,7 +16,7 @@
 
 #include <thread>
 
-namespace slc::net {
+namespace sl::net {
 
 	struct Context::Impl
 	{
@@ -161,4 +161,4 @@ namespace slc::net {
 		mImpl->threads.clear();
 	}
 
-} // namespace slc::net
+} // namespace sl::net

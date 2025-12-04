@@ -11,14 +11,13 @@ target_compile_features(streamline-gfx PUBLIC cxx_std_23)
 
 target_include_directories(streamline-gfx
     PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/include
-    PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
 file(GLOB_RECURSE STREAMLINE_GFX_SOURCES
     CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/*.cpp"
 )
 
 target_sources(streamline-gfx PRIVATE ${STREAMLINE_GFX_SOURCES})
@@ -37,6 +36,20 @@ target_compile_definitions(streamline-gfx
 # -------------------------------------------------------------
 # Third-party dependencies (graphics) via FetchContent
 # -------------------------------------------------------------
+
+# -------------------------
+# stb
+# -------------------------
+
+FetchContent_Declare(
+    stb
+    GIT_REPOSITORY https://github.com/nothings/stb.git
+    GIT_TAG        master
+)
+FetchContent_MakeAvailable(stb)
+
+add_library(stb INTERFACE)
+target_include_directories(stb INTERFACE ${stb_SOURCE_DIR})
 
 # -------------------------
 # GLFW
@@ -72,7 +85,7 @@ FetchContent_MakeAvailable(glad)
 FetchContent_Declare(
     imgui
     GIT_REPOSITORY https://github.com/ocornut/imgui.git
-    GIT_TAG        v1.91.0
+    GIT_TAG        docking
 )
 FetchContent_MakeAvailable(imgui)
 
@@ -91,6 +104,12 @@ target_include_directories(imgui_glfw
     PUBLIC
         ${imgui_SOURCE_DIR}
         ${imgui_SOURCE_DIR}/backends
+)
+
+target_link_libraries(imgui_glfw
+    PUBLIC
+        glfw
+        glad
 )
 
 # -------------------------
@@ -112,10 +131,15 @@ target_include_directories(imguizmo
     PUBLIC
         ${imguizmo_SOURCE_DIR}
 )
+target_link_libraries(imguizmo
+    PUBLIC
+        imgui_glfw
+)
 
 # Attach gfx deps to streamline-gfx
 target_link_libraries(streamline-gfx
     PUBLIC
+        stb
         glfw
         glad
         imgui_glfw

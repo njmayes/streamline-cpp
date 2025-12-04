@@ -2,7 +2,7 @@
 
 #include "Socket.h"
 
-namespace slc::net {
+namespace sl::net {
 
 	class Connection : public std::enable_shared_from_this< Connection >
 	{
@@ -41,5 +41,5 @@ namespace slc::net {
 		Box< Impl > mImpl;
 	};
 
-	using ConnectionPtr = std::shared_ptr< slc::net::Connection >;
-} // namespace slc::net
+	using ConnectionPtr = std::shared_ptr< sl::net::Connection >;
+} // namespace sl::net

@@ -4,7 +4,7 @@
 
 #include "SL/Core/Types/Math.h"
 
-namespace slc {
+namespace sl {
 
 	struct PanelConstructionData
 	{

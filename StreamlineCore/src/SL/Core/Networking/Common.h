@@ -3,7 +3,7 @@
 #include "SL/Core/Types/Buffer.h"
 #include "SL/Core/Types/UUID.h"
 
-namespace slc::net {
+namespace sl::net {
 
 	enum class InstanceType
 	{
@@ -19,4 +19,4 @@ namespace slc::net {
 	};
 
 	using ListenerHandle = UUID;
-} // namespace slc::net
+} // namespace sl::net

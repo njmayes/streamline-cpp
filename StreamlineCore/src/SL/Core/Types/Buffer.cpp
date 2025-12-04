@@ -2,7 +2,7 @@
 #include <algorithm>
 #include <cstring>
 
-namespace slc {
+namespace sl {
 
 	// ----- Constructors -----
 
@@ -108,4 +108,4 @@ namespace slc {
 		return ConstBufferView( *this, offset, size );
 	}
 
-} // namespace slc
+} // namespace sl

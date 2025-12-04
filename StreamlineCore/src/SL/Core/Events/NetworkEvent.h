@@ -4,13 +4,13 @@
 
 #include "SL/Core/Networking/Common.h"
 
-namespace slc {
+namespace sl {
 
 	struct NetworkInEvent : public EventBase
 	{
-		slc::net::Payload data;
+		sl::net::Payload data;
 
-		NetworkInEvent( slc::net::Payload payload )
+		NetworkInEvent( sl::net::Payload payload )
 			: data( std::move( payload ) )
 		{}
 
@@ -19,9 +19,9 @@ namespace slc {
 
 	struct NetworkOutEvent : public EventBase
 	{
-		slc::net::Payload data;
+		sl::net::Payload data;
 
-		NetworkOutEvent( slc::net::Payload payload )
+		NetworkOutEvent( sl::net::Payload payload )
 			: data( std::move( payload ) )
 		{}
 

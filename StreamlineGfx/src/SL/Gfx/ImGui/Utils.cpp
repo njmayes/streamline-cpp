@@ -3,7 +3,7 @@
 #include "imgui.h"
 #include "imgui_internal.h"
 
-namespace slc {
+namespace sl {
 
 	bool Utils::IsKeyPressed( KeyCode key )
 	{
@@ -222,4 +222,4 @@ namespace slc {
 	{
 		ImGui::SetKeyboardFocusHere( -1 );
 	}
-} // namespace slc
+} // namespace sl

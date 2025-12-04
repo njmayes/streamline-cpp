@@ -4,7 +4,7 @@
 
 #include "Detail/Enum.h"
 
-namespace slc {
+namespace sl {
 
 	template < auto E, typename F >
 	detail::EnumMatchCaseHandler< E, F > MatchCase( F&& f )
@@ -42,18 +42,18 @@ namespace slc {
 			Other
 		};
 
-		using SmartTestEnum = slc::SmartEnum< TestEnum,
-			slc::Case< TestEnum::OutOfBounds >,
-			slc::Case< TestEnum::Unexpected, std::string_view >,
-			slc::Case< TestEnum::Other >
+		using SmartTestEnum = sl::SmartEnum< TestEnum,
+			sl::Case< TestEnum::OutOfBounds >,
+			sl::Case< TestEnum::Unexpected, std::string_view >,
+			sl::Case< TestEnum::Other >
 		>;
 
 		SmartTestEnum foo = SmartTestEnum::Make< TestEnum::Unexpected >( "Actual value" );
 
 		auto bar = asasfa.Match(
-			slc::MatchCase< ErrorEnum::OutOfBounds >( [] { return "OutOfBounds"; } ),
-			slc::MatchCase< ErrorEnum::Unexpected >( []( std::string_view value ) { return value; } ),
-			slc::MatchDefault( [] { return "Default"; }
+			sl::MatchCase< ErrorEnum::OutOfBounds >( [] { return "OutOfBounds"; } ),
+			sl::MatchCase< ErrorEnum::Unexpected >( []( std::string_view value ) { return value; } ),
+			sl::MatchDefault( [] { return "Default"; }
 		);
 	*/
 
@@ -363,4 +363,4 @@ namespace slc {
 
 	} // namespace detail
 
-} // namespace slc
+} // namespace sl

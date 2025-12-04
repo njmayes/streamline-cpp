@@ -4,7 +4,7 @@
 
 #include "SharedMutex.h"
 
-namespace slc::ipc {
+namespace sl::ipc {
 
 	// A RAII buffer object that locks and unlocks the shared mutex for the associated shared memory.
 	class SharedBuffer : public BufferView

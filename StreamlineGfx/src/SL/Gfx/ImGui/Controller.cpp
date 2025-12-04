@@ -8,11 +8,11 @@
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
 
-#include "SL/Core/Common/Application.h"
+#include "SL/Gfx/Common/GuiApplication.h"
 
 #include "Widgets.h"
 
-namespace slc {
+namespace sl {
 
 	ImGuiController::ImGuiController( GLFWwindow* window )
 	{
@@ -63,7 +63,7 @@ namespace slc {
 
 		ImGuiIO& io = ImGui::GetIO();
 
-		io.DisplaySize = ImVec2( Application::GetWindowWidth(), Application::GetWindowHeight() );
+		io.DisplaySize = ImVec2( GuiApplication::GetWindowWidth(), GuiApplication::GetWindowHeight() );
 
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData( ImGui::GetDrawData() );
@@ -79,7 +79,7 @@ namespace slc {
 
 	void ImGuiController::OnEvent( Event& e )
 	{
-		if ( !mBlockEvents )
+		if ( !Application::AreEventsBlocked() )
 			return;
 
 		ImGuiIO& io = ImGui::GetIO();
@@ -123,4 +123,4 @@ namespace slc {
 		colours[ ImGuiCol_TitleBgActive ] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
 		colours[ ImGuiCol_TitleBgCollapsed ] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
 	}
-} // namespace slc
+} // namespace sl

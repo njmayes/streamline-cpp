@@ -2,7 +2,7 @@
 
 #include "SL/Core/Common/Base.h"
 
-namespace slc {
+namespace sl {
 
 	using KeyCode = int;
 

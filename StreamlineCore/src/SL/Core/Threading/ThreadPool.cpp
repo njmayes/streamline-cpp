@@ -1,6 +1,6 @@
 #include "ThreadPool.h"
 
-namespace slc {
+namespace sl {
 
 	ThreadPool::ThreadPool( size_t num_threads )
 	{
@@ -51,4 +51,4 @@ namespace slc {
 		for ( auto& thread : mThreads )
 			thread.join();
 	}
-} // namespace slc
+} // namespace sl

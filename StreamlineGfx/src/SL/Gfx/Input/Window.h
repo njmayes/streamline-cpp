@@ -5,7 +5,7 @@
 
 struct GLFWwindow;
 
-namespace slc {
+namespace sl {
 
 	class Event;
 
@@ -81,4 +81,4 @@ namespace slc {
 		WindowData mData;
 	};
 
-} // namespace slc
+} // namespace sl

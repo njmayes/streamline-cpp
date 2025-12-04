@@ -6,7 +6,7 @@
 #include <glad/glad.h>
 #include "GLFW/glfw3.h"
 
-namespace slc {
+namespace sl {
 
 	static uint8_t sGLFWWindowCount = 0;
 
@@ -184,4 +184,4 @@ namespace slc {
 		}
 		log::Info( "Window shutdown complete" );
 	}
-} // namespace slc
+} // namespace sl

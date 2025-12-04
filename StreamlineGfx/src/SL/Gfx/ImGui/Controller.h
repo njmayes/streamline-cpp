@@ -7,7 +7,7 @@
 
 struct GLFWwindow;
 
-namespace slc {
+namespace sl {
 
 	class ImGuiController : public IEventListener
 	{
@@ -47,11 +47,6 @@ namespace slc {
 		void OnEvent( Event& e );
 		SLC_LISTENING_EVENTS( EVENT_CATEGORY_MOUSE, EVENT_CATEGORY_KEY )
 
-		void BlockEvents( bool block )
-		{
-			mBlockEvents = block;
-		}
-
 	private:
 		void SetDarkThemeColours();
 
@@ -60,4 +55,4 @@ namespace slc {
 		ModalManager mModalManager{};
 		PanelManager mPanelManager{};
 	};
-} // namespace slc
+} // namespace sl

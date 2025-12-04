@@ -2,7 +2,7 @@
 
 #include "SL/Core/Common/Profiling.h"
 
-namespace slc {
+namespace sl {
 
 	LogMemoryArena::LogMemoryArena( std::size_t size )
 		: mBuffer{ MakeBox< char[] >( size ) }
@@ -29,4 +29,4 @@ namespace slc {
 
 		mUsed = 0;
 	}
-} // namespace slc
+} // namespace sl

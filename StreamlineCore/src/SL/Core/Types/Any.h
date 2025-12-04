@@ -2,7 +2,7 @@
 
 #include <any>
 
-namespace slc {
+namespace sl {
 
 	/// <summary>
 	/// Wrapper for std::any that supports reference types
@@ -96,4 +96,4 @@ namespace slc {
 	private:
 		std::any mValue;
 	};
-} // namespace slc
+} // namespace sl

@@ -3,7 +3,7 @@
 #include "Property.h"
 #include "Method.h"
 
-namespace slc {
+namespace sl {
 
 	/// <summary>
 	/// The main interface for runtime reflection. Retrieve the reflection data for a type T using Type::Get&lt;T&gt;() or Type::Get("T")
@@ -173,4 +173,4 @@ namespace slc {
 			}
 		}
 	};
-} // namespace slc
+} // namespace sl

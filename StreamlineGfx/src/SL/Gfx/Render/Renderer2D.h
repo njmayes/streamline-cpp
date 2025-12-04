@@ -3,7 +3,7 @@
 #include "IRenderable.h"
 #include "Renderer2DInternal.h"
 
-namespace slc {
+namespace sl {
 
 	class Camera;
 
@@ -44,4 +44,4 @@ namespace slc {
 	private:
 		inline static Box< Renderer2DData > sRenderData;
 	};
-} // namespace slc
+} // namespace sl

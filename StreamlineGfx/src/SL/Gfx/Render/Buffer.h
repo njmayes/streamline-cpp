@@ -2,7 +2,7 @@
 
 #include <SL/Core/Common/Base.h>
 
-namespace slc {
+namespace sl {
 
 	enum class ShaderDataType : uint8_t
 	{
@@ -214,4 +214,4 @@ namespace slc {
 		uint32_t mCount;
 	};
 
-} // namespace slc
+} // namespace sl

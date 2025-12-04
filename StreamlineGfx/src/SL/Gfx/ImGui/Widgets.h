@@ -6,7 +6,7 @@
 #include "Widgets/MenuBar.h"
 #include "Widgets/PopUp.h"
 
-namespace slc {
+namespace sl {
 
 	template < typename T >
 		requires VecSized< ImVec2, T >
@@ -191,13 +191,13 @@ namespace slc {
 			Vector2EditInternalRef( label, imValues, resetVal, colWidth );
 			values = Utils::FromImVec< T >( imValues );
 		}
-		template < VecSized< ImVec3 > T >
-		static void Vector3Edit( std::string_view label, T& values, float resetVal = 0.0f, float colWidth = 100.0f )
-		{
-			ImVec3 imValues = Utils::ToImVec< ImVec3 >( values );
-			Vector3EditInternalRef( label, imValues, resetVal, colWidth );
-			values = Utils::FromImVec< T >( imValues );
-		}
+		//template < VecSized< ImVec3 > T >
+		//static void Vector3Edit( std::string_view label, T& values, float resetVal = 0.0f, float colWidth = 100.0f )
+		//{
+		//	ImVec3 imValues = Utils::ToImVec< ImVec3 >( values );
+		//	Vector3EditInternalRef( label, imValues, resetVal, colWidth );
+		//	values = Utils::FromImVec< T >( imValues );
+		//}
 		template < VecSized< ImVec4 > T >
 		static void Vector4Edit( std::string_view label, T& values, float resetVal = 0.0f, float colWidth = 100.0f )
 		{
@@ -215,16 +215,16 @@ namespace slc {
 				onEdit( Utils::FromImVec< T >( newValues ) );
 			}
 		}
-		template < VecSized< ImVec3 > T, IsAction< const ImVec3& > Func >
-		static void Vector3Edit( std::string_view label, T values, Func&& onEdit, float resetVal = 0.0f, float colWidth = 100.0f )
-		{
-			auto cmpVal = Utils::ToImVec< ImVec3 >( values );
-			auto newValues = Vector3EditInternal( label, cmpVal, resetVal, colWidth );
-			if ( newValues.x != cmpVal.x or newValues.y != cmpVal.y or newValues.z != cmpVal.z )
-			{
-				onEdit( Utils::FromImVec< T >( newValues ) );
-			}
-		}
+		//template < VecSized< ImVec3 > T, IsAction< const ImVec3& > Func >
+		//static void Vector3Edit( std::string_view label, T values, Func&& onEdit, float resetVal = 0.0f, float colWidth = 100.0f )
+		//{
+		//	auto cmpVal = Utils::ToImVec< ImVec3 >( values );
+		//	auto newValues = Vector3EditInternal( label, cmpVal, resetVal, colWidth );
+		//	if ( newValues.x != cmpVal.x or newValues.y != cmpVal.y or newValues.z != cmpVal.z )
+		//	{
+		//		onEdit( Utils::FromImVec< T >( newValues ) );
+		//	}
+		//}
 		template < VecSized< ImVec4 > T, IsAction< const ImVec4& > Func >
 		static void Vector4Edit( std::string_view label, T values, Func&& onEdit, float resetVal = 0.0f, float colWidth = 100.0f )
 		{
@@ -400,10 +400,10 @@ namespace slc {
 		static float FloatEditInternal( std::string_view label, float field, float speed, float min, float max );
 
 		static void Vector2EditInternalRef( std::string_view label, ImVec2& values, float resetVal = 0.0f, float colWidth = 100.0f );
-		static void Vector3EditInternalRef( std::string_view label, ImVec3& values, float resetVal = 0.0f, float colWidth = 100.0f );
+		//static void Vector3EditInternalRef( std::string_view label, ImVec3& values, float resetVal = 0.0f, float colWidth = 100.0f );
 		static void Vector4EditInternalRef( std::string_view label, ImVec4& values, float resetVal = 0.0f, float colWidth = 100.0f );
 		static ImVec2 Vector2EditInternal( std::string_view label, ImVec2 values, float resetVal = 0.0f, float colWidth = 100.0f );
-		static ImVec3 Vector3EditInternal( std::string_view label, ImVec3 values, float resetVal = 0.0f, float colWidth = 100.0f );
+		//static ImVec3 Vector3EditInternal( std::string_view label, ImVec3 values, float resetVal = 0.0f, float colWidth = 100.0f );
 		static ImVec4 Vector4EditInternal( std::string_view label, ImVec4 values, float resetVal = 0.0f, float colWidth = 100.0f );
 
 		static void ColourEditInternal( std::string_view label, ImVec4& colour );
@@ -424,4 +424,4 @@ namespace slc {
 		inline static ui::PopUp sCurrentPopup;
 		inline static ui::PopUpContext sCurrentPopupCtx;
 	};
-} // namespace slc
+} // namespace sl

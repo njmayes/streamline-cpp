@@ -1,6 +1,6 @@
 #pragma once
 
-namespace slc {
+namespace sl {
 
 	class Timestep
 	{

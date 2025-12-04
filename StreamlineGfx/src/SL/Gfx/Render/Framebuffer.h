@@ -2,7 +2,7 @@
 
 #include "IRenderable.h"
 
-namespace slc {
+namespace sl {
 
 	enum class FramebufferTextureFormat
 	{
@@ -94,4 +94,4 @@ namespace slc {
 		uint32_t mDepthAttachment = 0;
 	};
 
-} // namespace slc
+} // namespace sl

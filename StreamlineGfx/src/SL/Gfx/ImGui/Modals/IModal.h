@@ -3,7 +3,7 @@
 #include "SL/Core/Common/Base.h"
 #include "SL/Core/Logging/Log.h"
 
-namespace slc {
+namespace sl {
 
 	enum class ModalButtons
 	{
@@ -56,4 +56,4 @@ namespace slc {
 	private:
 		Action<> mOnOverlayRender, mOnComplete;
 	};
-} // namespace slc
+} // namespace sl

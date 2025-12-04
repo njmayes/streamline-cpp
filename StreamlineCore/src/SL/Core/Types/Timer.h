@@ -2,7 +2,7 @@
 
 #include <chrono>
 
-namespace slc {
+namespace sl {
 
 	class Timer
 	{
@@ -36,4 +36,4 @@ namespace slc {
 		std::chrono::time_point< std::chrono::steady_clock > mStart;
 	};
 
-} // namespace slc
+} // namespace sl

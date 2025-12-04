@@ -4,7 +4,7 @@
 
 #include "Event.h"
 
-namespace slc {
+namespace sl {
 
 	struct MouseMovedEvent : public EventBase
 	{
@@ -49,4 +49,4 @@ namespace slc {
 
 		SLC_EVENT_DATA_TYPE( MouseButtonReleased )
 	};
-} // namespace slc
+} // namespace sl

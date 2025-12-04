@@ -1,12 +1,9 @@
 #include "Application.h"
 
-#include "SL/Core/Graphics/Renderer.h"
-#include "SL/Core/ImGui/Widgets.h"
+namespace sl {
 
-namespace slc {
-
-	Application::Application( Box< ApplicationSpecification > spec )
-		: mSpecification( std::move( spec ) )
+	Application::Application( Ref< ApplicationSpecification > spec )
+		: mSpecification( spec )
 	{
 		if ( sInstance )
 		{
@@ -21,16 +18,6 @@ namespace slc {
 
 		if ( !mSpecification->working_dir.empty() )
 			std::filesystem::current_path( mSpecification->working_dir );
-
-		if ( mSpecification->headless )
-			return;
-
-		auto window_props = WindowProperties( mSpecification->name, mSpecification->resolution, mSpecification->fullscreen );
-		mWindow = MakeBox< Window >( window_props );
-
-		mImGuiController = mEventRuntime->CreateListener< ImGuiController >( mWindow->GetNativeWindow() );
-
-		RegisterSystem< Renderer >();
 	}
 
 	Application::~Application()
@@ -41,37 +28,10 @@ namespace slc {
 			layer.Reset();
 		}
 
-		mImGuiController.Reset();
 		mEventRuntime.reset();
-		mWindow.reset();
 
 		for ( const auto& shutdownTask : mAppSystems | std::views::reverse )
 			shutdownTask();
-	}
-
-	void Application::OnEvent( Event& e )
-	{
-		e.Dispatch< WindowCloseEvent >( SLC_BIND_EVENT_FUNC( OnWindowClose ) );
-		e.Dispatch< WindowResizeEvent >( SLC_BIND_EVENT_FUNC( OnWindowResize ) );
-	}
-
-	bool Application::OnWindowClose( WindowCloseEvent& e )
-	{
-		Application::Close();
-		return true;
-	}
-
-	bool Application::OnWindowResize( WindowResizeEvent& e )
-	{
-		if ( e.width == 0 || e.height == 0 )
-		{
-			mState.minimised = true;
-			return false;
-		}
-
-		mState.minimised = false;
-		Renderer::SetViewport( e.width, e.height );
-		return false;
 	}
 
 	void Application::ExecuteQueuedJobs()
@@ -87,11 +47,16 @@ namespace slc {
 	void Application::Run( int argc, char** argv )
 	{
 		Application* app = CreateApplication( argc, argv );
+
+		if ( !app )
+		{
+			FATAL_ERROR( "No app instance was created." );
+		}
+
 		if ( sInstance != app )
 		{
 			delete app;
-			ASSERT( false, "There was already an app instance, could not create a new one" );
-			return;
+			FATAL_ERROR( false, "There was already an app instance, could not create a new one" );
 		}
 
 		while ( sInstance->mState.running )
@@ -112,28 +77,10 @@ namespace slc {
 				for ( auto& layer : sInstance->mLayerStack )
 					layer->OnUpdate( timestep );
 
-				if ( not sInstance->mSpecification->headless )
-				{
-					for ( auto& layer : sInstance->mLayerStack )
-						layer->OnRender();
-				}
+				sInstance->OnRender();
 			}
 
-			if ( not sInstance->mSpecification->headless )
-			{
-				// Begin ImGui rendering
-				sInstance->mImGuiController->StartFrame();
-
-				// Render each ImGui controls in each layer
-				for ( auto& layer : sInstance->mLayerStack )
-					layer->OnOverlayRender();
-
-				// End ImGui rendering
-				sInstance->mImGuiController->EndFrame();
-
-				// Poll GLFW events to populate queue and swap buffers
-				sInstance->mWindow->OnUpdate();
-			}
+			sInstance->OnUpdate( timestep );
 		}
 
 		delete sInstance;
@@ -155,9 +102,11 @@ namespace slc {
 
 	void Application::BlockEvents( bool block )
 	{
-		if ( sInstance->mSpecification->headless )
-			return;
-
-		sInstance->mImGuiController->BlockEvents( block );
+		sInstance->mState.block_events = block;
 	}
-} // namespace slc
+
+	bool Application::AreEventsBlocked()
+	{
+		return sInstance->mState.block_events;
+	}
+} // namespace sl

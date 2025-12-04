@@ -4,5 +4,5 @@
 
 int main( int argc, char** argv )
 {
-	slc::Application::Run( argc, argv );
+	sl::Application::Run( argc, argv );
 }

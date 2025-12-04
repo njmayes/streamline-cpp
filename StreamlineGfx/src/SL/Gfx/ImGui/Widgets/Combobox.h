@@ -2,7 +2,7 @@
 
 #include <string_view>
 
-namespace slc {
+namespace sl {
 
 	struct IComboEntry
 	{

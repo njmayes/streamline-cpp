@@ -2,7 +2,7 @@
 
 #include "EventTypes.h"
 
-namespace slc {
+namespace sl {
 
 	/// <summary>
 	/// The base class for all events that contains metadata like the event type and
@@ -18,7 +18,7 @@ namespace slc {
 	};
 
 #define SLC_EVENT_DATA_TYPE( type )             \
-	static ::slc::EventTypeFlag GetStaticType() \
+	static ::sl::EventTypeFlag GetStaticType() \
 	{                                           \
 		return EventType::type;                 \
 	}
@@ -94,7 +94,7 @@ namespace slc {
 		friend class Event;
 	};
 
-#define SLC_BIND_EVENT_FUNC( fn ) [ this ]( ::slc::IsEvent auto& event ) -> bool { return this->fn( event ); }
+#define SLC_BIND_EVENT_FUNC( fn ) [ this ]( ::sl::IsEvent auto& event ) -> bool { return this->fn( event ); }
 
 	/// <summary>
 	/// Type erased event class. Contains a pointer to the base event concept
@@ -161,4 +161,4 @@ namespace slc {
 		EventConcept* mImpl;
 	};
 
-} // namespace slc
+} // namespace sl

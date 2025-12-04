@@ -3,7 +3,7 @@
 #include "Core.h"
 #include "Exception.h"
 
-namespace slc::reflect {
+namespace sl::reflect {
 
 	class Reflection
 	{
@@ -232,15 +232,15 @@ namespace slc::reflect {
 		using ReflectionData = std::unordered_map< std::string_view, TypeInfo >;
 		inline static ReflectionData sReflectionData;
 	};
-} // namespace slc::reflect
+} // namespace sl::reflect
 
 #define SLC_REFLECT_MEMBER_IMPL( member )                                                               \
 	{                                                                                                   \
 		auto invoker = []< typename _T > {                                                              \
-			if constexpr ( std::derived_from< _T, ::slc::detail::CtrBase > )                            \
-				::slc::reflect::Reflection::RegisterConstructor< ClassType >( _T{} );                   \
+			if constexpr ( std::derived_from< _T, ::sl::detail::CtrBase > )                            \
+				::sl::reflect::Reflection::RegisterConstructor< ClassType >( _T{} );                   \
 			else                                                                                        \
-				::slc::reflect::Reflection::RegisterMember< ClassType >( #member, &ClassType::member ); \
+				::sl::reflect::Reflection::RegisterMember< ClassType >( #member, &ClassType::member ); \
 		};                                                                                              \
 		using MemberType = decltype( &ClassType::member );                                              \
 		invoker.template operator()< MemberType >();                                                    \
@@ -256,7 +256,7 @@ namespace slc::reflect {
 			using ClassType = CLASS;                                                         \
 			SLC_FOR_EACH( SLC_REFLECT_MEMBER_IMPL, __VA_ARGS__ )                             \
 		}                                                                                    \
-		inline static const TypeInfo* Info = ::slc::reflect::Reflection::GetInfo< CLASS >(); \
+		inline static const TypeInfo* Info = ::sl::reflect::Reflection::GetInfo< CLASS >(); \
 	};
 
 

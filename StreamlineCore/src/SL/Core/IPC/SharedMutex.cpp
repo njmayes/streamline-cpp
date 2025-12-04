@@ -8,7 +8,7 @@
 #include <sys/stat.h>
 #endif
 
-namespace slc::ipc {
+namespace sl::ipc {
 
 	struct MutexDescriptor
 	{
@@ -165,4 +165,4 @@ namespace slc::ipc {
 	{
 		return CheckIsValid( mImpl->desc );
 	}
-} // namespace slc::ipc
+} // namespace sl::ipc

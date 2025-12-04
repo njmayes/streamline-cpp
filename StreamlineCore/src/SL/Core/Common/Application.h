@@ -2,8 +2,6 @@
 
 #include "SL/Core/Events/IEventListener.h"
 #include "SL/Core/Events/EventRuntime.h"
-#include "SL/Core/IO/Window.h"
-#include "SL/Core/ImGui/Controller.h"
 #include "SL/Core/Logging/Logger.h"
 #include "SL/Core/Types/Timestep.h"
 
@@ -12,16 +10,14 @@
 
 int main( int argc, char* argv[] );
 
-struct GLFWwindow;
-
-namespace slc {
+namespace sl {
 	class Application;
 }
 
 // To be defined in client
-extern slc::Application* CreateApplication( int argc, char** argv );
+extern sl::Application* CreateApplication( int argc, char** argv );
 
-namespace slc {
+namespace sl {
 
 	class ApplicationLayer : public IEventListener
 	{
@@ -54,6 +50,7 @@ namespace slc {
 			bool running = true;
 			bool minimised = false;
 			bool block_exit = false;
+			bool block_events = false;
 			float last_frame_time = 0.0f;
 
 			std::mutex main_thread_queue_mutex;
@@ -61,13 +58,11 @@ namespace slc {
 		};
 	} // namespace detail
 
-	struct ApplicationSpecification
+	struct ApplicationSpecification : public RefCounted
 	{
 		std::string name = "Streamline Application";
-		Resolution resolution = { 1600, 900 };
 		std::filesystem::path working_dir;
 		bool fullscreen = false;
-		bool headless = false;
 
 		virtual ~ApplicationSpecification()
 		{}
@@ -76,18 +71,18 @@ namespace slc {
 	class Application : public IEventListener
 	{
 	public:
-		SLC_LISTENING_EVENTS( WindowClose, WindowResize )
+		SLC_LISTENING_EVENTS( None )
 
 	public:
-		Application( Box< ApplicationSpecification > spec );
-		~Application();
+		Application( Ref< ApplicationSpecification > spec );
+		virtual ~Application();
 
-		void OnEvent( Event& e ) override;
+		virtual void OnUpdate( Timestep ts )
+		{}
+		virtual void OnRender()
+		{}
 
-		Window& GetWindow()
-		{
-			return *mWindow;
-		}
+		void OnEvent( Event& e ) override {}
 
 		template < detail::IsLayer T, typename... Args >
 		void PushLayer( Args&&... args )
@@ -105,6 +100,11 @@ namespace slc {
 			mAppSystems.emplace_back( T::Shutdown );
 		}
 
+		void RegisterShutdownTask( Action<> shutdownTask )
+		{
+			mAppSystems.emplace_back( std::move( shutdownTask ) );
+		}
+
 		template < typename T, typename... Args >
 		void AddLogTarget( Args&&... args )
 		{
@@ -112,32 +112,37 @@ namespace slc {
 		}
 
 	private:
-		bool OnWindowClose( WindowCloseEvent& e );
 		bool OnWindowResize( WindowResizeEvent& e );
 
 	public:
 		static void Close();
-		static Application& Get()
+		static Application* Get()
 		{
-			return *sInstance;
+			return sInstance;
+		}
+		template < typename T >
+			requires std::derived_from< T, Application >
+		static T* Get()
+		{
+			return dynamic_cast< T* >( Get() );
 		}
 
-		static const ApplicationSpecification& GetSpec()
+		static Ref< ApplicationSpecification > GetSpec()
 		{
-			return *sInstance->mSpecification;
+			return sInstance->mSpecification;
 		}
 		template < typename T >
 			requires std::derived_from< T, ApplicationSpecification >
-		static const T& GetSpec()
+		static const Ref< T > GetSpec()
 		{
-			return static_cast< const T& >( *sInstance->mSpecification );
+			return GetSpec().As< T >();
 		}
 
 		template < typename T >
 			requires std::derived_from< T, ApplicationSpecification >
 		static void SetSpec( const T& spec )
 		{
-			sInstance->mSpecification = MakeBox< T >( spec );
+			sInstance->mSpecification = Ref::Create< T >( spec );
 		}
 
 		template < IsAction Func >
@@ -152,20 +157,7 @@ namespace slc {
 
 		static void BlockEsc( bool block = true );
 		static void BlockEvents( bool block );
-
-		static GLFWwindow* GetNativeWindow()
-		{
-			return sInstance->mWindow->GetNativeWindow();
-		}
-
-		static float GetWindowWidth()
-		{
-			return static_cast< float >( sInstance->mWindow->GetWidth() );
-		}
-		static float GetWindowHeight()
-		{
-			return static_cast< float >( sInstance->mWindow->GetHeight() );
-		}
+		static bool AreEventsBlocked();
 
 		template < IsEventListener T, typename... Args >
 		static Ref< T > CreateEventListener( Args&&... args )
@@ -185,40 +177,20 @@ namespace slc {
 			sInstance->mEventRuntime->Post< TEvent >( std::forward< TArgs >( args )... );
 		}
 
-		template < IsModal T, typename... Args >
-		static void OpenModal( ModalConstructionData const& init_data, Args&&... args )
-		{
-			if ( !sInstance )
-				return;
-
-			if ( !sInstance->mImGuiController )
-				return;
-
-			sInstance->mImGuiController->OpenModal< T >( init_data, std::forward< Args >( args )... );
-		}
-
-		template < IsPanel T, typename... Args >
-		static void OpenPanel( PanelConstructionData const& init_data, Args&&... args )
-		{
-			if ( !sInstance )
-				return;
-
-			if ( !sInstance->mImGuiController )
-				return;
-
-			sInstance->mImGuiController->OpenPanel< T >( init_data, std::forward< Args >( args )... );
-		}
-
 	private:
 		static void Run( int argc, char** argv );
 
 	protected:
-		Box< ApplicationSpecification > mSpecification;
+		detail::LayerStack const& GetLayerStack()
+		{
+			return mLayerStack;
+		}
+
+	protected:
+		Ref< ApplicationSpecification > mSpecification;
+		detail::ApplicationState mState;
 
 	private:
-		detail::ApplicationState mState;
-		Box< Window > mWindow;
-		Ref< ImGuiController > mImGuiController;
 		detail::LayerStack mLayerStack;
 		detail::AppSystemCleanups mAppSystems;
 
@@ -228,4 +200,4 @@ namespace slc {
 		inline static Application* sInstance = nullptr;
 		friend int ::main( int argc, char** argv );
 	};
-} // namespace slc
+} // namespace sl

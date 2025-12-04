@@ -6,7 +6,7 @@
 
 #include "SL/Core/Logging/Log.h"
 
-namespace slc {
+namespace sl {
 
 	void OpenGLMessageCallback(
 		unsigned source,
@@ -111,4 +111,4 @@ namespace slc {
 	{
 		glDisable( GL_DEPTH_TEST );
 	}
-} // namespace slc
+} // namespace sl

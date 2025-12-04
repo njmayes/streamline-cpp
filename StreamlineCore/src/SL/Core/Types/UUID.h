@@ -4,7 +4,7 @@
 
 #include <random>
 
-namespace slc {
+namespace sl {
 
 	class UUID
 	{
@@ -44,16 +44,16 @@ namespace slc {
 		inline static std::mt19937_64 sEngine = std::mt19937_64( sRandomDevice() );
 		inline static std::uniform_int_distribution< uint64_t >( sUniformDistribution );
 	};
-} // namespace slc
+} // namespace sl
 
 namespace std {
 	template < typename T >
 	struct hash;
 
 	template <>
-	struct hash< slc::UUID >
+	struct hash< sl::UUID >
 	{
-		std::size_t operator()( const slc::UUID& uuid ) const
+		std::size_t operator()( const sl::UUID& uuid ) const
 		{
 			return uuid.get();
 			;

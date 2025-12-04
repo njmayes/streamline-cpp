@@ -1,9 +1,9 @@
 #include "PanelManager.h"
 
-#include "SL/Core/ImGui/Widgets.h"
+#include "SL/Gfx/ImGui/Widgets.h"
 #include "SL/Core/Logging/Log.h"
 
-namespace slc {
+namespace sl {
 
 	PanelManager::PanelEntry* PanelManager::Find( std::string_view key )
 	{

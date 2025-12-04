@@ -9,7 +9,7 @@
 #include <mutex>
 #include <sstream>
 
-namespace slc {
+namespace sl {
 
 	using FloatingPointMicroseconds = std::chrono::duration< double, std::micro >;
 
@@ -190,7 +190,7 @@ namespace slc {
 			return result;
 		}
 	} // namespace InstrumentorUtils
-} // namespace slc
+} // namespace sl
 
 #ifdef SLC_PROFILE
 // Resolve which function signature macro will be used. Note that this only
@@ -214,11 +214,11 @@ namespace slc {
 #define SLC_FUNC_SIG "SLC_FUNC_SIG unknown!"
 #endif
 
-#define SLC_PROFILE_BEGIN_SESSION( name, filepath ) ::slc::Instrumentor::Get().BeginSession( name, filepath )
-#define SLC_PROFILE_END_SESSION() ::slc::Instrumentor::Get().EndSession()
+#define SLC_PROFILE_BEGIN_SESSION( name, filepath ) ::sl::Instrumentor::Get().BeginSession( name, filepath )
+#define SLC_PROFILE_END_SESSION() ::sl::Instrumentor::Get().EndSession()
 #define SLC_PROFILE_SCOPE_LINE2( name, line )                                                           \
-	constexpr auto fixedName##line = ::slc::InstrumentorUtils::CleanupOutputString( name, "__cdecl " ); \
-	::slc::InstrumentationTimer timer##line( fixedName##line.Data )
+	constexpr auto fixedName##line = ::sl::InstrumentorUtils::CleanupOutputString( name, "__cdecl " ); \
+	::sl::InstrumentationTimer timer##line( fixedName##line.Data )
 #define SLC_PROFILE_SCOPE_LINE( name, line ) SLC_PROFILE_SCOPE_LINE2( name, line )
 #define SLC_PROFILE_SCOPE( name ) SLC_PROFILE_SCOPE_LINE( name, __LINE__ )
 #define SLC_PROFILE_FUNCTION() SLC_PROFILE_SCOPE( SLC_FUNC_SIG )

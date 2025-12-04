@@ -2,7 +2,7 @@
 
 #include "Event.h"
 
-namespace slc {
+namespace sl {
 
 	class IEventListener : public RefCounted
 	{
@@ -32,15 +32,15 @@ namespace slc {
 	template < typename T >
 	concept IsEventListener = DerivedFromOnly< T, IEventListener >;
 
-#define SLC_MAKE_EVENT_FLAG( event ) ::slc::EventType::event
+#define SLC_MAKE_EVENT_FLAG( event ) ::sl::EventType::event
 
 #define SLC_LISTENING_EVENTS( ... )                                                                                  \
-	static constexpr ::slc::EventTypeFlag GetStaticType()                                                            \
+	static constexpr ::sl::EventTypeFlag GetStaticType()                                                            \
 	{                                                                                                                \
-		return ::slc::detail::BuildEventTypeMask( SLC_FOR_EACH_SEP( SLC_MAKE_EVENT_FLAG, SLC_COMMA, __VA_ARGS__ ) ); \
+		return ::sl::detail::BuildEventTypeMask( SLC_FOR_EACH_SEP( SLC_MAKE_EVENT_FLAG, SLC_COMMA, __VA_ARGS__ ) ); \
 	}                                                                                                                \
-	virtual constexpr ::slc::EventTypeFlag GetListeningEvents() const override                                       \
+	virtual constexpr ::sl::EventTypeFlag GetListeningEvents() const override                                       \
 	{                                                                                                                \
 		return GetStaticType();                                                                                      \
 	}
-} // namespace slc
+} // namespace sl

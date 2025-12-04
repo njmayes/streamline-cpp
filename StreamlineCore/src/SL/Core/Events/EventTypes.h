@@ -2,14 +2,14 @@
 
 #include "SL/Core/Common/Base.h"
 
-namespace slc {
+namespace sl {
 
 	using EventTypeFlag = size_t;
 
 #define SLC_MAKE_EVENT_FLAG_BITS( i, event ) event = MakeBit( i )
 #define SLC_MAKE_EVENT_FLAGS( ... )                                                \
 	namespace EventType {                                                          \
-		enum : ::slc::EventTypeFlag                                                \
+		enum : ::sl::EventTypeFlag                                                \
 		{                                                                          \
 			SLC_FOR_EACH_I_SEP( SLC_MAKE_EVENT_FLAG_BITS, SLC_COMMA, __VA_ARGS__ ) \
 		};                                                                         \
@@ -67,4 +67,4 @@ namespace slc {
 		static constexpr EventTypeFlag EVENT_CATEGORY_ALL = EVENT_CATEGORY_APP | EVENT_CATEGORY_KEY | EVENT_CATEGORY_MOUSE | EVENT_CATEGORY_NETWORK;
 	} // namespace EventType
 
-} // namespace slc
+} // namespace sl

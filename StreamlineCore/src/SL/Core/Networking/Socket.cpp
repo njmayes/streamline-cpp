@@ -10,7 +10,7 @@
 #include <asio/use_awaitable.hpp>
 #include <asio/ssl.hpp>
 
-namespace slc::net {
+namespace sl::net {
 
 	struct Socket::Impl
 	{
@@ -51,4 +51,4 @@ namespace slc::net {
 	{
 		return mImpl->type;
 	}
-} // namespace slc::net
+} // namespace sl::net

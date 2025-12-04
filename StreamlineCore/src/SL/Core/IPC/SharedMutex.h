@@ -2,7 +2,7 @@
 
 #include "SL/Core/Common/Base.h"
 
-namespace slc::ipc {
+namespace sl::ipc {
 
 	class SharedMutex
 	{
@@ -26,4 +26,4 @@ namespace slc::ipc {
 		struct Impl;
 		Box< Impl > mImpl;
 	};
-} // namespace slc::ipc
+} // namespace sl::ipc

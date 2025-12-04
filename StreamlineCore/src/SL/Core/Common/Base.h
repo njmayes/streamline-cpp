@@ -19,7 +19,7 @@
 #include <cstddef>
 #include <cstring>
 
-namespace slc {
+namespace sl {
 
 	using Byte = std::byte;
 
@@ -83,4 +83,4 @@ namespace slc {
 	{
 		return value * 1024 * 1024 * 1024;
 	}
-} // namespace slc
+} // namespace sl

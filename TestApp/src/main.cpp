@@ -8,7 +8,7 @@
 #include <iostream>
 #include <csignal>
 
-namespace slc {
+namespace sl {
 
 	enum class Error
 	{
@@ -16,19 +16,19 @@ namespace slc {
 		InvalidRandom,
 	};
 
-	using SmartError = slc::SmartEnum<
+	using SmartError = sl::SmartEnum<
 		Error,
-		slc::Case< Error::InvalidChar >,
-		slc::Case< Error::InvalidRandom, int > >;
+		sl::Case< Error::InvalidChar >,
+		sl::Case< Error::InvalidRandom, int > >;
 
 	enum class Failure
 	{
 		RandomFail,
 	};
 
-	using SmartFailure = slc::SmartEnum<
+	using SmartFailure = sl::SmartEnum<
 		Failure,
-		slc::Case< Failure::RandomFail > >;
+		sl::Case< Failure::RandomFail > >;
 
 	using FooResult = Result< int, SmartError >;
 	using BarResult = Result< float, SmartError >;
@@ -42,11 +42,11 @@ namespace slc {
 		InvalidFormatString,
 	};
 
-	using SmartInputError = slc::SmartEnum<
+	using SmartInputError = sl::SmartEnum<
 		InputError,
-		slc::Case< InputError::InvalidChar, char >,
-		slc::Case< InputError::InvalidState >,
-		slc::Case< InputError::InvalidFormatString, std::string > >;
+		sl::Case< InputError::InvalidChar, char >,
+		sl::Case< InputError::InvalidState >,
+		sl::Case< InputError::InvalidFormatString, std::string > >;
 
 	using IntInputResult = Result< int, InputError >;
 	using StringInputResult = Result< std::string, InputError >;
@@ -73,9 +73,9 @@ namespace slc {
 		return Ok< StringInputResult >( input );
 	}
 
-} // namespace slc
+} // namespace sl
 
-using namespace slc;
+using namespace sl;
 
 
 struct SerialisationTest
@@ -139,18 +139,17 @@ using SmartErrorEnum = SmartEnum<
 SLC_FOR_EACH( TEST, x )
 
 
-slc::Application* NetServerTest( int argc, char* argv[] )
+sl::Application* NetServerTest( int argc, char* argv[] )
 {
 	if ( argc < 2 )
 	{
 		return nullptr;
 	}
 
-	auto spec = slc::MakeBox< slc::ApplicationSpecification >();
-	spec->headless = true;
-	spec->working_dir = "C:/Users/NMayes/Desktop/Reference/streamline-cpp/TestApp";
+	auto spec = sl::Ref< sl::ApplicationSpecification >::Create();
+	spec->working_dir = "C:/Users/natha/Desktop/Coding/Projects/WIP/C++/streamline-cpp/TestApp";
 
-	slc::net::ServerContextOptions opts{};
+	sl::net::ServerContextOptions opts{};
 	opts.num_threads = 5;
 	opts.cert_file = "server.crt";
 	opts.key_file = "server.key";
@@ -163,20 +162,20 @@ slc::Application* NetServerTest( int argc, char* argv[] )
 		opts.ports[ i - 1 ] = port;
 	}
 
-	return new ChatServer( std::move( spec ), opts );
+	return new ChatServer( spec, opts );
 }
 
-slc::Application* NetClientTest( int argc, char* argv[] )
+sl::Application* NetClientTest( int argc, char* argv[] )
 {
 	if ( argc < 2 )
 	{
 		return nullptr;
 	}
 
-	auto spec = slc::MakeBox< slc::ApplicationSpecification >();
-	spec->working_dir = "C:/Users/NMayes/Desktop/Reference/streamline-cpp/TestApp";
+	auto spec = sl::Ref< sl::GuiApplicationSpecification >::Create();
+	spec->working_dir = "C:/Users/natha/Desktop/Coding/Projects/WIP/C++/streamline-cpp/TestApp";
 
-	slc::net::ClientContextOptions opts{};
+	sl::net::ClientContextOptions opts{};
 
 	const char* host = argv[ 1 ];
 	unsigned short port = std::atoi( argv[ 2 ] );
@@ -184,11 +183,14 @@ slc::Application* NetClientTest( int argc, char* argv[] )
 	opts.host = host;
 	opts.port = port;
 
-	return new ChatClient( std::move( spec ), opts );
+	return new ChatClient( spec, opts );
 }
 
-slc::Application* CreateApplication( int argc, char** argv )
+sl::Application* CreateApplication( int argc, char** argv )
 {
+	if ( argc < 2 )
+		return nullptr;
+
 	if ( std::string( argv[ 1 ] ) == "server" )
 		return NetServerTest( argc - 1, &argv[ 1 ] );
 	else if ( std::string( argv[ 1 ] ) == "client" )
@@ -241,7 +243,7 @@ slc::Application* CreateApplication( int argc, char** argv )
 // int main( int argc, char* argv[] )
 //{
 //
-//	slc::Logger::GetGlobalLogger().AddLogTarget< slc::ConsoleLogTarget >( slc::LogLevel::Info );
+//	sl::Logger::GetGlobalLogger().AddLogTarget< sl::ConsoleLogTarget >( sl::LogLevel::Info );
 //
 //	RunChallengeTests< v2::BillionRows >();
 //

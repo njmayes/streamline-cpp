@@ -4,7 +4,7 @@
 
 #include "SL/Core/Types/Math.h"
 
-namespace slc {
+namespace sl {
 
 	struct ModalConstructionData
 	{
@@ -89,4 +89,4 @@ namespace slc {
 		CallbackMap mModalCallbacks;
 		std::string_view mLastAdded;
 	};
-} // namespace slc
+} // namespace sl

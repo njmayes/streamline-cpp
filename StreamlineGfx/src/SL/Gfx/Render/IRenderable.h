@@ -3,7 +3,7 @@
 #include <SL/Core/Common/Base.h>
 #include <SL/Core/Types/Math.h>
 
-namespace slc {
+namespace sl {
 
 	class IRenderable : public RefCounted
 	{
@@ -23,4 +23,4 @@ namespace slc {
 	private:
 		static constexpr Vec2f DefaultCoords[ 4 ] = { { 0.0f, 0.0f }, { 1.0f, 0.0f }, { 1.0f, 1.0f }, { 0.0f, 1.0f } };
 	};
-} // namespace slc
+} // namespace sl

@@ -2,7 +2,7 @@
 
 #include "Reflection.h"
 
-namespace slc {
+namespace sl {
 
 	class Type;
 
@@ -62,4 +62,4 @@ namespace slc {
 	private:
 		const PropertyInfo* mProperty;
 	};
-} // namespace slc
+} // namespace sl

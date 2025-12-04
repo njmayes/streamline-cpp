@@ -1,6 +1,6 @@
 #include "FileLogTarget.h"
 
-namespace slc {
+namespace sl {
 	FileLogTarget::FileLogTarget( std::string const& filename, LogLevel level )
 		: ILogTarget( level )
 		, mFile{ filename, std::ios::out | std::ios::app | std::ios::binary }
@@ -22,4 +22,4 @@ namespace slc {
 		mFile << std::flush;
 		mFile.rdbuf()->pubsetbuf( nullptr, 0 );
 	}
-} // namespace slc
+} // namespace sl

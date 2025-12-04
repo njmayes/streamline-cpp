@@ -5,7 +5,7 @@
 
 typedef unsigned int GLenum;
 
-namespace slc {
+namespace sl {
 
 	class Shader : public RefCounted
 	{
@@ -51,4 +51,4 @@ namespace slc {
 
 		mutable std::unordered_map< std::string_view, int > mUniformLocCache;
 	};
-} // namespace slc
+} // namespace sl

@@ -4,7 +4,7 @@
 
 #include <print>
 
-namespace slc {
+namespace sl {
 
 	class ScopedTimer
 	{
@@ -23,4 +23,4 @@ namespace slc {
 		std::string mName;
 	};
 
-} // namespace slc
+} // namespace sl

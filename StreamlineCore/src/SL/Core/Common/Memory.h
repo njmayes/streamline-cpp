@@ -4,7 +4,7 @@
 #include <memory>
 #include <atomic>
 
-namespace slc {
+namespace sl {
 
 	// Unique Pointer
 
@@ -303,16 +303,16 @@ namespace slc {
 	private:
 		T* mData = nullptr;
 	};
-} // namespace slc
+} // namespace sl
 
 namespace std {
 	template < typename T >
 	struct hash;
 
 	template < typename T >
-	struct hash< slc::Ref< T > >
+	struct hash< sl::Ref< T > >
 	{
-		std::size_t operator()( const slc::Ref< T >& ref ) const
+		std::size_t operator()( const sl::Ref< T >& ref ) const
 		{
 			return std::hash< const void* >()( ( const void* )ref.Data() );
 		}

@@ -15,7 +15,7 @@
 
 namespace {
 
-	using namespace slc;
+	using namespace sl;
 
 	static void SetupConsoleNative()
 	{
@@ -102,7 +102,7 @@ namespace {
 	}
 } // namespace
 
-namespace slc {
+namespace sl {
 
 	ConsoleLogTarget::ConsoleLogTarget( LogLevel level, std::map< LogLevel, ConsoleAttributes::Attribute > colours )
 		: ILogTarget( level )
@@ -218,4 +218,4 @@ namespace slc {
 
 		mCurrentAttribute = ConsoleAttributes::Default;
 	}
-} // namespace slc
+} // namespace sl

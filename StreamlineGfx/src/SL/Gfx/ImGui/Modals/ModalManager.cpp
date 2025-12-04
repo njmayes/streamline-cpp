@@ -1,9 +1,8 @@
 #include "ModalManager.h"
 
-#include "SL/Core/Common/Application.h"
-#include "SL/Core/ImGui/Widgets.h"
+#include "SL/Gfx/ImGui/Widgets.h"
 
-namespace slc {
+namespace sl {
 
 	void ModalManager::Render()
 	{
@@ -23,7 +22,7 @@ namespace slc {
 			if ( Widgets::BeginWindow( modal_data.init_data.heading, ImGuiWindowFlags_NoDocking, &modal_data.open ) )
 			{
 				Widgets::BeginChild( "ModalBody", Vec2f{ 0, -modal_data.init_data.button_size.y - 5.0f } );
-				slc::Utils::SetWindowFontScale( modal_data.init_data.font_scale );
+				sl::Utils::SetWindowFontScale( modal_data.init_data.font_scale );
 				modal_data.modal->OnOverlayRender();
 				Widgets::EndChild();
 
@@ -102,4 +101,4 @@ namespace slc {
 		}
 	}
 
-} // namespace slc
+} // namespace sl

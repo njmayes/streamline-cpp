@@ -2,7 +2,7 @@
 
 #include "glm/glm.hpp"
 
-namespace slc {
+namespace sl {
 
 	using Vec2f = glm::vec2;
 	using Vec3f = glm::vec3;
@@ -13,4 +13,4 @@ namespace slc {
 
 	using Mat4f = glm::mat4;
 	using Mat4 = glm::mat< 4, 4, double >;
-} // namespace slc
+} // namespace sl

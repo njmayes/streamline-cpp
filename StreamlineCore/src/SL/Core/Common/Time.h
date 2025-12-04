@@ -2,7 +2,7 @@
 
 #include <ctime>
 
-namespace slc {
+namespace sl {
 
 	inline std::tm GetLocalTime( std::time_t const* timer )
 	{
@@ -18,4 +18,4 @@ namespace slc {
 #endif
 		return bt;
 	}
-} // namespace slc
+} // namespace sl

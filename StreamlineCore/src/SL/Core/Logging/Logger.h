@@ -9,7 +9,7 @@
 #include <mutex>
 #include <condition_variable>
 
-namespace slc {
+namespace sl {
 
 	class Logger
 	{
@@ -160,4 +160,4 @@ namespace slc {
 		std::size_t mMessageSizeLimit;
 		std::size_t mMaxMessagesBeforeFlush;
 	};
-} // namespace slc
+} // namespace sl

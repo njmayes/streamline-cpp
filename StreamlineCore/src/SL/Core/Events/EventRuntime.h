@@ -8,7 +8,7 @@
 #include "MouseEvent.h"
 #include "NetworkEvent.h"
 
-namespace slc {
+namespace sl {
 
 	/// <summary>
 	/// The interface by which events are queued and handled. Use the Post(...) method to submit an event
@@ -79,4 +79,4 @@ namespace slc {
 	private:
 		EventRuntimeState mState{};
 	};
-} // namespace slc
+} // namespace sl

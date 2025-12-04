@@ -2,7 +2,7 @@
 
 #include "Result.h"
 
-namespace slc {
+namespace sl {
 
 	template < typename T >
 	class Option : private Result< T, std::monostate >
@@ -188,4 +188,4 @@ namespace slc {
 
 	template < typename T >
 	SCONSTEXPR NoneFunctor< T > None;
-} // namespace slc
+} // namespace sl

@@ -2,7 +2,7 @@
 
 #include <portable-file-dialogs.h>
 
-namespace slc::fs {
+namespace sl::fs {
 
 	std::optional< std::filesystem::path > OpenFileDialog( const std::vector< std::string >& filter )
 	{

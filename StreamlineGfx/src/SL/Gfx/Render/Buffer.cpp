@@ -2,7 +2,7 @@
 
 #include "glad/glad.h"
 
-namespace slc {
+namespace sl {
 
 	///
 	/// OpenGL Vertex Buffer
@@ -72,4 +72,4 @@ namespace slc {
 	{
 		glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
 	}
-} // namespace slc
+} // namespace sl

@@ -2,7 +2,7 @@
 
 #include <glad/glad.h>
 
-namespace slc {
+namespace sl {
 
 	static GLenum ShaderDataTypetoOpenGLType( ShaderDataType type )
 	{
@@ -110,4 +110,4 @@ namespace slc {
 		mIndexBuffer = indexBuffer;
 	}
 
-} // namespace slc
+} // namespace sl

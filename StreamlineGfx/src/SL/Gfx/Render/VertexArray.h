@@ -2,7 +2,7 @@
 
 #include "Buffer.h"
 
-namespace slc {
+namespace sl {
 
 	class VertexArray : public RefCounted
 	{
@@ -32,4 +32,4 @@ namespace slc {
 		Ref< IndexBuffer > mIndexBuffer;
 	};
 
-} // namespace slc
+} // namespace sl

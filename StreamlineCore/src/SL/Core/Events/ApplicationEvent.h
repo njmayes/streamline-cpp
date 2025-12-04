@@ -2,7 +2,7 @@
 
 #include "Event.h"
 
-namespace slc {
+namespace sl {
 
 	struct WindowResizeEvent : public EventBase
 	{
@@ -56,4 +56,4 @@ namespace slc {
 	{
 		SLC_EVENT_DATA_TYPE( AppRender )
 	};
-} // namespace slc
+} // namespace sl

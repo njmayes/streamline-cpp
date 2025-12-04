@@ -4,7 +4,7 @@
 
 #include "Event.h"
 
-namespace slc {
+namespace sl {
 
 	struct KeyPressedEvent : public EventBase
 	{
@@ -39,4 +39,4 @@ namespace slc {
 
 		SLC_EVENT_DATA_TYPE( KeyTyped )
 	};
-} // namespace slc
+} // namespace sl

@@ -2,35 +2,35 @@
 
 #include "SL/Core/Logging/Log.h"
 
-ServerLayer::ServerLayer( slc::net::ServerContextOptions const& opts )
-	: slc::net::ServerLayer( opts )
+ServerLayer::ServerLayer( sl::net::ServerContextOptions const& opts )
+	: sl::net::ServerLayer( opts )
 {
 }
 
-void ServerLayer::OnConnect( slc::net::ConnectionPtr participant )
+void ServerLayer::OnConnect( sl::net::ConnectionPtr participant )
 {
 	if ( mRecentMessages.empty() )
 		return;
 
 	// Strip null terminator from each message
 	auto messages = mRecentMessages | std::views::transform( []( auto const& buffer ) { return buffer.View( 0, buffer.Size() - 1 ); } );
-	auto message = slc::Buffer::Concat( messages, '\0', '\n' );
+	auto message = sl::Buffer::Concat( messages, '\0', '\n' );
 
 	participant->AddToQueue( message );
 }
 
-void ServerLayer::OnMessage( slc::net::Payload const& msg )
+void ServerLayer::OnMessage( sl::net::Payload const& msg )
 {
 	auto const& new_msg = mRecentMessages.emplace_back( msg );
 	while ( mRecentMessages.size() > max_recent_msgs )
 		mRecentMessages.pop_front();
 
-	slc::Application::PostEvent< slc::NetworkOutEvent >( new_msg );
+	sl::Application::PostEvent< sl::NetworkOutEvent >( new_msg );
 }
 
-ChatServer::ChatServer( slc::Box< slc::ApplicationSpecification > spec, slc::net::ServerContextOptions const& opts )
-	: Application( std::move( spec ) )
+ChatServer::ChatServer( sl::Ref< sl::ApplicationSpecification > spec, sl::net::ServerContextOptions const& opts )
+	: Application( spec )
 {
 	PushLayer< ServerLayer >( opts );
-	AddLogTarget< slc::ConsoleLogTarget >( slc::LogLevel::Info );
+	AddLogTarget< sl::ConsoleLogTarget >( sl::LogLevel::Info );
 }

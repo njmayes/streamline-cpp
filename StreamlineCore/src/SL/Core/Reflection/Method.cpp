@@ -1,7 +1,7 @@
 #include "Method.h"
 #include "Type.h"
 
-namespace slc {
+namespace sl {
 
 	Type Method::GetReturnType() const
 	{
@@ -14,4 +14,4 @@ namespace slc {
 			   std::views::transform( []( const auto& arg ) { return Type( arg ); } ) |
 			   std::ranges::to< std::vector >();
 	}
-} // namespace slc
+} // namespace sl

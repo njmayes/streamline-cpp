@@ -2,7 +2,7 @@
 
 #include <SL/Core/Types/Buffer.h>
 
-namespace slc::fs {
+namespace sl::fs {
 
 	Buffer ReadToBuffer( const std::filesystem::path& filepath );
 	std::string ReadToString( const std::filesystem::path& filepath );
@@ -18,4 +18,4 @@ namespace slc::fs {
 	void Remove( const std::filesystem::path& filepath );
 	void RemoveDir( const std::filesystem::path& filepath );
 
-} // namespace slc::file
+} // namespace sl::file

@@ -4,7 +4,7 @@
 
 #include <map>
 
-namespace slc {
+namespace sl {
 
 	namespace ConsoleAttributes {
 
@@ -72,4 +72,4 @@ namespace slc {
 		std::map< LogLevel, ConsoleAttributes::Attribute > mColours;
 		ConsoleAttributes::Attribute mCurrentAttribute{};
 	};
-} // namespace slc
+} // namespace sl

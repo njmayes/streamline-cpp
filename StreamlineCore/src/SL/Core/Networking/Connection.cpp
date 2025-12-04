@@ -22,7 +22,7 @@
 
 #include <deque>
 
-namespace slc::net {
+namespace sl::net {
 
 	struct Connection::Impl
 	{
@@ -245,4 +245,4 @@ namespace slc::net {
 		if ( mImpl->on_write )
 			mImpl->on_write( payload );
 	}
-} // namespace slc::net
+} // namespace sl::net

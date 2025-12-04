@@ -1,6 +1,6 @@
 #include "SharedBuffer.h"
 
-namespace slc::ipc {
+namespace sl::ipc {
 
 	SharedBuffer::SharedBuffer( std::string_view name, BufferView buffer )
 		: BufferView( buffer )
@@ -16,4 +16,4 @@ namespace slc::ipc {
 	{
 		mMutex.Unlock();
 	}
-} // namespace slc::ipc
+} // namespace sl::ipc

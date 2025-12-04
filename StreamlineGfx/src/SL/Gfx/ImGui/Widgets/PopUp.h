@@ -2,7 +2,7 @@
 
 #include "SL/Core/Common/Base.h"
 
-namespace slc::ui {
+namespace sl::ui {
 
 	struct PopUpItem
 	{

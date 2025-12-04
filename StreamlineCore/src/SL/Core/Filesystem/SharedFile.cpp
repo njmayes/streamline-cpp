@@ -12,7 +12,7 @@
 #include <unistd.h>
 #endif
 
-namespace slc::fs {
+namespace sl::fs {
 
 #ifdef SLC_PLATFORM_WINDOWS
 	using Handle = HANDLE;
@@ -34,7 +34,7 @@ namespace slc::fs {
 
 		LPVOID msg;
 		::FormatMessageA( FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, NULL, err, 0, ( LPSTR )&msg, 0, NULL );
-		slc::log::Error( "{}", ( LPSTR )msg );
+		sl::log::Error( "{}", ( LPSTR )msg );
 		::LocalFree( msg );
 	}
 
@@ -248,4 +248,4 @@ namespace slc::fs {
 
 		return MapSharedFile( mImpl->desc, offset, size );
 	}
-} // namespace slc::ipc
+} // namespace sl::ipc

@@ -3,7 +3,7 @@
 #include "Texture.h"
 #include "Pixel.h"
 
-namespace slc {
+namespace sl {
 
 	class PixelBuffer : public IRenderable
 	{
@@ -40,4 +40,4 @@ namespace slc {
 		Ref< Texture2D > mTexture = nullptr;
 		Pixel* mPixels = nullptr;
 	};
-} // namespace slc
+} // namespace sl

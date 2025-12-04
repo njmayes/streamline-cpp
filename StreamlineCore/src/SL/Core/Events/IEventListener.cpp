@@ -2,11 +2,11 @@
 
 #include "EventRuntime.h"
 
-namespace slc {
+namespace sl {
 
 	IEventListener::~IEventListener()
 	{
 		if ( mRuntime )
 			mRuntime->DeregisterListener( this );
 	}
-} // namespace slc
+} // namespace sl

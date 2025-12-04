@@ -2,7 +2,7 @@
 
 #include <SL/Core/Common/Base.h>
 
-namespace slc {
+namespace sl {
 
 	class UniformBuffer : public RefCounted
 	{
@@ -15,4 +15,4 @@ namespace slc {
 	private:
 		uint32_t mRendererID = 0;
 	};
-} // namespace slc
+} // namespace sl

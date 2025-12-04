@@ -2,7 +2,7 @@
 
 #include "StaticBuffer.h"
 
-namespace slc {
+namespace sl {
 
 	template < size_t TSize >
 	class StaticString : public StaticBuffer< TSize + 1 >
@@ -31,4 +31,4 @@ namespace slc {
 			return std::string_view( this->Data(), Length() );
 		}
 	};
-} // namespace slc
+} // namespace sl

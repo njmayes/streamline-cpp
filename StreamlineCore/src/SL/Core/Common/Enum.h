@@ -5,7 +5,7 @@
 #include <bit>
 #include <stdexcept>
 
-namespace slc::Enum {
+namespace sl::Enum {
 
 	template < IsEnum T >
 	inline static constexpr std::string_view ToString( T enumVal )
@@ -142,4 +142,4 @@ namespace slc::Enum {
 	private:
 		Underlying mMask;
 	};
-} // namespace slc::Enum
+} // namespace sl::Enum

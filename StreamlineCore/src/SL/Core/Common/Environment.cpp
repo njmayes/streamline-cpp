@@ -4,7 +4,7 @@
 
 #include "SL/Core/Logging/Log.h"
 
-namespace slc::env {
+namespace sl::env {
 
 	bool SetVar( std::string_view env_name, std::string_view env_val )
 	{
@@ -54,4 +54,4 @@ namespace slc::env {
 		return {}};
 #endif
 	}
-} // namespace slc::env
+} // namespace sl::env

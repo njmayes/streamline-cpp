@@ -5,7 +5,7 @@
 #include "Forward.h"
 #include "Common.h"
 
-namespace slc::net {
+namespace sl::net {
 
 	class Connection;
 
@@ -29,4 +29,4 @@ namespace slc::net {
 		struct Impl;
 		Box< Impl > mImpl;
 	};
-} // namespace slc::net
+} // namespace sl::net

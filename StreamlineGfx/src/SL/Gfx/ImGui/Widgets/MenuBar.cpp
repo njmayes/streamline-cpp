@@ -2,7 +2,7 @@
 
 #include "imgui.h"
 
-namespace slc::ui {
+namespace sl::ui {
 
 	MenuBar::~MenuBar()
 	{
@@ -63,4 +63,4 @@ namespace slc::ui {
 		MenuHeading& last_menu = mMenuItems.back();
 		last_menu.menu.emplace_back( MenuItemType::Separator );
 	}
-} // namespace slc::ui
+} // namespace sl::ui

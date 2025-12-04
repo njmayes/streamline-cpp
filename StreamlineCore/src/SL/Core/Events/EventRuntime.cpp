@@ -4,7 +4,7 @@
 
 #include "IEventListener.h"
 
-namespace slc {
+namespace sl {
 
 	void EventRuntime::Dispatch()
 	{
@@ -80,4 +80,4 @@ namespace slc {
 		std::scoped_lock lk( mState.queue_lock );
 		mState.old_listeners.push_back( listener );
 	}
-} // namespace slc
+} // namespace sl

@@ -4,7 +4,7 @@
 
 #include "SL/Core/Common/Base.h"
 
-namespace slc {
+namespace sl {
 
 	template < typename T >
 	class BlockAllocator : public IAllocator
@@ -240,4 +240,4 @@ namespace slc {
 		std::set< Block* > mInUse;
 		std::map< std::size_t, std::vector< Block* > > mBlockSizes;
 	};
-} // namespace slc
+} // namespace sl

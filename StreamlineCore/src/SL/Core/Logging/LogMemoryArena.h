@@ -2,7 +2,7 @@
 
 #include "Common.h"
 
-namespace slc {
+namespace sl {
 
 	class LogMemoryArena
 	{
@@ -17,4 +17,4 @@ namespace slc {
 		std::size_t mCapacity;
 		std::size_t mUsed = 0;
 	};
-} // namespace slc
+} // namespace sl

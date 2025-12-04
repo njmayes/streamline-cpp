@@ -2,27 +2,27 @@
 
 #include <GLFW/glfw3.h>
 
-#include "SL/Core/Common/Application.h"
+#include "SL/Gfx/Common/GuiApplication.h"
 
-namespace slc::input {
+namespace sl::input {
 
 	bool IsKeyPressed( KeyCode keycode )
 	{
-		auto* window = static_cast< GLFWwindow* >( Application::Get().GetWindow().GetNativeWindow() );
+		auto* window = static_cast< GLFWwindow* >( Application::Get< GuiApplication >()->GetWindow().GetNativeWindow() );
 		auto state = glfwGetKey( window, static_cast< int32_t >( keycode ) );
 		return state == GLFW_PRESS;
 	}
 
 	bool IsMouseButtonPressed( MouseCode button )
 	{
-		auto* window = static_cast< GLFWwindow* >( Application::Get().GetWindow().GetNativeWindow() );
+		auto* window = static_cast< GLFWwindow* >( Application::Get< GuiApplication >()->GetWindow().GetNativeWindow() );
 		auto state = glfwGetMouseButton( window, static_cast< int32_t >( button ) );
 		return state == GLFW_PRESS;
 	}
 
 	Vec2f GetMousePosition()
 	{
-		auto* window = static_cast< GLFWwindow* >( Application::Get().GetWindow().GetNativeWindow() );
+		auto* window = static_cast< GLFWwindow* >( Application::Get< GuiApplication >()->GetWindow().GetNativeWindow() );
 		double xpos, ypos;
 		glfwGetCursorPos( window, &xpos, &ypos );
 		return { static_cast< float >( xpos ), static_cast< float >( ypos ) };
@@ -37,4 +37,4 @@ namespace slc::input {
 	{
 		return GetMousePosition().y;
 	}
-} // namespace slc::input
+} // namespace sl::input

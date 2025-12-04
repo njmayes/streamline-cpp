@@ -4,7 +4,7 @@
 
 #include "VertexArray.h"
 
-namespace slc {
+namespace sl {
 
 	class Renderer
 	{
@@ -25,4 +25,4 @@ namespace slc {
 		static void DisableDepth();
 	};
 
-} // namespace slc
+} // namespace sl

@@ -11,7 +11,7 @@
 #include <unistd.h>
 #endif
 
-namespace slc::ipc {
+namespace sl::ipc {
 
 #ifdef SLC_PLATFORM_WINDOWS
 	using FileHandle = HANDLE;
@@ -276,4 +276,4 @@ namespace slc::ipc {
 	{
 		return mImpl->user_data;
 	}
-} // namespace slc::ipc
+} // namespace sl::ipc

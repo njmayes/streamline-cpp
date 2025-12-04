@@ -3,7 +3,7 @@
 #include "SL/Core/Common/Base.h"
 #include "SL/Core/Types/Any.h"
 
-namespace slc {
+namespace sl {
 
 	namespace detail {
 
@@ -330,4 +330,4 @@ namespace slc {
 		std::vector< const TypeInfo* > arguments;
 		FunctionInvoker invoker;
 	};
-} // namespace slc
+} // namespace sl

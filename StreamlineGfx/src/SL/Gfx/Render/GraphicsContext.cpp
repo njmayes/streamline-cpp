@@ -5,7 +5,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-namespace slc {
+namespace sl {
 
 	GraphicsContext::GraphicsContext( GLFWwindow* windowHandle )
 		: mWindowHandle( windowHandle )
@@ -36,4 +36,4 @@ namespace slc {
 		glfwSwapBuffers( mWindowHandle );
 	}
 
-} // namespace slc
+} // namespace sl

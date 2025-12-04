@@ -6,7 +6,7 @@
 
 typedef unsigned int GLenum;
 
-namespace slc {
+namespace sl {
 
 	class Texture2D : public IRenderable
 	{
@@ -45,4 +45,4 @@ namespace slc {
 		GLenum mInternalFormat, mDataFormat;
 	};
 
-} // namespace slc
+} // namespace sl

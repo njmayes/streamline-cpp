@@ -2,7 +2,7 @@
 
 #include <glad/glad.h>
 
-namespace slc {
+namespace sl {
 
 	namespace detail {
 
@@ -221,4 +221,4 @@ namespace slc {
 		bool multisample = mSpecification.samples > 1;
 		detail::BindTexture( multisample, mColourAttachments[ index ] );
 	}
-} // namespace slc
+} // namespace sl

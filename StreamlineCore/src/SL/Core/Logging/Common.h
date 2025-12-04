@@ -4,7 +4,7 @@
 
 #include <span>
 
-namespace slc {
+namespace sl {
 
 	enum class LogLevel
 	{
@@ -24,4 +24,4 @@ namespace slc {
 		std::size_t length;
 		LogLevel level;
 	};
-} // namespace slc
+} // namespace sl

@@ -2,7 +2,7 @@
 
 #include <glad/glad.h>
 
-namespace slc {
+namespace sl {
 
 	UniformBuffer::UniformBuffer( uint32_t size, uint32_t binding )
 	{
@@ -20,4 +20,4 @@ namespace slc {
 	{
 		glNamedBufferSubData( mRendererID, offset, size, data );
 	}
-} // namespace slc
+} // namespace sl

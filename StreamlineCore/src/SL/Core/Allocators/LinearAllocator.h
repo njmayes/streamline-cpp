@@ -4,7 +4,7 @@
 
 #include "SL/Core/Common/Base.h"
 
-namespace slc {
+namespace sl {
 
 	/// <summary>
 	/// A simple arena allocator for objects of type T.
@@ -92,4 +92,4 @@ namespace slc {
 		T* mMemBlock = nullptr;
 		T* mHead = nullptr;
 	};
-} // namespace slc
+} // namespace sl

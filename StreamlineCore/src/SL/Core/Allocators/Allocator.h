@@ -2,7 +2,7 @@
 
 #include "SL/Core/Common/Base.h"
 
-namespace slc {
+namespace sl {
 
 	/// <summary>
 	/// Base allocator interface.
@@ -88,4 +88,4 @@ namespace slc {
 	{
 		return !( a == b );
 	}
-} // namespace slc
+} // namespace sl

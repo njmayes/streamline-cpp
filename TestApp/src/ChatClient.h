@@ -1,12 +1,13 @@
 #pragma once
 
 #include "streamline.h"
+#include "SL/Gfx/Common/GuiApplication.h"
 
 #include <deque>
 #include <thread>
 
 
-class ChatLayer : public slc::ApplicationLayer
+class ChatLayer : public sl::ApplicationLayer
 {
 public:
 	SLC_LISTENING_EVENTS( NetworkIn );
@@ -20,14 +21,14 @@ public:
 	{}
 	void OnOverlayRender() override;
 
-	void OnUpdate( slc::Timestep );
-	void OnEvent( slc::Event& e ) override
+	void OnUpdate( sl::Timestep );
+	void OnEvent( sl::Event& e ) override
 	{
-		e.Dispatch< slc::NetworkInEvent >( SLC_BIND_EVENT_FUNC( OnMessageReceived ) );
+		e.Dispatch< sl::NetworkInEvent >( SLC_BIND_EVENT_FUNC( OnMessageReceived ) );
 	}
 
 private:
-	bool OnMessageReceived( slc::NetworkInEvent& e );
+	bool OnMessageReceived( sl::NetworkInEvent& e );
 	bool SendMessage();
 
 	void OpenUsernameEntryIfNeeded();
@@ -42,25 +43,25 @@ private:
 	{
 		max_recent_msgs = 100
 	};
-	std::deque< slc::net::Payload > mRecentMessages;
+	std::deque< sl::net::Payload > mRecentMessages;
 };
 
 
-class ClientLayer : public slc::net::ClientLayer
+class ClientLayer : public sl::net::ClientLayer
 {
 public:
-	ClientLayer( slc::net::ClientContextOptions const& opts );
+	ClientLayer( sl::net::ClientContextOptions const& opts );
 
-	void OnConnect( slc::net::ConnectionPtr connection )
+	void OnConnect( sl::net::ConnectionPtr connection )
 	{
-		slc::Application::Get().PushLayer< ChatLayer >();
+		sl::Application::Get()->PushLayer< ChatLayer >();
 	}
-	void OnDisconnect( slc::net::ConnectionPtr )
+	void OnDisconnect( sl::net::ConnectionPtr )
 	{}
 };
 
-class ChatClient : public slc::Application
+class ChatClient : public sl::GuiApplication
 {
 public:
-	ChatClient( slc::Box< slc::ApplicationSpecification > spec, slc::net::ClientContextOptions const& opts );
+	ChatClient( sl::Ref< sl::GuiApplicationSpecification > spec, sl::net::ClientContextOptions const& opts );
 };

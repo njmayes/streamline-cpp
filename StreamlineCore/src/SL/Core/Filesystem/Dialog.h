@@ -2,7 +2,7 @@
 
 #include <SL/Core/Common/Base.h>
 
-namespace slc::fs {
+namespace sl::fs {
 
 	// These return empty if cancelled
 	std::optional< std::filesystem::path > OpenFileDialog( const std::vector< std::string >& filter );

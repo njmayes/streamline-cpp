@@ -2,7 +2,7 @@
 
 #include <atomic>
 
-namespace slc::thread {
+namespace sl::thread {
 
 	enum class UnlockPolicy
 	{
@@ -65,4 +65,4 @@ namespace slc::thread {
 		std::atomic_flag mFlag{};
 		UnlockPolicy mPolicy = UnlockPolicy::NotifyOne;
 	};
-} // namespace slc::thread
+} // namespace sl::thread

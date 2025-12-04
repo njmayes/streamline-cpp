@@ -8,7 +8,7 @@
 #include <functional>
 #include <type_traits>
 
-namespace slc {
+namespace sl {
 
 	class ThreadPool
 	{
@@ -62,4 +62,4 @@ namespace slc {
 		std::condition_variable mCV;
 		bool mStop = false;
 	};
-} // namespace slc
+} // namespace sl

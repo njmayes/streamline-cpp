@@ -6,7 +6,7 @@
 #include "SL/Core/Common/Application.h"
 #include "SL/Core/Events/EventTypes.h"
 
-namespace slc::net {
+namespace sl::net {
 
 	class NetLayer : public ApplicationLayer
 	{
@@ -85,4 +85,4 @@ namespace slc::net {
 		std::vector< ListenerHandle > mListeners;
 		std::set< ConnectionPtr > mConnections;
 	};
-} // namespace slc::net
+} // namespace sl::net

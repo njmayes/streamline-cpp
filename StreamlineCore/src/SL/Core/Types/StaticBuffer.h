@@ -2,7 +2,7 @@
 
 #include <array>
 
-namespace slc {
+namespace sl {
 
 	template < size_t TSize >
 	class StaticBuffer
@@ -67,4 +67,4 @@ namespace slc {
 	protected:
 		std::array< Byte, TSize > mData;
 	};
-} // namespace slc
+} // namespace sl
