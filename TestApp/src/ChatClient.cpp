@@ -1,8 +1,8 @@
 #include "ChatClient.h"
 
-#include "slc/Common/Time.h"
-#include "slc/Logging/Log.h"
-#include "slc/ImGui/Widgets.h"
+#include "SL/Core/Common/Time.h"
+#include "SL/Core/Logging/Log.h"
+#include "SL/Core/ImGui/Widgets.h"
 
 #include <iostream>
 

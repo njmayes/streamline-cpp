@@ -3,7 +3,7 @@
 #include "ChatRoom.h"
 #include "ChatClient.h"
 
-#include "slc/Common/EntryPoint.h"
+#include "SL/Core/Common/EntryPoint.h"
 
 #include <iostream>
 #include <csignal>

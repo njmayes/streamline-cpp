@@ -1,6 +1,6 @@
 #include "ChatRoom.h"
 
-#include "slc/Logging/Log.h"
+#include "SL/Core/Logging/Log.h"
 
 ServerLayer::ServerLayer( slc::net::ServerContextOptions const& opts )
 	: slc::net::ServerLayer( opts )
