@@ -86,14 +86,14 @@ namespace slc::Enum {
 	} // namespace detail
 
 	template < IsEnum T >
-	class EnumBitMask
+	class BitMask
 	{
 	private:
 		SCONSTEVAL bool IsEnumAllFlags()
 		{
 			auto values = magic_enum::enum_values< T >();
 
-			for (auto value : values)
+			for ( auto value : values )
 			{
 				if ( std::popcount( std::to_underlying( value ) ) > 1 )
 					return false;
@@ -107,15 +107,15 @@ namespace slc::Enum {
 	public:
 		using Underlying = std::underlying_type_t< T >;
 
-		constexpr EnumBitMask( Underlying mask )
+		constexpr BitMask( Underlying mask )
 			: mMask( mask )
 		{
 		}
 
-		template < typename... Bits >
-			requires( ( std::same_as< Bits, T > && ... ) )
-		constexpr EnumBitMask( Bits... bits )
-			: mMask( ( std::to_underlying( bits ) | ... ) )
+		template < typename... Ts >
+			requires( ... and std::same_as< T, Ts > )
+		constexpr BitMask( T first, Ts... rest )
+			: mMask( ( std::to_underlying( first ) | ... | std::to_underlying( rest ) ) )
 		{
 		}
 
@@ -128,6 +128,11 @@ namespace slc::Enum {
 		constexpr void Set( T flag )
 		{
 			mMask = static_cast< T >( std::to_underlying( mMask ) | std::to_underlying( flag ) );
+		}
+
+		constexpr void Reset(T flag)
+		{
+			mMask = static_cast< T >( std::to_underlying( mMask ) & ~std::to_underlying( flag ) );
 		}
 
 		constexpr auto begin() const

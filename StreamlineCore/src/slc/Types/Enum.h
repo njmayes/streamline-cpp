@@ -50,7 +50,7 @@ namespace slc {
 
 		SmartTestEnum foo = SmartTestEnum::Make< TestEnum::Unexpected >( "Actual value" );
 
-		auto bar = asasfa.Match(
+		auto bar = foo.Match(
 			slc::MatchCase< ErrorEnum::OutOfBounds >( [] { return "OutOfBounds"; } ),
 			slc::MatchCase< ErrorEnum::Unexpected >( []( std::string_view value ) { return value; } ),
 			slc::MatchDefault( [] { return "Default"; }
