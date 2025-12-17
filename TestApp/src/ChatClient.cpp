@@ -1,8 +1,8 @@
 #include "ChatClient.h"
 
-#include "slc/Common/Time.h"
-#include "slc/Logging/Log.h"
-#include "slc/ImGui/Widgets.h"
+#include "SL/Core/Common/Time.h"
+#include "SL/Core/Logging/Log.h"
+#include "SL/Gfx/ImGui/Widgets.h"
 
 #include <iostream>
 
@@ -11,7 +11,7 @@ static std::string GetTimestamp()
 	std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
 	std::time_t now_c = std::chrono::system_clock::to_time_t( now );
 
-	std::tm time = slc::GetLocalTime( &now_c );
+	std::tm time = sl::GetLocalTime( &now_c );
 
 	std::string timestamp( 20, '\0' );
 	std::strftime( timestamp.data(), timestamp.size(), "%F %T", &time );
@@ -20,13 +20,13 @@ static std::string GetTimestamp()
 
 void ChatLayer::OnOverlayRender()
 {
-	using slc::Widgets;
+	using sl::Widgets;
 
 	Widgets::BeginWindow( "Chat Client", ImGuiWindowFlags_NoTitleBar );
 
-	Widgets::BeginChild( "Messages", slc::Vec2f{ 0, -34.f } );
+	Widgets::BeginChild( "Messages", sl::Vec2f{ 0, -34.f } );
 
-	slc::Utils::SetWindowFontScale( 2.0f );
+	sl::Utils::SetWindowFontScale( 2.0f );
 
 	for ( auto const& line : mRecentMessages )
 	{
@@ -38,7 +38,7 @@ void ChatLayer::OnOverlayRender()
 
 	Widgets::BeginChild( "Input" );
 
-	slc::Utils::SetWindowFontScale( 2.0f );
+	sl::Utils::SetWindowFontScale( 2.0f );
 
 	int flags = ImGuiInputTextFlags_EnterReturnsTrue;
 	if ( mUsername.empty() or mInUsernameModal )
@@ -52,12 +52,12 @@ void ChatLayer::OnOverlayRender()
 	Widgets::EndWindow();
 }
 
-void ChatLayer::OnUpdate( slc::Timestep )
+void ChatLayer::OnUpdate( sl::Timestep )
 {
 	OpenUsernameEntryIfNeeded();
 }
 
-bool ChatLayer::OnMessageReceived( slc::NetworkInEvent& e )
+bool ChatLayer::OnMessageReceived( sl::NetworkInEvent& e )
 {
 	mRecentMessages.emplace_back( e.data );
 	return true;
@@ -73,16 +73,16 @@ bool ChatLayer::SendMessage()
 
 	auto text = std::format( "{}: [{}] {}", timestamp_view, mUsername, mCurrentText );
 
-	slc::net::Payload msg{};
+	sl::net::Payload msg{};
 	msg.Reserve( text.size() + 1 );
 	msg.Append( text );
 	msg.Push( '\0' );
 
-	slc::Application::PostEvent< slc::NetworkOutEvent >( msg );
+	sl::Application::PostEvent< sl::NetworkOutEvent >( msg );
 
 	mCurrentText.clear();
-	slc::Utils::ReloadCurrentBuffer();
-	slc::Utils::SetKeyboardFocusHere();
+	sl::Utils::ReloadCurrentBuffer();
+	sl::Utils::SetKeyboardFocusHere();
 
 	return false;
 }
@@ -92,7 +92,7 @@ void ChatLayer::OpenUsernameEntryIfNeeded()
 	if ( !mUsername.empty() or mInUsernameModal )
 		return;
 
-	using slc::Widgets;
+	using sl::Widgets;
 
 	mInUsernameModal = true;
 
@@ -104,21 +104,21 @@ void ChatLayer::OpenUsernameEntryIfNeeded()
 		mInUsernameModal = false;
 	};
 
-	auto cd = slc::ModalConstructionData{};
+	auto cd = sl::ModalConstructionData{};
 	cd.heading = "No username";
-	cd.button_type = slc::ModalButtons::OK;
+	cd.button_type = sl::ModalButtons::OK;
 
-	slc::Application::OpenModal< slc::InlineModal >( cd, on_render, on_complete );
+	sl::GuiApplication::OpenModal< sl::InlineModal >( cd, on_render, on_complete );
 }
 
-ClientLayer::ClientLayer( slc::net::ClientContextOptions const& opts )
-	: slc::net::ClientLayer( opts )
+ClientLayer::ClientLayer( sl::net::ClientContextOptions const& opts )
+	: sl::net::ClientLayer( opts )
 {
 }
 
-ChatClient::ChatClient( slc::Box< slc::ApplicationSpecification > spec, slc::net::ClientContextOptions const& opts )
-	: Application( std::move( spec ) )
+ChatClient::ChatClient( sl::Ref< sl::GuiApplicationSpecification > spec, sl::net::ClientContextOptions const& opts )
+	: GuiApplication( spec )
 {
 	PushLayer< ClientLayer >( opts );
-	AddLogTarget< slc::ConsoleLogTarget >( slc::LogLevel::Info );
+	AddLogTarget< sl::ConsoleLogTarget >( sl::LogLevel::Info );
 }

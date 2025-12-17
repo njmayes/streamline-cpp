@@ -5,24 +5,24 @@
 #include <set>
 #include <deque>
 
-class ServerLayer : public slc::net::ServerLayer
+class ServerLayer : public sl::net::ServerLayer
 {
 public:
-	ServerLayer( slc::net::ServerContextOptions const& opts );
+	ServerLayer( sl::net::ServerContextOptions const& opts );
 
-	void OnConnect( slc::net::ConnectionPtr participant ) override;
-	void OnMessage( slc::net::Payload const& msg ) override;
+	void OnConnect( sl::net::ConnectionPtr participant ) override;
+	void OnMessage( sl::net::Payload const& msg ) override;
 
 private:
 	enum
 	{
 		max_recent_msgs = 100
 	};
-	std::deque< slc::net::Payload > mRecentMessages;
+	std::deque< sl::net::Payload > mRecentMessages;
 };
 
-class ChatServer : public slc::Application
+class ChatServer : public sl::Application
 {
 public:
-	ChatServer( slc::Box< slc::ApplicationSpecification > spec, slc::net::ServerContextOptions const& opts );
+	ChatServer( sl::Ref< sl::ApplicationSpecification > spec, sl::net::ServerContextOptions const& opts );
 };

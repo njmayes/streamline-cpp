@@ -1,0 +1,187 @@
+#include "Window.h"
+
+#include "SL/Core/Common/Application.h"
+#include "SL/Core/Logging/Log.h"
+
+#include <glad/glad.h>
+#include "GLFW/glfw3.h"
+
+namespace sl {
+
+	static uint8_t sGLFWWindowCount = 0;
+
+	static void GLFWErrorCallback( int error, const char* description )
+	{
+		log::Error( "GLFW Error ({0}): {1}", error, description );
+	}
+
+	Window::Window( const WindowProperties& props )
+	{
+		Init( props );
+	}
+
+	Window::~Window()
+	{
+		Shutdown();
+	}
+
+	void Window::OnUpdate()
+	{
+		glfwPollEvents();
+		glfwSwapBuffers( mWindow );
+	}
+
+	void Window::SetTitle( std::string_view title )
+	{
+		mData.title = title;
+		glfwSetWindowTitle( mWindow, title.data() );
+	}
+
+	void Window::SetVSync( bool enabled )
+	{
+		if ( enabled )
+			glfwSwapInterval( 1 );
+		else
+			glfwSwapInterval( 0 );
+
+		mData.vSync = enabled;
+	}
+
+	bool Window::IsVSync() const
+	{
+		return mData.vSync;
+	}
+
+	void Window::Init( const WindowProperties& props )
+	{
+		mData.title = props.title;
+		mData.width = props.width;
+		mData.height = props.height;
+
+		if ( sGLFWWindowCount == 0 )
+		{
+			int success = glfwInit();
+			ASSERT( success, "Could not initialize GLFW!" );
+			glfwSetErrorCallback( GLFWErrorCallback );
+		}
+
+		if ( props.fullscreen )
+		{ // Set Window size to be full size of primary monitor and set borderless (prefer this to actual fullscreen)
+			GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+			const GLFWvidmode* mode = glfwGetVideoMode( monitor );
+			mData.width = mode->width;
+			mData.height = mode->height;
+			glfwWindowHint( GLFW_DECORATED, GLFW_FALSE );
+		}
+
+		log::Trace( "Creating window {0} ({1}, {2})", mData.title, mData.width, mData.height );
+
+		{
+#if defined( _DEBUG )
+			glfwWindowHint( GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE );
+#endif
+			mWindow = glfwCreateWindow( ( int )mData.width, ( int )mData.height, mData.title.c_str(), nullptr, nullptr );
+			++sGLFWWindowCount;
+		}
+		ASSERT( mWindow, "Could not create GLFW window!" );
+
+		glfwMakeContextCurrent( mWindow );
+		int status = gladLoadGLLoader( ( GLADloadproc )glfwGetProcAddress );
+		ASSERT( status, "Failed to initialize Glad!" );
+
+		log::Info( "OpenGL Info:" );
+		log::Info( "  Vendor: {0}", reinterpret_cast< const char* >( glGetString( GL_VENDOR ) ) );
+		log::Info( "  Renderer: {0}", reinterpret_cast< const char* >( glGetString( GL_RENDERER ) ) );
+		log::Info( "  Version: {0}", reinterpret_cast< const char* >( glGetString( GL_VERSION ) ) );
+
+		ASSERT( GLVersion.major > 4 || ( GLVersion.major == 4 && GLVersion.minor >= 5 ), "Streamline requires at least OpenGL version 4.5!" );
+
+		glfwSetWindowUserPointer( mWindow, &mData );
+		SetVSync( true );
+
+		// Set GLFW callbacks
+		glfwSetWindowSizeCallback( mWindow, []( GLFWwindow* window, int width, int height ) {
+			WindowData& data = *( WindowData* )glfwGetWindowUserPointer( window );
+			data.width = width;
+			data.height = height;
+
+			Application::PostEvent< WindowResizeEvent >( width, height );
+		} );
+
+		glfwSetWindowCloseCallback( mWindow, []( GLFWwindow* window ) {
+			Application::PostEvent< WindowCloseEvent >();
+		} );
+
+		glfwSetWindowPosCallback( mWindow, []( GLFWwindow* window, int xpos, int ypos ) {
+			Application::PostEvent< WindowMovedEvent >( xpos, ypos );
+		} );
+
+		glfwSetKeyCallback( mWindow, []( GLFWwindow* window, int key, int scancode, int action, int mods ) {
+			switch ( action )
+			{
+				case GLFW_PRESS:
+				{
+					Application::PostEvent< KeyPressedEvent >( ( KeyCode )key, false );
+					break;
+				}
+				case GLFW_RELEASE:
+				{
+					Application::PostEvent< KeyReleasedEvent >( ( KeyCode )key );
+					break;
+				}
+				case GLFW_REPEAT:
+				{
+					Application::PostEvent< KeyPressedEvent >( ( KeyCode )key, true );
+					break;
+				}
+			}
+		} );
+
+		glfwSetCharCallback( mWindow, []( GLFWwindow* window, unsigned int keycode ) {
+			Application::PostEvent< KeyTypedEvent >( keycode );
+		} );
+
+		glfwSetMouseButtonCallback( mWindow, []( GLFWwindow* window, int button, int action, int mods ) {
+			switch ( action )
+			{
+				case GLFW_PRESS:
+				{
+					Application::PostEvent< MouseButtonPressedEvent >( button );
+					break;
+				}
+				case GLFW_RELEASE:
+				{
+					Application::PostEvent< MouseButtonReleasedEvent >( button );
+					break;
+				}
+			}
+		} );
+
+		glfwSetScrollCallback( mWindow, []( GLFWwindow* window, double xOffset, double yOffset ) {
+			Application::PostEvent< MouseScrolledEvent >( ( float )xOffset, ( float )yOffset );
+		} );
+
+		glfwSetCursorPosCallback( mWindow, []( GLFWwindow* window, double xPos, double yPos ) {
+			Application::PostEvent< MouseMovedEvent >( ( float )xPos, ( float )yPos );
+		} );
+
+		glfwSetWindowFocusCallback( mWindow, []( GLFWwindow* window, int focused ) {
+			if ( focused == GLFW_TRUE )
+				Application::PostEvent< WindowFocusEvent >();
+			else
+				Application::PostEvent< WindowFocusLostEvent >();
+		} );
+	}
+
+	void Window::Shutdown()
+	{
+		glfwDestroyWindow( mWindow );
+		--sGLFWWindowCount;
+
+		if ( sGLFWWindowCount == 0 )
+		{
+			glfwTerminate();
+		}
+		log::Info( "Window shutdown complete" );
+	}
+} // namespace sl

@@ -1,0 +1,26 @@
+#pragma once
+
+#include <SL/Core/Common/Base.h>
+
+struct GLFWwindow;
+
+namespace sl {
+
+	class GraphicsContext
+	{
+	public:
+		GraphicsContext( GLFWwindow* windowHandle );
+
+		virtual void Init();
+		virtual void SwapBuffers();
+
+		static Box< GraphicsContext > Create( void* window )
+		{
+			return MakeBox< GraphicsContext >( ( GLFWwindow* )window );
+		}
+
+	private:
+		GLFWwindow* mWindowHandle;
+	};
+
+} // namespace sl
