@@ -127,33 +127,33 @@ namespace sl {
 			return dynamic_cast< T* >( Get() );
 		}
 
-		static Ref< ApplicationSpecification > GetSpec()
+		static Ref< const ApplicationSpecification > GetSpec()
 		{
+			if ( not sInstance )
+				return nullptr;
+
 			return sInstance->mSpecification;
 		}
 		template < typename T >
 			requires std::derived_from< T, ApplicationSpecification >
-		static const Ref< T > GetSpec()
+		static const Ref< const T > GetSpec()
 		{
-			return GetSpec().As< T >();
-		}
+			if ( not sInstance )
+				return nullptr;
 
-		template < typename T >
-			requires std::derived_from< T, ApplicationSpecification >
-		static void SetSpec( const T& spec )
-		{
-			sInstance->mSpecification = Ref::Create< T >( spec );
+			return GetSpec().As< T >();
 		}
 
 		template < IsAction Func >
 		static void SubmitActionToMainThread( Func&& function )
 		{
+			if ( not sInstance )
+				return;
+
 			std::scoped_lock< std::mutex > lock( sInstance->mState.main_thread_queue_mutex );
 
 			sInstance->mState.main_thread_queue.emplace_back( std::move( function ) );
 		}
-
-		static void ExecuteQueuedJobs();
 
 		static void BlockEsc( bool block = true );
 		static void BlockEvents( bool block );
@@ -180,6 +180,8 @@ namespace sl {
 	private:
 		static void Run( int argc, char** argv );
 
+		static void ExecuteQueuedJobs();
+
 	protected:
 		detail::LayerStack const& GetLayerStack()
 		{
@@ -187,7 +189,7 @@ namespace sl {
 		}
 
 	protected:
-		Ref< ApplicationSpecification > mSpecification;
+		Ref< const ApplicationSpecification > mSpecification;
 		detail::ApplicationState mState;
 
 	private:

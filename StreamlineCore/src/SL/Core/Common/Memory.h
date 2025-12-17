@@ -61,18 +61,18 @@ namespace sl {
 		class RefTracker
 		{
 		public:
-			static bool IsTracked( void* data );
+			static bool IsTracked( void const* data );
 
-			static void AddToReferenceTracker( void* data );
-			static void RemoveFromReferenceTracker( void* data );
+			static void AddToReferenceTracker( void const* data );
+			static void RemoveFromReferenceTracker( void const* data );
 
 		private:
-			inline static std::unordered_set< void* > sRefSet;
+			inline static std::unordered_set< void const* > sRefSet;
 		};
 	} // namespace detail
 
 	namespace Memory {
-		inline bool IsTracked( void* data )
+		inline bool IsTracked( void const* data )
 		{
 			return detail::RefTracker::IsTracked( data );
 		}
@@ -221,7 +221,7 @@ namespace sl {
 				return;
 
 			mData->IncRefCount();
-			detail::RefTracker::AddToReferenceTracker( static_cast< void* >( mData ) );
+			detail::RefTracker::AddToReferenceTracker( static_cast< const void* >( mData ) );
 		}
 
 		void DecRef()
@@ -233,7 +233,7 @@ namespace sl {
 			if ( mData->GetRefCount() == 0 )
 			{
 				delete mData;
-				detail::RefTracker::RemoveFromReferenceTracker( static_cast< void* >( mData ) );
+				detail::RefTracker::RemoveFromReferenceTracker( static_cast< const void* >( mData ) );
 				mData = nullptr;
 			}
 		}

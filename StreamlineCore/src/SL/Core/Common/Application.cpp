@@ -5,14 +5,11 @@ namespace sl {
 	Application::Application( Ref< ApplicationSpecification > spec )
 		: mSpecification( spec )
 	{
-		if ( sInstance )
-		{
-			ASSERT( false, "Application already exists" );
-			return;
-		}
+		ASSERT( not sInstance, "App instance already exists" );
 		sInstance = this;
 
 		mEventRuntime = MakeBox< EventRuntime >();
+
 		// Manually call RegisterListener for Application it is not created via EventRuntime::CreateListener
 		mEventRuntime->RegisterListener( this );
 
@@ -47,17 +44,7 @@ namespace sl {
 	void Application::Run( int argc, char** argv )
 	{
 		Application* app = CreateApplication( argc, argv );
-
-		if ( !app )
-		{
-			FATAL_ERROR( "No app instance was created." );
-		}
-
-		if ( sInstance != app )
-		{
-			delete app;
-			FATAL_ERROR( false, "There was already an app instance, could not create a new one" );
-		}
+		ASSERT( app, "No app instance was created" );
 
 		while ( sInstance->mState.running )
 		{
@@ -97,16 +84,25 @@ namespace sl {
 
 	void Application::BlockEsc( bool block )
 	{
+		if ( !sInstance )
+			return;
+
 		sInstance->mState.block_exit = block;
 	}
 
 	void Application::BlockEvents( bool block )
 	{
+		if ( !sInstance )
+			return;
+
 		sInstance->mState.block_events = block;
 	}
 
 	bool Application::AreEventsBlocked()
 	{
+		if ( !sInstance )
+			return false;
+
 		return sInstance->mState.block_events;
 	}
 } // namespace sl

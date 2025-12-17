@@ -13,7 +13,7 @@ target_include_directories(streamline-core
 
 file(GLOB_RECURSE STREAMLINE_CORE_SOURCES
     CONFIGURE_DEPENDS
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/SL/Core/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
 )
 
 target_sources(streamline-core
