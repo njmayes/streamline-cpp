@@ -109,7 +109,6 @@ target_link_libraries(streamline-core
         glm::glm
         ${MAGIC_ENUM_TARGET}
         portable-file-dialogs
-        stb
         asio
         OpenSSL::SSL
         OpenSSL::Crypto
