@@ -46,6 +46,11 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/g-truc/glm.git
     GIT_TAG        1.0.1
 )
+
+set(GLM_BUILD_LIBRARY OFF CACHE BOOL "" FORCE)
+set(GLM_BUILD_TESTS   OFF CACHE BOOL "" FORCE)
+set(GLM_BUILD_INSTALL OFF CACHE BOOL "" FORCE)
+
 FetchContent_MakeAvailable(glm)
 
 
@@ -95,11 +100,10 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(asio)
 
-add_library(asio INTERFACE)
-target_include_directories(asio
-    INTERFACE
-        ${asio_SOURCE_DIR}/asio/include
-)
+if(NOT TARGET asio)
+  add_library(asio INTERFACE)
+  target_include_directories(asio INTERFACE ${asio_SOURCE_DIR}/asio/include)
+endif()
 
 find_package(OpenSSL REQUIRED)
 
