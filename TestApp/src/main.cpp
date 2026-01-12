@@ -3,8 +3,6 @@
 #include "ChatRoom.h"
 #include "ChatClient.h"
 
-#include "SL/Core/Common/EntryPoint.h"
-
 #include <iostream>
 #include <csignal>
 
@@ -139,64 +137,65 @@ using SmartErrorEnum = SmartEnum<
 SLC_FOR_EACH( TEST, x )
 
 
-sl::Application* NetServerTest( int argc, char* argv[] )
+sl::Application* NetServerTest( sl::CommandLineArgs const& args )
 {
-	if ( argc < 2 )
-	{
-		return nullptr;
-	}
+	using namespace sl::net;
 
 	auto spec = sl::Ref< sl::ApplicationSpecification >::Create();
 	spec->working_dir = "C:/Users/natha/Desktop/Coding/Projects/WIP/C++/streamline-cpp/TestApp";
 
-	sl::net::ServerContextOptions opts{};
-	opts.num_threads = 5;
-	opts.cert_file = "server.crt";
-	opts.key_file = "server.key";
 
-	opts.ports = std::vector< std::uint16_t >( argc - 1 );
+	auto opts = sl::Read< ServerContextOptions >(
+		args,
+		sl::Field< ServerContextOptions >( "num_threads", 'n', &ServerContextOptions::num_threads, 1 ),
+		sl::Field< ServerContextOptions >( "host", 'h', &ServerContextOptions::cert_file, "server.crt" ),
+		sl::Field< ServerContextOptions >( "threads", 't', &ServerContextOptions::key_file, "server.crt" ),
+		sl::Field< ServerContextOptions >( "ports", 'p', &ServerContextOptions::ports, {} )
+	);
 
-	for ( int i = 1; i < argc; ++i )
-	{
-		unsigned short port = std::atoi( argv[ i ] );
-		opts.ports[ i - 1 ] = port;
-	}
+	if ( not opts.has_value() )
+		throw std::runtime_error( "Failed to parse server options from command line" );
 
-	return new ChatServer( spec, opts );
+	return new ChatServer( spec, *opts );
 }
 
-sl::Application* NetClientTest( int argc, char* argv[] )
+sl::Application* NetClientTest( sl::CommandLineArgs const& args )
 {
-	if ( argc < 2 )
-	{
-		return nullptr;
-	}
+	using namespace sl::net;
 
 	auto spec = sl::Ref< sl::GuiApplicationSpecification >::Create();
 	spec->working_dir = "C:/Users/natha/Desktop/Coding/Projects/WIP/C++/streamline-cpp/TestApp";
 
-	sl::net::ClientContextOptions opts{};
+	auto opts = sl::Read< ClientContextOptions >(
+		args,
+		sl::Field< ClientContextOptions >( "num_threads", 'n', &ClientContextOptions::num_threads, 1 ),
+		sl::Field< ClientContextOptions >( "host", 'h', &ClientContextOptions::host ),
+		sl::Field< ClientContextOptions >( "port", 't', &ClientContextOptions::port )
+	);
 
-	const char* host = argv[ 1 ];
-	unsigned short port = std::atoi( argv[ 2 ] );
+	if ( not opts.has_value() )
+		throw std::runtime_error( "Failed to parse server options from command line" );
 
-	opts.host = host;
-	opts.port = port;
-
-	return new ChatClient( spec, opts );
+	return new ChatClient( spec, *opts );
 }
 
-sl::Application* CreateApplication( int argc, char** argv )
+sl::Application* CreateApplication( sl::CommandLineArgs const& args )
 {
-	if ( argc < 2 )
+	if ( args.Count() < 2 )
 		return nullptr;
 
-	if ( std::string( argv[ 1 ] ) == "server" )
-		return NetServerTest( argc - 1, &argv[ 1 ] );
-	else if ( std::string( argv[ 1 ] ) == "client" )
-		return NetClientTest( argc - 1, &argv[ 1 ] );
+	if ( std::string( args[ 1 ] ) == "server" )
+		return NetServerTest( args );
+	else if ( std::string( args[ 1 ] ) == "client" )
+		return NetClientTest( args );
 
 	return nullptr;
+}
+
+int main( int argc, char** argv )
+{
+	sl::CommandLineArgs args{ argc, argv };
+	sl::Application::Run( CreateApplication, args );
 }
 
 // static auto constexpr Filename = "measurements.txt";

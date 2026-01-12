@@ -41,9 +41,9 @@ namespace sl {
 		sInstance->mState.main_thread_queue.clear();
 	}
 
-	void Application::Run( int argc, char** argv )
+	void Application::Run( ApplicationFactory make_app, CommandLineArgs const& args )
 	{
-		Application* app = CreateApplication( argc, argv );
+		Application* app = make_app( args );
 		ASSERT( app, "No app instance was created" );
 
 		while ( sInstance->mState.running )

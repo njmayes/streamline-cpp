@@ -1,5 +1,7 @@
 #pragma once
 
+#include "CommandLine.h"
+
 #include "SL/Core/Events/IEventListener.h"
 #include "SL/Core/Events/EventRuntime.h"
 #include "SL/Core/Logging/Logger.h"
@@ -8,16 +10,11 @@
 #include <string>
 #include <mutex>
 
-int main( int argc, char* argv[] );
-
 namespace sl {
+
 	class Application;
-}
 
-// To be defined in client
-extern sl::Application* CreateApplication( int argc, char** argv );
-
-namespace sl {
+	using ApplicationFactory = std::function< Application*( CommandLineArgs const& ) >;
 
 	class ApplicationLayer : public IEventListener
 	{
@@ -73,6 +70,8 @@ namespace sl {
 	public:
 		SLC_LISTENING_EVENTS( None )
 
+		static void Run( ApplicationFactory factory, CommandLineArgs const& args );
+
 	public:
 		Application( Ref< ApplicationSpecification > spec );
 		virtual ~Application();
@@ -82,7 +81,8 @@ namespace sl {
 		virtual void OnRender()
 		{}
 
-		void OnEvent( Event& e ) override {}
+		void OnEvent( Event& e ) override
+		{}
 
 		template < detail::IsLayer T, typename... Args >
 		void PushLayer( Args&&... args )
@@ -178,8 +178,6 @@ namespace sl {
 		}
 
 	private:
-		static void Run( int argc, char** argv );
-
 		static void ExecuteQueuedJobs();
 
 	protected:
@@ -200,6 +198,5 @@ namespace sl {
 
 	private:
 		inline static Application* sInstance = nullptr;
-		friend int ::main( int argc, char** argv );
 	};
 } // namespace sl
