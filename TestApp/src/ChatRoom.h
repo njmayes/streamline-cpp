@@ -1,6 +1,6 @@
 #pragma once
 
-#include "streamline.h"
+#include "streamline-core.h"
 
 #include <set>
 #include <deque>

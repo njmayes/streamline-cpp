@@ -46,19 +46,28 @@ namespace sl {
 			return std::span< std::string_view const >( mArgs.data() + 1, mArgs.size() - 1 );
 		}
 
+		std::string_view ProgramName() const
+		{
+			if ( mArgs.empty() )
+			{
+				return {};
+			}
+			return mArgs[ 0 ];
+		}
+
 		std::string_view operator[]( std::size_t idx ) const
 		{
-			return mArgs[ idx ];
+			return Values()[ idx ];
 		}
 
 		auto begin() const
 		{
-			return mArgs.begin();
+			return Values().begin();
 		}
 
 		auto end() const
 		{
-			return mArgs.end();
+			return Values().end();
 		}
 
 	private:

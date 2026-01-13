@@ -1,4 +1,4 @@
-#include "streamline.h"
+#include "streamline-core.h"
 
 #include "ChatRoom.h"
 #include "ChatClient.h"
@@ -148,8 +148,8 @@ sl::Application* NetServerTest( sl::CommandLineArgs const& args )
 	auto opts = sl::Read< ServerContextOptions >(
 		args,
 		sl::Field< ServerContextOptions >( "num_threads", 'n', &ServerContextOptions::num_threads, 1 ),
-		sl::Field< ServerContextOptions >( "host", 'h', &ServerContextOptions::cert_file, "server.crt" ),
-		sl::Field< ServerContextOptions >( "threads", 't', &ServerContextOptions::key_file, "server.crt" ),
+		sl::Field< ServerContextOptions >( "cert", 'c', &ServerContextOptions::cert_file, "server.crt" ),
+		sl::Field< ServerContextOptions >( "key", 'k', &ServerContextOptions::key_file, "server.crt" ),
 		sl::Field< ServerContextOptions >( "ports", 'p', &ServerContextOptions::ports, {} )
 	);
 
@@ -170,23 +170,23 @@ sl::Application* NetClientTest( sl::CommandLineArgs const& args )
 		args,
 		sl::Field< ClientContextOptions >( "num_threads", 'n', &ClientContextOptions::num_threads, 1 ),
 		sl::Field< ClientContextOptions >( "host", 'h', &ClientContextOptions::host ),
-		sl::Field< ClientContextOptions >( "port", 't', &ClientContextOptions::port )
+		sl::Field< ClientContextOptions >( "port", 'p', &ClientContextOptions::port )
 	);
 
 	if ( not opts.has_value() )
-		throw std::runtime_error( "Failed to parse server options from command line" );
+		throw std::runtime_error( "Failed to parse client options from command line" );
 
 	return new ChatClient( spec, *opts );
 }
 
 sl::Application* CreateApplication( sl::CommandLineArgs const& args )
 {
-	if ( args.Count() < 2 )
+	if ( args.Count() < 1 )
 		return nullptr;
 
-	if ( std::string( args[ 1 ] ) == "server" )
+	if ( std::string( args[ 0 ] ) == "server" )
 		return NetServerTest( args );
-	else if ( std::string( args[ 1 ] ) == "client" )
+	else if ( std::string( args[ 0 ] ) == "client" )
 		return NetClientTest( args );
 
 	return nullptr;
