@@ -4,7 +4,7 @@
 
 #include "nlohmann/json.hpp"
 
-namespace sl::JSON {
+namespace sl::json {
 
 	template<typename T>
 	concept CanSerialise = requires (const T& t)

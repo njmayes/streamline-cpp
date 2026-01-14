@@ -34,7 +34,7 @@ namespace sl {
 
 		std::size_t Count() const
 		{
-			return mArgs.size();
+			return mArgs.size() - 1;
 		}
 
 		std::span< std::string_view const > Values() const

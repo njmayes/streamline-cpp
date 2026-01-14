@@ -13,6 +13,7 @@
 #include "SL/Core/IO/Json.h"
 
 #include "SL/Core/IPC/SharedMemory.h"
+#include "SL/Core/IPC/SharedBuffer.h"
 
 #include "SL/Core/Logging/Log.h"
 #include "SL/Core/Logging/Targets/FileLogTarget.h"

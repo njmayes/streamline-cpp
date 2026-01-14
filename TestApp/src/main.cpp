@@ -1,4 +1,4 @@
-#include "streamline-core.h"
+#include "SL/Core.h"
 
 #include "ChatRoom.h"
 #include "ChatClient.h"

@@ -43,6 +43,7 @@ namespace sl {
 
 	void Application::Run( ApplicationFactory make_app, CommandLineArgs const& args )
 	{
+		SLC_TODO( "Handle application creation failure using optionals" );
 		Application* app = make_app( args );
 		ASSERT( app, "No app instance was created" );
 

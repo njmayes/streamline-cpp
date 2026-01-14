@@ -1,7 +1,7 @@
 #pragma once
 
-#include "streamline-core.h"
-#include "streamline-gfx.h"
+#include "SL/Core.h"
+#include "SL/Gfx.h"
 
 #include <deque>
 #include <thread>
