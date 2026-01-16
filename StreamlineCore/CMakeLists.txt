@@ -77,7 +77,7 @@ endif()
 # portable-file-dialogs (single header)
 FetchContent_Declare(
     portable_file_dialogs
-    GIT_REPOSITORY https://github.com/samhocevar/portable-file-dialogs.git
+    GIT_REPOSITORY https://github.com/njmayes/portable-file-dialogs
     GIT_TAG        main
 )
 FetchContent_MakeAvailable(portable_file_dialogs)
