@@ -74,9 +74,12 @@ FetchContent_MakeAvailable(glfw)
 FetchContent_Declare(
     glad
     GIT_REPOSITORY https://github.com/Dav1dde/glad.git
-    GIT_TAG        v0.1.36
+    GIT_TAG        v2.0.8
+    SOURCE_SUBDIR  cmake
 )
 FetchContent_MakeAvailable(glad)
+
+glad_add_library(glad_gl_core_46 STATIC REPRODUCIBLE LOADER API gl:core=4.6)
 
 # -------------------------
 # ImGui
@@ -109,7 +112,7 @@ target_include_directories(imgui_glfw
 target_link_libraries(imgui_glfw
     PUBLIC
         glfw
-        glad
+        glad_gl_core_46
 )
 
 # -------------------------
@@ -141,7 +144,7 @@ target_link_libraries(streamline-gfx
     PUBLIC
         stb
         glfw
-        glad
+        glad_gl_core_46
         imgui_glfw
         imguizmo
 )

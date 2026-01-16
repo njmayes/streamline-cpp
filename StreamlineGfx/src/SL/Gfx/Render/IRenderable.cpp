@@ -1,6 +1,6 @@
 #include "IRenderable.h"
 
-#include <glad/glad.h>
+#include <glad/gl.h>
 
 namespace sl {
 

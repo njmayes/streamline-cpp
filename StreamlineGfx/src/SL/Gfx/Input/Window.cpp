@@ -3,7 +3,7 @@
 #include "SL/Core/Common/Application.h"
 #include "SL/Core/Logging/Log.h"
 
-#include <glad/glad.h>
+#include <glad/gl.h>
 #include "GLFW/glfw3.h"
 
 namespace sl {
@@ -86,15 +86,13 @@ namespace sl {
 		ASSERT( mWindow, "Could not create GLFW window!" );
 
 		glfwMakeContextCurrent( mWindow );
-		int status = gladLoadGLLoader( ( GLADloadproc )glfwGetProcAddress );
+		int status = gladLoadGL( glfwGetProcAddress );
 		ASSERT( status, "Failed to initialize Glad!" );
 
 		log::Info( "OpenGL Info:" );
-		log::Info( "  Vendor: {0}", reinterpret_cast< const char* >( glGetString( GL_VENDOR ) ) );
-		log::Info( "  Renderer: {0}", reinterpret_cast< const char* >( glGetString( GL_RENDERER ) ) );
-		log::Info( "  Version: {0}", reinterpret_cast< const char* >( glGetString( GL_VERSION ) ) );
-
-		ASSERT( GLVersion.major > 4 || ( GLVersion.major == 4 && GLVersion.minor >= 5 ), "Streamline requires at least OpenGL version 4.5!" );
+		log::Info( "\tVendor: {0}", reinterpret_cast< const char* >( glGetString( GL_VENDOR ) ) );
+		log::Info( "\tRenderer: {0}", reinterpret_cast< const char* >( glGetString( GL_RENDERER ) ) );
+		log::Info( "\tVersion: {0}", reinterpret_cast< const char* >( glGetString( GL_VERSION ) ) );
 
 		glfwSetWindowUserPointer( mWindow, &mData );
 		SetVSync( true );

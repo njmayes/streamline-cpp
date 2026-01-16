@@ -1,6 +1,6 @@
 #include "Framebuffer.h"
 
-#include <glad/glad.h>
+#include <glad/gl.h>
 
 namespace sl {
 

@@ -71,8 +71,10 @@ If the graphics library is built, then the derived application class `sl::GuiApp
 ## Dependencies
 
 * OpenSSL - for asio
-* VulkanSDK - If building graphics module for compiling shaders
-* Currently supports Windows and Linux (Ubuntu tested).
+
+#### Graphics Module Only
+* VulkanSDK - For compiling shaders
+* Python + Jinja2 - For glad OpenGL loader generation
 
 ## License
 
