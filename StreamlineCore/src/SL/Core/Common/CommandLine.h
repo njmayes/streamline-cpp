@@ -2,21 +2,22 @@
 
 #include "sl/Core/Common/Base.h"
 
+#include <array>
 #include <charconv>
 #include <cstddef>
 #include <expected>
 #include <optional>
 #include <span>
+#include <stdexcept>
+#include <string>
 #include <string_view>
+#include <system_error>
 #include <tuple>
 #include <type_traits>
 #include <utility>
 #include <vector>
 
 namespace sl {
-	// ------------------------------------------------------------
-	// CommandLine
-	// ------------------------------------------------------------
 
 	class CommandLineArgs
 	{
@@ -25,8 +26,13 @@ namespace sl {
 
 		CommandLineArgs( int argc, char const* const* argv )
 		{
-			mArgs.reserve( argc > 0 ? static_cast< std::size_t >( argc ) : 0 );
-			for ( int i = 0; i < argc; ++i )
+			if ( argc == 0 || !argv || !argv[ 0 ] )
+				throw std::runtime_error( "Invalid command line arguments" );
+
+			mProgramPath = std::string_view{ argv[ 0 ] };
+
+			mArgs.reserve( static_cast< std::size_t >( argc > 1 ? argc - 1 : 0 ) );
+			for ( int i = 1; i < argc; ++i )
 			{
 				mArgs.emplace_back( argv[ i ] ? std::string_view{ argv[ i ] } : std::string_view{} );
 			}
@@ -34,25 +40,31 @@ namespace sl {
 
 		std::size_t Count() const
 		{
-			return mArgs.size() - 1;
+			return mArgs.size();
+		}
+
+		bool Empty() const
+		{
+			return mArgs.empty();
+		}
+
+		std::string_view PopFront()
+		{
+			if ( mArgs.empty() )
+				return {};
+
+			auto const val = mArgs.front();
+			mArgs.erase( mArgs.begin() );
+			return val;
 		}
 
 		std::span< std::string_view const > Values() const
 		{
-			if ( mArgs.size() <= 1 )
-			{
-				return {};
-			}
-			return std::span< std::string_view const >( mArgs.data() + 1, mArgs.size() - 1 );
+			return mArgs;
 		}
-
-		std::string_view ProgramName() const
+		std::string_view Path() const
 		{
-			if ( mArgs.empty() )
-			{
-				return {};
-			}
-			return mArgs[ 0 ];
+			return mProgramPath;
 		}
 
 		std::string_view operator[]( std::size_t idx ) const
@@ -64,13 +76,13 @@ namespace sl {
 		{
 			return Values().begin();
 		}
-
 		auto end() const
 		{
 			return Values().end();
 		}
 
 	private:
+		std::string_view mProgramPath{};
 		std::vector< std::string_view > mArgs{};
 	};
 
@@ -89,22 +101,18 @@ namespace sl {
 		{
 			auto const pos = s.find( ch );
 			if ( pos == std::string_view::npos )
-			{
 				return std::nullopt;
-			}
 			return std::pair{ s.substr( 0, pos ), s.substr( pos + 1 ) };
 		}
 
 		inline std::optional< bool > ParseBool( std::string_view s )
 		{
 			if ( s.empty() || s == "1" || s == "true" || s == "TRUE" || s == "True" || s == "yes" || s == "on" )
-			{
 				return true;
-			}
+
 			if ( s == "0" || s == "false" || s == "FALSE" || s == "False" || s == "no" || s == "off" )
-			{
 				return false;
-			}
+
 			return std::nullopt;
 		}
 
@@ -120,9 +128,7 @@ namespace sl {
 			{
 				auto r = std::from_chars( b, e, out );
 				if ( r.ec == std::errc{} && r.ptr == e )
-				{
 					return out;
-				}
 				return std::nullopt;
 			}
 			else if constexpr ( std::is_floating_point_v< T > )
@@ -130,9 +136,7 @@ namespace sl {
 #if defined( __cpp_lib_to_chars ) && __cpp_lib_to_chars >= 201611L
 				auto r = std::from_chars( b, e, out, std::chars_format::general );
 				if ( r.ec == std::errc{} && r.ptr == e )
-				{
 					return out;
-				}
 				return std::nullopt;
 #else
 				( void )b;
@@ -153,6 +157,10 @@ namespace sl {
 			{
 				return s;
 			}
+			else if constexpr ( std::is_same_v< T, std::string > )
+			{
+				return std::string{ s };
+			}
 			else if constexpr ( std::is_same_v< T, bool > )
 			{
 				return ParseBool( s );
@@ -166,6 +174,18 @@ namespace sl {
 				return std::nullopt;
 			}
 		}
+
+		template < typename T >
+		struct is_std_vector : std::false_type
+		{};
+
+		template < typename U, typename A >
+		struct is_std_vector< std::vector< U, A > > : std::true_type
+		{};
+
+		template < typename T >
+		inline constexpr bool is_std_vector_v = is_std_vector< T >::value;
+
 	} // namespace detail
 
 	// ------------------------------------------------------------
@@ -271,6 +291,7 @@ namespace sl {
 		Code error_code{ Code::Ok };
 		std::string_view token{};
 		std::string_view field{};
+		std::optional< char > short_opt{};
 	};
 
 	template < typename T >
@@ -302,34 +323,88 @@ namespace sl {
 		template < typename T, typename SpecT >
 		inline std::optional< ReadError > Assign( T& out, SpecT const& spec, std::string_view token, std::string_view value )
 		{
-			if ( spec.arity_kind == Arity::Flag )
-			{
-				using member_t = std::remove_reference_t< decltype( out.*( spec.member ) ) >;
+			using member_t = std::remove_reference_t< decltype( out.*( spec.member ) ) >;
 
-				if constexpr ( std::is_same_v< member_t, bool > )
+			// Vector support:
+			// - Repeat option to append: --include a --include b
+			// - Also supports comma-separated: --include a,b,c
+			if constexpr ( detail::is_std_vector_v< member_t > )
+			{
+				if ( spec.arity_kind == Arity::Flag )
 				{
-					auto parsed = spec.parser( value );
+					return ReadError{ ReadError::Code::BadValue, token, spec.long_name, std::nullopt };
+				}
+
+				using elem_t = typename member_t::value_type;
+
+				// Element parser:
+				// For now, use DefaultParser<elem_t>. If you want per-field custom element parsing,
+				// change FieldSpec to store an element parser for vector fields.
+				DefaultParser< elem_t > elem_parser{};
+
+				auto append_one = [ & ]( std::string_view part ) -> std::optional< ReadError > {
+					auto parsed = elem_parser( part );
 					if ( !parsed )
 					{
-						return ReadError{ ReadError::Code::BadValue, token, spec.long_name };
+						return ReadError{ ReadError::Code::BadValue, token, spec.long_name, std::nullopt };
 					}
-					out.*( spec.member ) = *parsed;
+					( out.*( spec.member ) ).push_back( std::move( *parsed ) );
 					return std::nullopt;
-				}
-				else
-				{
-					return ReadError{ ReadError::Code::BadValue, token, spec.long_name };
-				}
-			}
+				};
 
-			auto parsed = spec.parser( value );
-			if ( !parsed )
-			{
-				return ReadError{ ReadError::Code::BadValue, token, spec.long_name };
+				std::size_t start = 0;
+				while ( start <= value.size() )
+				{
+					auto const comma = value.find( ',', start );
+					auto const part = ( comma == std::string_view::npos )
+										  ? value.substr( start )
+										  : value.substr( start, comma - start );
+
+					if ( auto e = append_one( part ) )
+					{
+						return e;
+					}
+
+					if ( comma == std::string_view::npos )
+					{
+						break;
+					}
+					start = comma + 1;
+				}
+
+				return std::nullopt;
 			}
-			out.*( spec.member ) = *parsed;
-			return std::nullopt;
+			else
+			{
+				// Flag behaviour (only supported for bool members)
+				if ( spec.arity_kind == Arity::Flag )
+				{
+					if constexpr ( std::is_same_v< member_t, bool > )
+					{
+						auto parsed = spec.parser( value );
+						if ( !parsed )
+						{
+							return ReadError{ ReadError::Code::BadValue, token, spec.long_name, std::nullopt };
+						}
+						out.*( spec.member ) = *parsed;
+						return std::nullopt;
+					}
+					else
+					{
+						return ReadError{ ReadError::Code::BadValue, token, spec.long_name, std::nullopt };
+					}
+				}
+
+				auto parsed = spec.parser( value );
+				if ( !parsed )
+				{
+					return ReadError{ ReadError::Code::BadValue, token, spec.long_name, std::nullopt };
+				}
+				out.*( spec.member ) = *parsed;
+				return std::nullopt;
+			}
 		}
+
 		template < typename T, typename... SpecsT >
 		inline ReadResult< T > ReadImpl( CommandLineArgs const& cmd, std::tuple< SpecsT... > const& specs )
 		{
@@ -432,7 +507,7 @@ namespace sl {
 					auto const* spec_ptr = FindLong( name );
 					if ( !spec_ptr )
 					{
-						return std::unexpected( ReadError{ ReadError::Code::UnknownOption, tok, name } );
+						return std::unexpected( ReadError{ ReadError::Code::UnknownOption, tok, name, std::nullopt } );
 					}
 
 					std::optional< ReadError > err{};
@@ -460,7 +535,7 @@ namespace sl {
 
 								  if ( i + 1 >= tokens.size() )
 								  {
-									  err = ReadError{ ReadError::Code::MissingValue, tok, name };
+									  err = ReadError{ ReadError::Code::MissingValue, tok, name, std::nullopt };
 									  return;
 								  }
 
@@ -502,7 +577,7 @@ namespace sl {
 					auto const* spec_ptr = FindShort( opt );
 					if ( !spec_ptr )
 					{
-						return std::unexpected( ReadError{ ReadError::Code::UnknownOption, tok, std::string_view{ &opt, 1 } } );
+						return std::unexpected( ReadError{ ReadError::Code::UnknownOption, tok, {}, opt } );
 					}
 
 					std::optional< ReadError > err{};
@@ -530,7 +605,7 @@ namespace sl {
 
 								  if ( i + 1 >= tokens.size() )
 								  {
-									  err = ReadError{ ReadError::Code::MissingValue, tok, s.long_name };
+									  err = ReadError{ ReadError::Code::MissingValue, tok, s.long_name, std::nullopt };
 									  return;
 								  }
 
@@ -552,7 +627,7 @@ namespace sl {
 
 				if ( positional_idx >= positional_specs.size() )
 				{
-					return std::unexpected( ReadError{ ReadError::Code::TooManyPositionals, tok, {} } );
+					return std::unexpected( ReadError{ ReadError::Code::TooManyPositionals, tok, {}, std::nullopt } );
 				}
 
 				auto const* spec_ptr = positional_specs[ positional_idx ];
@@ -602,7 +677,7 @@ namespace sl {
 
 			if ( missing )
 			{
-				return std::unexpected( ReadError{ ReadError::Code::MissingRequired, {}, missing_field } );
+				return std::unexpected( ReadError{ ReadError::Code::MissingRequired, {}, missing_field, std::nullopt } );
 			}
 
 			return out;

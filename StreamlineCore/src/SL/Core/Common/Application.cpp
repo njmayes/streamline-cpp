@@ -41,10 +41,9 @@ namespace sl {
 		sInstance->mState.main_thread_queue.clear();
 	}
 
-	void Application::Run( ApplicationFactory make_app, CommandLineArgs const& args )
+	void Application::Run( ApplicationFactory make_app, CommandLineArgs args )
 	{
-		SLC_TODO( "Handle application creation failure using optionals" );
-		Application* app = make_app( args );
+		Application* app = make_app( std::move( args ) );
 		ASSERT( app, "No app instance was created" );
 
 		while ( sInstance->mState.running )

@@ -142,15 +142,13 @@ sl::Application* NetServerTest( sl::CommandLineArgs const& args )
 	using namespace sl::net;
 
 	auto spec = sl::Ref< sl::ApplicationSpecification >::Create();
-	spec->working_dir = "C:/Users/natha/Desktop/Coding/Projects/WIP/C++/streamline-cpp/TestApp";
-
 
 	auto opts = sl::Read< ServerContextOptions >(
 		args,
 		sl::Field< ServerContextOptions >( "num_threads", 'n', &ServerContextOptions::num_threads, 1 ),
 		sl::Field< ServerContextOptions >( "cert", 'c', &ServerContextOptions::cert_file, "server.crt" ),
-		sl::Field< ServerContextOptions >( "key", 'k', &ServerContextOptions::key_file, "server.crt" ),
-		sl::Field< ServerContextOptions >( "ports", 'p', &ServerContextOptions::ports, {} )
+		sl::Field< ServerContextOptions >( "key", 'k', &ServerContextOptions::key_file, "server.key" ),
+		sl::Field< ServerContextOptions >( "ports", 'p', &ServerContextOptions::ports, std::vector< std::uint16_t >{} )
 	);
 
 	if ( not opts.has_value() )
@@ -164,7 +162,6 @@ sl::Application* NetClientTest( sl::CommandLineArgs const& args )
 	using namespace sl::net;
 
 	auto spec = sl::Ref< sl::GuiApplicationSpecification >::Create();
-	spec->working_dir = "C:/Users/natha/Desktop/Coding/Projects/WIP/C++/streamline-cpp/TestApp";
 
 	auto opts = sl::Read< ClientContextOptions >(
 		args,
@@ -179,14 +176,16 @@ sl::Application* NetClientTest( sl::CommandLineArgs const& args )
 	return new ChatClient( spec, *opts );
 }
 
-sl::Application* CreateApplication( sl::CommandLineArgs const& args )
+sl::Application* CreateApplication( sl::CommandLineArgs args )
 {
-	if ( args.Count() < 1 )
+	if ( args.Empty() )
 		return nullptr;
 
-	if ( std::string( args[ 0 ] ) == "server" )
+	auto app_type = args.PopFront();
+
+	if ( app_type == "server" )
 		return NetServerTest( args );
-	else if ( std::string( args[ 0 ] ) == "client" )
+	else if ( app_type == "client" )
 		return NetClientTest( args );
 
 	return nullptr;

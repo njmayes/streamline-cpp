@@ -14,7 +14,7 @@ namespace sl {
 
 	class Application;
 
-	using ApplicationFactory = std::function< Application*( CommandLineArgs const& ) >;
+	using ApplicationFactory = std::function< Application*( CommandLineArgs ) >;
 
 	class ApplicationLayer : public IEventListener
 	{
@@ -70,7 +70,7 @@ namespace sl {
 	public:
 		SLC_LISTENING_EVENTS( None )
 
-		static void Run( ApplicationFactory factory, CommandLineArgs const& args );
+		static void Run( ApplicationFactory factory, CommandLineArgs args );
 
 	public:
 		Application( Ref< ApplicationSpecification > spec );
