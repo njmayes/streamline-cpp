@@ -100,19 +100,11 @@ namespace sl {
 			mAppSystems.emplace_back( T::Shutdown );
 		}
 
-		void RegisterShutdownTask( Action<> shutdownTask )
-		{
-			mAppSystems.emplace_back( std::move( shutdownTask ) );
-		}
-
 		template < typename T, typename... Args >
 		void AddLogTarget( Args&&... args )
 		{
 			Logger::GetGlobalLogger().AddLogTarget< T >( std::forward< Args >( args )... );
 		}
-
-	private:
-		bool OnWindowResize( WindowResizeEvent& e );
 
 	public:
 		static void Close();
@@ -130,7 +122,7 @@ namespace sl {
 		static Ref< const ApplicationSpecification > GetSpec()
 		{
 			if ( not sInstance )
-				return nullptr;
+				throw std::runtime_error( "No application instance" );
 
 			return sInstance->mSpecification;
 		}
@@ -163,7 +155,7 @@ namespace sl {
 		static Ref< T > CreateEventListener( Args&&... args )
 		{
 			if ( not sInstance )
-				return nullptr;
+				throw std::runtime_error( "No application instance" );
 
 			return sInstance->mEventRuntime->CreateListener< T >( std::forward< Args >( args )... );
 		}
@@ -172,7 +164,7 @@ namespace sl {
 		static void PostEvent( TArgs&&... args )
 		{
 			if ( not sInstance )
-				return;
+				throw std::runtime_error( "No application instance" );
 
 			sInstance->mEventRuntime->Post< TEvent >( std::forward< TArgs >( args )... );
 		}

@@ -32,6 +32,7 @@ sl::Application* NetClientTest( sl::CommandLineArgs const& args )
 	auto opts = sl::Read< ClientContextOptions >(
 		args,
 		sl::Field< ClientContextOptions >( "num_threads", 'n', &ClientContextOptions::num_threads, 1 ),
+		sl::Field< ClientContextOptions >( "cert", 'c', &ClientContextOptions::cert_file, "server.crt" ),
 		sl::Field< ClientContextOptions >( "host", 'h', &ClientContextOptions::host ),
 		sl::Field< ClientContextOptions >( "port", 'p', &ClientContextOptions::port )
 	);

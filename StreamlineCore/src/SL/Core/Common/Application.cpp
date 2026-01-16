@@ -5,7 +5,9 @@ namespace sl {
 	Application::Application( Ref< ApplicationSpecification > spec )
 		: mSpecification( spec )
 	{
-		ASSERT( not sInstance, "App instance already exists" );
+		if ( sInstance )
+			throw std::runtime_error( "Application instance already exists!" );
+
 		sInstance = this;
 
 		mEventRuntime = MakeBox< EventRuntime >();
@@ -44,7 +46,8 @@ namespace sl {
 	void Application::Run( ApplicationFactory make_app, CommandLineArgs args )
 	{
 		Application* app = make_app( std::move( args ) );
-		ASSERT( app, "No app instance was created" );
+		if ( !app )
+			throw std::runtime_error( "No application instance was created!" );
 
 		while ( sInstance->mState.running )
 		{

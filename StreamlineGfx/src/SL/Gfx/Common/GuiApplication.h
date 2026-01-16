@@ -39,17 +39,29 @@ namespace sl {
 		static GLFWwindow* GetNativeWindow()
 		{
 			auto instance = Get< GuiApplication >();
+
+			if ( !instance )
+				throw std::runtime_error( "No gui application instance" );
+
 			return instance->mWindow->GetNativeWindow();
 		}
 
 		static float GetWindowWidth()
 		{
 			auto instance = Get< GuiApplication >();
+
+			if ( !instance )
+				throw std::runtime_error( "No gui application instance" );
+
 			return static_cast< float >( instance->mWindow->GetWidth() );
 		}
 		static float GetWindowHeight()
 		{
 			auto instance = Get< GuiApplication >();
+
+			if ( !instance )
+				throw std::runtime_error( "No gui application instance" );
+
 			return static_cast< float >( instance->mWindow->GetHeight() );
 		}
 
@@ -59,10 +71,10 @@ namespace sl {
 			auto instance = Get< GuiApplication >();
 
 			if ( !instance )
-				return;
+				throw std::runtime_error( "No gui application instance" );
 
 			if ( !instance->mImGuiController )
-				return;
+				throw std::runtime_error( "No Dear ImGui controller instance" );
 
 			instance->mImGuiController->OpenModal< T >( init_data, std::forward< Args >( args )... );
 		}
@@ -73,10 +85,10 @@ namespace sl {
 			auto instance = Get< GuiApplication >();
 
 			if ( !instance )
-				return;
+				throw std::runtime_error( "No gui application instance" );
 
 			if ( !instance->mImGuiController )
-				return;
+				throw std::runtime_error( "No Dear ImGui controller instance" );
 
 			instance->mImGuiController->OpenPanel< T >( init_data, std::forward< Args >( args )... );
 		}

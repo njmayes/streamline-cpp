@@ -14,11 +14,6 @@ namespace sl {
 
 		mImGuiController = Application::CreateEventListener< ImGuiController >( mWindow->GetNativeWindow() );
 
-		RegisterShutdownTask( [ this ]() {
-			mImGuiController.Reset();
-			mWindow.reset();
-		} );
-
 		RegisterSystem< Renderer >();
 	}
 
