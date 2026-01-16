@@ -1,10 +1,7 @@
 #include "ChatClient.h"
 
 #include "SL/Core/Common/Time.h"
-#include "SL/Core/Logging/Log.h"
 #include "SL/Gfx/ImGui/Widgets.h"
-
-#include <iostream>
 
 static std::string GetTimestamp()
 {

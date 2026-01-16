@@ -2,7 +2,6 @@
 
 #include "SL/Core.h"
 
-#include <set>
 #include <deque>
 
 class ServerLayer : public sl::net::ServerLayer
@@ -11,7 +10,11 @@ public:
 	ServerLayer( sl::net::ServerContextOptions const& opts );
 
 	void OnConnect( sl::net::ConnectionPtr participant ) override;
+	void OnDisconnect( sl::net::ConnectionPtr participant ) override;
 	void OnMessage( sl::net::Payload const& msg ) override;
+
+private:
+	void BroadcastMessage( std::string_view msg );
 
 private:
 	enum

@@ -4,7 +4,6 @@
 #include "SL/Gfx.h"
 
 #include <deque>
-#include <thread>
 
 
 class ChatLayer : public sl::ApplicationLayer
