@@ -341,14 +341,6 @@ namespace sl {
 		}
 
 	private:
-		template < std::size_t... I >
-		constexpr StaticMap< Element, N + 1 > emplace( const KeyType& key, const MappedType& value, std::index_sequence< I... > ) const
-		{
-			std::array< ValueType, N + 1 > data = { ( *mData[ I ] )..., { key, value } };
-			return StaticMap< Element, N + 1 >( data );
-		}
-
-	private:
 		Element mData[ N ];
 	};
 } // namespace sl

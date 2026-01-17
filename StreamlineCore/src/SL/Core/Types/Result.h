@@ -314,42 +314,45 @@ namespace sl {
 		StorageType mValue;
 	};
 
-	template < typename T >
-	struct OkFunctor;
+	namespace detail {
 
-	template < typename T >
-	struct ErrorFunctor;
+		template < typename T >
+		struct OkFunctor;
 
-	template < typename T, typename E >
-	struct OkFunctor< Result< T, E > >
-	{
-		template < typename... Args >
-		constexpr Result< T, E > operator()( Args&&... args ) const noexcept( Result< T, E >::IsNoExceptMove && Result< T, E >::template IsNoExceptNew< Args... > )
+		template < typename T >
+		struct ErrorFunctor;
+
+		template < typename T, typename E >
+		struct OkFunctor< Result< T, E > >
 		{
-			T&& val = T( std::forward< Args >( args )... );
-			return Result< T, E >( std::move( val ) );
-		}
-	};
+			template < typename... Args >
+			constexpr Result< T, E > operator()( Args&&... args ) const noexcept( Result< T, E >::IsNoExceptMove && Result< T, E >::template IsNoExceptNew< Args... > )
+			{
+				T&& val = T( std::forward< Args >( args )... );
+				return Result< T, E >( std::move( val ) );
+			}
+		};
 
-	template < typename T, typename E >
-	struct ErrorFunctor< Result< T, E > >
-	{
-		constexpr Result< T, E > operator()( E error ) const noexcept
+		template < typename T, typename E >
+		struct ErrorFunctor< Result< T, E > >
 		{
-			return Result< T, E >( error );
-		}
+			constexpr Result< T, E > operator()( E error ) const noexcept
+			{
+				return Result< T, E >( error );
+			}
 
-		template < auto O, typename... Args >
-		constexpr Result< T, E > operator()( ::sl::detail::EnumTag< O > error, Args&&... args ) const noexcept
-		{
-			return Result< T, E >( E( error, std::forward< Args >( args )... ) );
-		}
-	};
+			template < auto O, typename... Args >
+			constexpr Result< T, E > operator()( ::sl::detail::EnumTag< O > error, Args&&... args ) const noexcept
+			{
+				return Result< T, E >( E( error, std::forward< Args >( args )... ) );
+			}
+		};
+	} // namespace detail
 
 	template < typename T >
-	constexpr OkFunctor< T > Ok;
+	constexpr detail::OkFunctor< T > Ok;
 
 	template < typename T >
-	constexpr ErrorFunctor< T > Err;
+	constexpr detail::ErrorFunctor< T > Err;
 
 } // namespace sl

@@ -7,7 +7,7 @@ namespace sl {
 	template < typename T, Numeric KeyType = int >
 	struct TableValue
 	{
-		int low, high;
+		KeyType low, high;
 		T value;
 	};
 

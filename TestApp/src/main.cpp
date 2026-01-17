@@ -1,5 +1,7 @@
 #include "SL/Core.h"
 
+#include "EnumTesting.h"
+
 #include "ChatRoom.h"
 #include "ChatClient.h"
 

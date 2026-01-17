@@ -152,40 +152,42 @@ namespace sl {
 		}
 	};
 
-	template < typename T >
-	struct SomeFunctor;
+	namespace detail {
+		template < typename T >
+		struct SomeFunctor;
 
-	template < typename T >
-	struct NoneFunctor;
+		template < typename T >
+		struct NoneFunctor;
 
-	template < typename T >
-	struct SomeFunctor< Option< T > >
-	{
-		constexpr Option< T > operator()( T&& result ) const noexcept( noexcept( T( std::forward< T >( std::declval< T >() ) ) ) )
+		template < typename T >
+		struct SomeFunctor< Option< T > >
 		{
-			return Option< T >( std::forward< T >( result ) );
-		}
+			constexpr Option< T > operator()( T&& result ) const noexcept( noexcept( T( std::forward< T >( std::declval< T >() ) ) ) )
+			{
+				return Option< T >( std::forward< T >( result ) );
+			}
 
-		template < typename... Args >
-		constexpr Option< T > operator()( Args&&... args ) const noexcept( Option< T >::IsNoExceptMove && Option< T >::template IsNoExceptNew< Args... > )
+			template < typename... Args >
+			constexpr Option< T > operator()( Args&&... args ) const noexcept( Option< T >::IsNoExceptMove && Option< T >::template IsNoExceptNew< Args... > )
+			{
+				T&& val = T( std::forward< Args >( args )... );
+				return Option< T >( std::move( val ) );
+			}
+		};
+
+		template < typename T >
+		struct NoneFunctor< Option< T > >
 		{
-			T&& val = T( std::forward< Args >( args )... );
-			return Option< T >( std::move( val ) );
-		}
-	};
+			constexpr Option< T > operator()() const noexcept
+			{
+				return Option< T >( Option< T >::None );
+			}
+		};
+	} // namespace detail
 
 	template < typename T >
-	struct NoneFunctor< Option< T > >
-	{
-		constexpr Option< T > operator()() const noexcept
-		{
-			return Option< T >( Option< T >::None );
-		}
-	};
+	SCONSTEXPR detail::SomeFunctor< T > Some;
 
 	template < typename T >
-	SCONSTEXPR SomeFunctor< T > Some;
-
-	template < typename T >
-	SCONSTEXPR NoneFunctor< T > None;
+	SCONSTEXPR detail::NoneFunctor< T > None;
 } // namespace sl
