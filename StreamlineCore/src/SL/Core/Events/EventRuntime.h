@@ -28,6 +28,7 @@ namespace sl {
 
 			std::mutex queue_lock;
 			std::vector< EventQueue* > queue_registry{};
+			std::vector< Event > merged_queue;
 
 			std::vector< IEventListener* > listeners;
 
@@ -50,7 +51,7 @@ namespace sl {
 		{
 			thread_local Box< EventQueue > queue = MakeThreadEventQueue();
 
-			auto lock = queue->Lock();
+			auto lock = queue->flag.Lock();
 
 			// Wait in case we're currently dispatching events.
 			mState.dispatching.WaitUntil( false );
@@ -67,7 +68,7 @@ namespace sl {
 	private:
 		Box< EventQueue > MakeThreadEventQueue();
 
-		std::vector< Event > MergeThreadQueues();
+		void MergeThreadQueues();
 		void CleanupThreadQueues();
 
 		void RegisterListener( IEventListener* listener );

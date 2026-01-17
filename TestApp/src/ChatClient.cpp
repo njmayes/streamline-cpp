@@ -18,12 +18,13 @@ static std::string GetTimestamp()
 void ChatLayer::OnOverlayRender()
 {
 	using sl::Widgets;
+	using sl::Utils;
 
 	Widgets::BeginWindow( "Chat Client", ImGuiWindowFlags_NoTitleBar );
 
 	Widgets::BeginChild( "Messages", sl::Vec2f{ 0, -34.f } );
 
-	sl::Utils::SetWindowFontScale( 2.0f );
+	Utils::SetWindowFontScale( 2.0f );
 
 	for ( auto const& line : mRecentMessages )
 	{
@@ -35,7 +36,7 @@ void ChatLayer::OnOverlayRender()
 
 	Widgets::BeginChild( "Input" );
 
-	sl::Utils::SetWindowFontScale( 2.0f );
+	Utils::SetWindowFontScale( 2.0f );
 
 	int flags = ImGuiInputTextFlags_EnterReturnsTrue;
 	if ( mUsername.empty() or mInUsernameModal )
@@ -52,6 +53,11 @@ void ChatLayer::OnOverlayRender()
 void ChatLayer::OnUpdate( sl::Timestep )
 {
 	OpenUsernameEntryIfNeeded();
+}
+
+void ChatLayer::OnEvent( sl::Event& e )
+{
+	e.Dispatch< sl::NetworkInEvent >( SLC_BIND_EVENT_FUNC( OnMessageReceived ) );
 }
 
 bool ChatLayer::OnMessageReceived( sl::NetworkInEvent& e )

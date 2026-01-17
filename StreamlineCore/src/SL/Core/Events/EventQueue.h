@@ -6,9 +6,10 @@
 
 namespace sl {
 
-	struct EventQueue : public thread::Flag
+	struct EventQueue
 	{
-		std::deque< Event > events;
+		thread::Flag flag{};
+		std::vector< Event > events;
 		ModelAllocator allocator;
 	};
 } // namespace sl

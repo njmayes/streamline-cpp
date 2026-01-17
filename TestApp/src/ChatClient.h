@@ -21,10 +21,7 @@ public:
 	void OnOverlayRender() override;
 
 	void OnUpdate( sl::Timestep );
-	void OnEvent( sl::Event& e ) override
-	{
-		e.Dispatch< sl::NetworkInEvent >( SLC_BIND_EVENT_FUNC( OnMessageReceived ) );
-	}
+	void OnEvent( sl::Event& e ) override;
 
 private:
 	bool OnMessageReceived( sl::NetworkInEvent& e );

@@ -49,9 +49,7 @@ namespace sl::thread {
 		{
 		}
 
-		virtual ~Flag() = default;
-
-		ScopedGate Lock()
+		[[nodiscard]] ScopedGate Lock()
 		{
 			return ScopedGate( mFlag, mPolicy );
 		}
