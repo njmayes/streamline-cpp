@@ -2,11 +2,6 @@
 
 #include "SL/Core/Logging/Log.h"
 
-#include "Context.h"
-
-#include <set>
-#include <iostream>
-
 #include <asio/steady_timer.hpp>
 #include <asio/awaitable.hpp>
 #include <asio/use_awaitable.hpp>
@@ -15,7 +10,6 @@
 #include <asio/write.hpp>
 #include <asio/redirect_error.hpp>
 #include <asio/detached.hpp>
-#include <asio/signal_set.hpp>
 #include <asio/co_spawn.hpp>
 #include <asio/strand.hpp>
 #include <asio/ssl.hpp>

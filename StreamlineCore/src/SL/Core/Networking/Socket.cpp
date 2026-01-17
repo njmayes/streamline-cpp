@@ -1,13 +1,6 @@
 #include "Socket.h"
 
-#include <SL/Core/Logging/Log.h>
-
 #include <asio/ip/tcp.hpp>
-#include <asio/awaitable.hpp>
-#include <asio/write.hpp>
-#include <asio/detached.hpp>
-#include <asio/co_spawn.hpp>
-#include <asio/use_awaitable.hpp>
 #include <asio/ssl.hpp>
 
 namespace sl::net {

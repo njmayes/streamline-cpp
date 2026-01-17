@@ -10,8 +10,6 @@
 #include <asio/detached.hpp>
 #include <asio/connect.hpp>
 #include <asio/signal_set.hpp>
-#include <asio/this_coro.hpp>
-#include <asio/cancellation_signal.hpp>
 #include <asio/ssl.hpp>
 
 #include <thread>

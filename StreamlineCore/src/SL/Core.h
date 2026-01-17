@@ -21,7 +21,8 @@
 
 #include "SL/Core/Networking/Context.h"
 #include "SL/Core/Networking/Connection.h"
-#include "SL/Core/Networking/NetworkLayer.h"
+#include "SL/Core/Networking/ClientLayer.h"
+#include "SL/Core/Networking/ServerLayer.h"
 
 #include "SL/Core/Reflection/Type.h"
 
