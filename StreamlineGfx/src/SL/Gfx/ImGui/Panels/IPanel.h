@@ -1,7 +1,7 @@
 #pragma once
 
-#include <SL/Core/Common/Base.h>
 #include <SL/Core/Events/IEventListener.h>
+#include <SL/Core/Logging/Log.h>
 
 namespace sl {
 

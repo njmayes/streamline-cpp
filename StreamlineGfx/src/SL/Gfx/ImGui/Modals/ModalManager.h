@@ -27,39 +27,43 @@ namespace sl {
 		struct ModalEntry
 		{
 			ModalConstructionData init_data{};
-			Box< IModal > modal = nullptr;
+			Ref< IModal > modal = nullptr;
 
 			bool open = true;
 
-			ModalEntry( ModalConstructionData data )
+			ModalEntry( ModalConstructionData data, Ref< IModal > modal )
 				: init_data( data )
+				, modal( modal )
 			{}
-
-			template < typename T, typename... Args >
-			void Init( Args&&... args )
-			{
-				modal = MakeBox< T >( std::forward< Args >( args )... );
-			}
 		};
 
 	public:
 		template < IsModal T, typename... Args >
-		void Open( ModalConstructionData const& init_data, Args&&... args )
+		Ref< IModal > Open( ModalConstructionData const& init_data, Args&&... args )
 		{
-			if ( Contains( init_data.heading ) )
+			auto it = Find( init_data.heading );
+			if ( it != mEditorModals.end() )
 			{
-				log::Error( "Modal already open!" );
+				log::Warn( "Modal {} already open!", init_data.heading );
+				return nullptr;
+			}
+
+			Ref< T > new_modal = Ref< T >::Create( std::forward< Args >( args )... );
+			ModalEntry& entry = mEditorModals.emplace_back( init_data, new_modal );
+
+			return new_modal;
+		}
+
+		void AddCallback( std::string_view heading, std::function< void() > function )
+		{
+			auto it = Find( heading );
+			if ( it == mEditorModals.end() )
+			{
+				log::Error( "Could not find modal to add callback to." );
 				return;
 			}
 
-			ModalEntry& entry = mEditorModals.emplace_back( init_data );
-			entry.Init< T >( std::forward< Args >( args )... );
-			mLastAdded = entry.init_data.heading;
-		}
-
-		void AddCallback( std::function< void() > function )
-		{
-			mModalCallbacks[ mLastAdded ].emplace_back( function );
+			it->modal->AddCompletionCallback( function );
 		}
 
 		void Render();
@@ -67,7 +71,7 @@ namespace sl {
 	private:
 		void RenderButtons( ModalEntry& modalData );
 
-		auto Find( std::string_view key )
+		auto Find( std::string_view key ) -> std::vector< ModalEntry >::iterator
 		{
 			return std::ranges::find_if( mEditorModals, [ &key ]( const ModalEntry& panel ) { return key == panel.init_data.heading; } );
 		}
@@ -84,9 +88,5 @@ namespace sl {
 
 	private:
 		std::vector< ModalEntry > mEditorModals;
-
-		using CallbackMap = std::unordered_map< std::string_view, std::vector< std::function< void() > > >;
-		CallbackMap mModalCallbacks;
-		std::string_view mLastAdded;
 	};
 } // namespace sl

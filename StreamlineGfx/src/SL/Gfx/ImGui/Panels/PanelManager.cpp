@@ -5,14 +5,14 @@
 
 namespace sl {
 
-	PanelManager::PanelEntry* PanelManager::Find( std::string_view key )
+	auto PanelManager::Find( std::string_view key ) -> std::vector< PanelEntry >::iterator
 	{
-		return &( *std::ranges::find_if( mEditorPanels, [ key ]( const auto& panel ) { return panel.init_data.key == key; } ) );
+		return std::ranges::find_if( mEditorPanels, [ key ]( const auto& panel ) { return panel.init_data.key == key; } );
 	}
 
 	bool PanelManager::Contains( std::string_view key )
 	{
-		return std::ranges::find_if( mEditorPanels, [ & ]( const PanelEntry& entry ) { return entry.init_data.key == key; } ) != mEditorPanels.end();
+		return Find( key ) != mEditorPanels.end();
 	}
 
 	void PanelManager::Delete( std::string_view key )

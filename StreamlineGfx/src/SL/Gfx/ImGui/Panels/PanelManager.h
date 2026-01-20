@@ -30,32 +30,33 @@ namespace sl {
 			{}
 		};
 
-	private:
-		std::vector< PanelEntry >& GetPanels()
+	public:
+		template < IsPanel T, typename... Args >
+		Ref< T > Open( PanelConstructionData const& init_data, Args&&... args )
 		{
-			return mEditorPanels;
+			auto it = Find( init_data.key );
+			if ( it != mEditorPanels.end() )
+			{
+				log::Warn( "Panel {} already open!", init_data.key );
+				return nullptr;
+			}
+
+			Ref< T > new_panel = Ref< T >::Create( std::forward< Args >( args )... );
+			mEditorPanels.emplace_back( init_data, new_panel );
+
+			return new_panel;
 		}
 
 		void Render();
 
-		PanelEntry* Find( std::string_view key );
+	private:
+		auto Find( std::string_view key ) -> std::vector< PanelEntry >::iterator;
 		bool Contains( std::string_view key );
 
 		void Delete( std::string_view key );
 		void Clear()
 		{
 			mEditorPanels.clear();
-		}
-
-		template < IsPanel T, typename... Args >
-		Ref< T > Open( PanelConstructionData const& init_data, Args&&... args )
-		{
-			ASSERT( !Contains( init_data.key ), "Can't register panel that is already being managed! (Check name is not already in use)" );
-
-			Ref< T > new_panel = Ref< T >::Create( std::forward< Args >( args )... );
-			mEditorPanels.emplace_back( init_data, new_panel );
-
-			return new_panel;
 		}
 
 	private:

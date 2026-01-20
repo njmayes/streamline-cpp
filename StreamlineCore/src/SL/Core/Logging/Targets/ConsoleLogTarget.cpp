@@ -86,7 +86,7 @@ namespace {
 			return;
 		}
 #else
-		std::fwrite( buffer.data(), 1, buffer.mToWrite(), stdout );
+		std::fwrite( buffer.data(), 1, count, stdout );
 #endif
 	}
 

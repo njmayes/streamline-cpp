@@ -119,23 +119,6 @@ namespace sl {
 			return dynamic_cast< T* >( Get() );
 		}
 
-		static Ref< const ApplicationSpecification > GetSpec()
-		{
-			if ( not sInstance )
-				throw std::runtime_error( "No application instance" );
-
-			return sInstance->mSpecification;
-		}
-		template < typename T >
-			requires std::derived_from< T, ApplicationSpecification >
-		static const Ref< const T > GetSpec()
-		{
-			if ( not sInstance )
-				return nullptr;
-
-			return GetSpec().As< T >();
-		}
-
 		template < IsAction Func >
 		static void SubmitActionToMainThread( Func&& function )
 		{
@@ -179,10 +162,11 @@ namespace sl {
 		}
 
 	protected:
-		Ref< const ApplicationSpecification > mSpecification;
 		detail::ApplicationState mState;
 
 	private:
+		Ref< ApplicationSpecification > mSpecification;
+
 		detail::LayerStack mLayerStack;
 		detail::AppSystemCleanups mAppSystems;
 

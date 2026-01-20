@@ -53,8 +53,6 @@ namespace sl {
 		ImGuizmo::BeginFrame();
 
 		Widgets::BeginDockspace();
-
-		mModalManager.Render();
 	}
 
 	void ImGuiController::EndFrame()

@@ -26,6 +26,9 @@ namespace sl {
 		for ( auto layer : GetLayerStack() )
 			layer->OnOverlayRender();
 
+		mPanelManager.Render();
+		mModalManager.Render();
+
 		// End ImGui rendering
 		mImGuiController->EndFrame();
 

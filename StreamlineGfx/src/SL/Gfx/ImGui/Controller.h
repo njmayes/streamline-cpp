@@ -24,24 +24,11 @@ namespace sl {
 		void StartFrame();
 		void EndFrame();
 
-		template < IsModal T, typename... Args >
-		void OpenModal( ModalConstructionData const& init_data, Args&&... args )
-		{
-			mModalManager.Open< T >( init_data, std::forward< Args >( args )... );
-		}
-
-		template < IsPanel T, typename... Args >
-		Ref< T >  OpenPanel( PanelConstructionData const& init_data, Args&&... args )
-		{
-			mPanelManager.Open< T >( init_data, std::forward< Args >( args )... );
-		}
-
 		template < typename... Args >
 		static Box< ImGuiController > Create( Args&&... args )
 		{
 			return MakeBox< ImGuiController >( std::forward< Args >( args )... );
 		}
-
 
 	public:
 		void OnEvent( Event& e );
@@ -52,7 +39,5 @@ namespace sl {
 
 	private:
 		bool mBlockEvents = false;
-		ModalManager mModalManager{};
-		PanelManager mPanelManager{};
 	};
 } // namespace sl

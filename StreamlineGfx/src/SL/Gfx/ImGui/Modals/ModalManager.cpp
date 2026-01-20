@@ -35,16 +35,13 @@ namespace sl {
 		}
 		Utils::SetWindowMoveFromTitleBar( false );
 
-		// Call any completion callbacks before deleting modal entries. Filter for modals that are now closed and have callbacks.
-		auto has_callbacks = mEditorModals |
-							 std::views::filter( [ this ]( const ModalEntry& entry ) { return !entry.open && mModalCallbacks.contains( entry.init_data.heading ); } );
+		// Call any completion callbacks before deleting modal entries. Filter for modals that are now closed.
+		auto has_closed = mEditorModals | std::views::filter( [ this ]( const ModalEntry& entry ) { return !entry.open; } );
 
-		for ( const ModalEntry& entry : has_callbacks )
+		for ( const ModalEntry& entry : has_closed )
 		{
-			for ( auto func : mModalCallbacks[ entry.init_data.heading ] )
+			for ( auto const& func : entry.modal->mCompletionCallbacks )
 				func();
-
-			mModalCallbacks.erase( entry.init_data.heading );
 		}
 
 		std::erase_if( mEditorModals, []( const ModalEntry& entry ) { return !entry.open; } );

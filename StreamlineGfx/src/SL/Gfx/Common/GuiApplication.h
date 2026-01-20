@@ -73,10 +73,7 @@ namespace sl {
 			if ( !instance )
 				throw std::runtime_error( "No gui application instance" );
 
-			if ( !instance->mImGuiController )
-				throw std::runtime_error( "No Dear ImGui controller instance" );
-
-			instance->mImGuiController->OpenModal< T >( init_data, std::forward< Args >( args )... );
+			instance->mModalManager.Open< T >( init_data, std::forward< Args >( args )... );
 		}
 
 		template < IsPanel T, typename... Args >
@@ -87,14 +84,14 @@ namespace sl {
 			if ( !instance )
 				throw std::runtime_error( "No gui application instance" );
 
-			if ( !instance->mImGuiController )
-				throw std::runtime_error( "No Dear ImGui controller instance" );
-
-			instance->mImGuiController->OpenPanel< T >( init_data, std::forward< Args >( args )... );
+			instance->mPanelManager.Open< T >( init_data, std::forward< Args >( args )... );
 		}
 
 	private:
 		Box< Window > mWindow;
 		Ref< ImGuiController > mImGuiController;
+
+		ModalManager mModalManager{};
+		PanelManager mPanelManager{};
 	};
 }

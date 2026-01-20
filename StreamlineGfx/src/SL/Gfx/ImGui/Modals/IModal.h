@@ -20,7 +20,6 @@ namespace sl {
 		IModal();
 		virtual ~IModal();
 
-	private:
 		virtual void OnOverlayRender() = 0;
 		virtual void OnComplete()
 		{}
@@ -29,7 +28,13 @@ namespace sl {
 			throw std::logic_error( "You must provide an override for this function if using custom button behaviour!" );
 		}
 
+		void AddCompletionCallback( std::function< void() > const& function )
+		{
+			mCompletionCallbacks.emplace_back( function );
+		}
+
 	private:
+		std::vector< std::function< void() > > mCompletionCallbacks;
 		friend class ModalManager;
 	};
 
