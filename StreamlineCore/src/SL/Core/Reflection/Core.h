@@ -227,8 +227,8 @@ namespace sl {
 
 		template < typename T >
 		concept IsReflectableType = std::derived_from< T, Reflectable< T > > and requires {
-			{ T::slc_refl_data::Build() } -> std::same_as< void >;
-			{ T::slc_refl_data::Info } -> std::same_as< const TypeInfo*& >;
+			{ T::_reflection_data::Build() } -> std::same_as< void >;
+			{ T::_reflection_data::Info } -> std::same_as< const TypeInfo*& >;
 		};
 
 		template < typename T >
@@ -260,15 +260,6 @@ namespace sl {
 			return not Valid();
 		}
 	};
-
-	template < CanReflect T >
-	Instance MakeInstance( T&& value )
-	{
-		return Instance(
-			T::ReflectionData::Info,
-			std::forward< T >( value )
-		);
-	}
 
 	using GetFunction = std::function< Instance( Instance ) >;
 	using SetFunction = std::function< void( Instance, Instance ) >;
@@ -312,7 +303,6 @@ namespace sl {
 	struct TypeInfo
 	{
 		std::string_view name;
-		std::string_view base_name;
 
 		RuntimeTypeTraits rttt;
 

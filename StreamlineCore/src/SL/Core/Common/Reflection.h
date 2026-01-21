@@ -29,8 +29,16 @@ namespace sl {
 			return sv.substr( start, end - start );
 		}
 
+		static consteval std::string_view Trim( std::string_view sv, std::string_view prefix, std::string_view suffix )
+		{
+			std::size_t start = sv.starts_with( prefix ) ? prefix.size() : 0;
+			std::size_t end = sv.ends_with( suffix ) ? sv.rfind( suffix ) : sv.size();
+
+			return sv.substr( start, end - start );
+		}
+
 		template < typename Type >
-		static consteval auto GetLongName() noexcept
+		static consteval auto GetName() noexcept
 		{
 #if defined( __clang__ ) || defined( __GNUC__ )
 			// Example GCC/Clang __PRETTY_FUNCTION__:
@@ -42,24 +50,12 @@ namespace sl {
 #elif defined( _MSC_VER )
 			// Example MSVC __FUNCSIG__:
 			// "consteval std::string_view __cdecl detail::GetLongName<struct Foo>(void)"
-			constexpr std::string_view prefix1 = "GetLongName<";
+			constexpr std::string_view prefix1 = "GetName<";
 			constexpr std::string_view prefix2 = "class ";
 			constexpr std::string_view prefix3 = "struct ";
 			constexpr std::string_view suffix = ">(void)";
-			return Extract( Extract( Extract( SLC_FUNC_SIG_STRING, prefix1, suffix ), prefix2, {} ), prefix3, {} );
+			return Trim( Trim( Extract( SLC_FUNC_SIG_STRING, prefix1, suffix ), prefix2, {} ), prefix3, {} );
 #endif
-		}
-
-		template < typename Type >
-		static consteval auto GetName() noexcept
-		{
-			std::string_view long_name = GetLongName< Type >();
-			auto first = long_name.find_last_of( "::" );
-			if ( first == std::string_view::npos )
-				first = long_name.find_last_of( ' ' ) + 1; // If npos, will wrap around to zero
-			else
-				first++;
-			return long_name.substr( first, long_name.length() - first );
 		}
 	} // namespace detail
 
@@ -70,7 +66,6 @@ namespace sl {
 	template < typename T >
 	struct TypeTraits
 	{
-		static constexpr auto QualifiedName = detail::GetLongName< T >();
 		static constexpr auto Name = detail::GetName< T >();
 		static constexpr auto BaseName = detail::GetName< std::remove_cvref_t< T > >();
 

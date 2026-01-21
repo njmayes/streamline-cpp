@@ -19,6 +19,14 @@ namespace sl::reflect {
 			return &sReflectionData[ Traits::Name ];
 		}
 
+		static const TypeInfo* GetInfo( std::string_view name )
+		{
+			if ( not sReflectionData.contains( name ) )
+				throw std::runtime_error( "Attempting to get reflection type by name that didn't exist." );
+
+			return &sReflectionData[ name ];
+		}
+
 		template < typename T, typename... Args >
 			requires std::is_constructible_v< T, Args... >
 		static void RegisterConstructor( detail::Ctr< T, Args... > )
@@ -29,7 +37,7 @@ namespace sl::reflect {
 
 			ConstructorInfo ctr;
 			ctr.parent_type = type_info;
-			ctr.arguments = { GetInfo< Args >()... };
+			ctr.arguments = { GetInfo< std::remove_cvref_t< Args > >()... };
 
 			ctr.invoker = []( std::vector< Instance > instanced_args = {} ) {
 				auto gen_tuple_val = []< std::size_t I >( Instance object ) {
@@ -37,7 +45,7 @@ namespace sl::reflect {
 					return object.data.Get< ArgType >();
 				};
 
-				auto gen_tuple = [ &]< std::size_t... Is >( std::vector< Instance > args, std::index_sequence< Is... > ) -> Params::TupleType {
+				auto gen_tuple = [ & ]< std::size_t... Is >( std::vector< Instance > args, std::index_sequence< Is... > ) -> Params::TupleType {
 					return std::make_tuple( gen_tuple_val.template operator()< Is >( std::move( args[ Is ] ) )... );
 				};
 
@@ -100,7 +108,6 @@ namespace sl::reflect {
 
 			TypeInfo new_type;
 			new_type.name = Traits::Name;
-			new_type.base_name = Traits::BaseName;
 			new_type.rttt.Init< T >();
 
 			sReflectionData.emplace( Traits::Name, std::move( new_type ) );
@@ -120,7 +127,7 @@ namespace sl::reflect {
 				if constexpr ( std::is_destructible_v< T > )
 					RegisterDestructor< T >();
 
-				T::slc_refl_data::Build();
+				T::_reflection_data::Build();
 			}
 		}
 
@@ -232,30 +239,40 @@ namespace sl::reflect {
 		using ReflectionData = std::unordered_map< std::string_view, TypeInfo >;
 		inline static ReflectionData sReflectionData;
 	};
-} // namespace sl::reflect
 
-#define SLC_REFLECT_MEMBER_IMPL( member )                                                               \
-	{                                                                                                   \
-		auto invoker = []< typename _T > {                                                              \
-			if constexpr ( std::derived_from< _T, ::sl::detail::CtrBase > )                            \
-				::sl::reflect::Reflection::RegisterConstructor< ClassType >( _T{} );                   \
-			else                                                                                        \
-				::sl::reflect::Reflection::RegisterMember< ClassType >( #member, &ClassType::member ); \
-		};                                                                                              \
-		using MemberType = decltype( &ClassType::member );                                              \
-		invoker.template operator()< MemberType >();                                                    \
+	template < typename T >
+	Instance MakeInstance( T&& value )
+	{
+		return Instance(
+			reflect::Reflection::GetInfo< T >(),
+			std::forward< T >( value )
+		);
 	}
 
-#define SLC_REFLECT_CLASS( CLASS, ... )                                                      \
-	using Reflectable< CLASS >::Ctr;                                                         \
-	using Reflectable< CLASS >::ArgumentType;                                                \
-	struct slc_refl_data                                                                     \
-	{                                                                                        \
-		static void Build()                                                                  \
-		{                                                                                    \
-			using ClassType = CLASS;                                                         \
-			SLC_FOR_EACH( SLC_REFLECT_MEMBER_IMPL, __VA_ARGS__ )                             \
-		}                                                                                    \
+} // namespace sl::reflect
+
+#define SLC_REFLECT_MEMBER_IMPL( member )                                                              \
+	{                                                                                                  \
+		auto invoker = []< typename _refl > {                                                          \
+			if constexpr ( std::derived_from< _refl, ::sl::detail::CtrBase > )                         \
+				::sl::reflect::Reflection::RegisterConstructor< ClassType >( _refl{} );                \
+			else                                                                                       \
+				::sl::reflect::Reflection::RegisterMember< ClassType >( #member, &ClassType::member ); \
+		};                                                                                             \
+		using MemberType = decltype( &ClassType::member );                                             \
+		invoker.template operator()< MemberType >();                                                   \
+	}
+
+#define SLC_REFLECT_CLASS( CLASS, ... )                                                     \
+	using Reflectable< CLASS >::Ctr;                                                        \
+	using Reflectable< CLASS >::ArgumentType;                                               \
+	struct _reflection_data                                                                 \
+	{                                                                                       \
+		static void Build()                                                                 \
+		{                                                                                   \
+			using ClassType = CLASS;                                                        \
+			SLC_FOR_EACH( SLC_REFLECT_MEMBER_IMPL, __VA_ARGS__ )                            \
+		}                                                                                   \
 		inline static const TypeInfo* Info = ::sl::reflect::Reflection::GetInfo< CLASS >(); \
 	};
 

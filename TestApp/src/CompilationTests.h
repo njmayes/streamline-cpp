@@ -182,4 +182,42 @@ namespace sl {
 		auto dVal = f.UnwrapOrElse( []() { return 0; } );
 	}
 
+	struct ReflectionTest : Reflectable< ReflectionTest >
+	{
+		int x;
+		float y;
+		std::string z;
+
+		ReflectionTest() = default;
+		ReflectionTest( int a, float b, std::string c )
+			: x( a )
+			, y( b )
+			, z( c )
+		{}
+
+		SLC_REFLECT_CLASS(
+			ReflectionTest,
+			SLC_CTR( int, float, std::string ),
+			x, y, z
+		);
+	};
+
+	inline void ReflectionTestFunc()
+	{
+		ReflectionTest obj;
+		obj.x = 42;
+		obj.y = 3.14f;
+		obj.z = "Hello, Reflection!";
+
+		auto type = Type::Get( "sl::ReflectionTest" );
+		std::cout << "Class Name: " << type.GetName() << "\n";
+		std::cout << "Members:\n";
+		for ( auto const& member : type.GetProperties() )
+		{
+			std::cout << std::format( " - {}: {}\n", member.GetName(), member.GetType().GetName() );
+		}
+
+		auto obj2 = type.Instantiate< ReflectionTest >( 7, 2.71f, std::string{ "Instantiated via Reflection" } );
+	}
+
 } // namespace sl

@@ -103,18 +103,21 @@ namespace sl::fs {
 
 	void UnmapSharedRegion( Byte* base, std::size_t size )
 	{
+		if ( not base )
+			return;
+
 		::UnmapViewOfFile( base );
 	}
 
 	void CloseSharedFile( FileDescriptor& desc )
 	{
-		if (desc.map_handle and desc.map_handle != INVALID_HANDLE_VALUE)
+		if ( desc.map_handle and desc.map_handle != INVALID_HANDLE_VALUE )
 		{
 			::CloseHandle( *desc.map_handle );
 			desc.map_handle.reset();
 		}
 
-		if (desc.file_handle != INVALID_HANDLE_VALUE)
+		if ( desc.file_handle != INVALID_HANDLE_VALUE )
 		{
 			::CloseHandle( desc.file_handle );
 			desc.file_handle = INVALID_HANDLE_VALUE;
@@ -158,6 +161,9 @@ namespace sl::fs {
 
 	void UnmapSharedRegion( Byte* base, std::size_t size )
 	{
+		if ( not base )
+			return;
+
 		munmap( base, size );
 	}
 
@@ -196,8 +202,7 @@ namespace sl::fs {
 
 	SharedFile::Region::~Region()
 	{
-		if ( mBasePtr )
-			UnmapSharedRegion( mBasePtr, mBaseSize );
+		UnmapSharedRegion( mBasePtr, mBaseSize );
 	}
 
 	std::string_view SharedFile::Region::AsStringView( std::size_t offset, std::size_t size ) const
@@ -248,4 +253,4 @@ namespace sl::fs {
 
 		return MapSharedFile( mImpl->desc, offset, size );
 	}
-} // namespace sl::ipc
+} // namespace sl::fs

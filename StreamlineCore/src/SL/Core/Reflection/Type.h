@@ -58,7 +58,7 @@ namespace sl {
 			instanced_args.reserve( sizeof...( Args ) );
 
 			( [ & ]() {
-				instanced_args.emplace_back( MakeInstance( std::forward< Args >( args ) ) );
+				instanced_args.emplace_back( reflect::MakeInstance( std::forward< Args >( args ) ) );
 			}(),
 			  ... );
 
@@ -99,12 +99,17 @@ namespace sl {
 		{
 			if constexpr ( detail::IsReflectableType< T > )
 			{
-				return Type( T::slc_refl_data::Info );
+				return Type( T::_reflection_data::Info );
 			}
 			else
 			{
 				return Type( reflect::Reflection::GetInfo< T >() );
 			}
+		}
+
+		static Type Get( std::string_view name )
+		{
+			return Type( reflect::Reflection::GetInfo( name ) );
 		}
 
 	private:
@@ -140,9 +145,10 @@ namespace sl {
 		static bool IsConvertibleTo( const TypeInfo* target )
 		{
 			using Traits = TypeTraits< Arg >;
+			using BaseTraits = TypeTraits< std::remove_cvref_t< Arg > >;
 
 			SLC_TODO( "Support conversions between types, not just between value categories of same type" );
-			if ( Traits::BaseName != target->base_name )
+			if ( BaseTraits::Name != target->name )
 				return false;
 
 			if constexpr ( Traits::IsLValueReference )
