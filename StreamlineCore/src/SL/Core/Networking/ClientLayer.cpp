@@ -30,7 +30,7 @@ namespace sl::net {
 
 	void ClientLayer::Connect( std::string const& host, std::uint16_t port )
 	{
-		mContext.Connect( host, port, [ = ]( sl::net::ConnectionPtr connection ) {
+		mContext.Connect( host, port, [ this, host, port ]( sl::net::ConnectionPtr connection ) {
 			sl::log::Info( "Client connected to {}:{}", host, port );
 
 			mServerConnection = connection;

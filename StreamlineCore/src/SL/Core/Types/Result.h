@@ -266,10 +266,10 @@ namespace sl {
 		/// </summary>
 		template < typename Func >
 			requires IsFunc< Func, Result< T, E > >
-		constexpr Result< T, E > const& OrElse( Func&& func ) noexcept( std::is_nothrow_invocable_v< Func > )
+		constexpr Result< T, E > OrElse( Func&& func ) noexcept( std::is_nothrow_invocable_v< Func > )
 		{
 			if ( mResult )
-				return *this;
+				return std::move( *this );
 
 			return func();
 		}

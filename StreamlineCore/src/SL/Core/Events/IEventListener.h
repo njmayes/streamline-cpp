@@ -4,6 +4,8 @@
 
 namespace sl {
 
+	class EventRuntime;
+
 	class IEventListener : public RefCounted
 	{
 	public:

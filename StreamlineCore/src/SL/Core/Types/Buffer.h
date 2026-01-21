@@ -1,10 +1,13 @@
 #pragma once
 #include "SL/Core/Common/Base.h"
+
 #include <cstring>
 #include <memory>
 #include <stdexcept>
 #include <span>
+#include <ranges>
 #include <type_traits>
+#include <algorithm>
 #include <utility>
 
 namespace sl {
@@ -73,7 +76,7 @@ namespace sl {
 			std::size_t aligned_offset = AlignOffset( offset, alignof( T ) );
 			EnsureCapacity( aligned_offset + sizeof( T ) );
 
-			auto ptr = std::construct_at( reinterpret_cast< T* >( mData + aligned_offset ), std::forward< Args >( args )... );
+			auto ptr = std::construct_at( reinterpret_cast< T* >( mData.get() + aligned_offset ), std::forward< Args >( args )... );
 			if ( aligned_offset + sizeof( T ) > mSize )
 				mSize = aligned_offset + sizeof( T );
 			return ptr;

@@ -191,14 +191,12 @@ namespace sl {
 		template < typename... Ts >
 		struct HasCommonTypeDetail
 		{
-		private:
 			template < typename... Us >
 			static auto Test( int ) -> decltype( void( typename std::common_type< Us... >::type{} ), std::true_type{} );
 
 			template < typename... >
 			static auto Test( ... ) -> std::false_type;
 
-		public:
 			static constexpr bool Value = decltype( Test< Ts... >( 0 ) )::value;
 		};
 

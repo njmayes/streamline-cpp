@@ -176,7 +176,10 @@ namespace sl {
 			MatchDefault( [] { std::cout << "Default case\n"; } )
 		);
 
-		auto dVal = d.UnwrapOrElse( []() { return 0; } );
+		auto e = d;
+		auto f = std::move( e );
+
+		auto dVal = f.UnwrapOrElse( []() { return 0; } );
 	}
 
 } // namespace sl

@@ -156,7 +156,7 @@ namespace sl::fs {
 		return SharedFile::Region{ base_ptr, data_ptr, size + delta, size };
 	}
 
-	void UnmapSharedRegion( Byte* base, std::size_t size );
+	void UnmapSharedRegion( Byte* base, std::size_t size )
 	{
 		munmap( base, size );
 	}
