@@ -15,7 +15,7 @@ namespace sl {
 	{
 		auto it = std::ranges::find_if( mInfo->properties, [ name ]( const auto& prop ) { return prop.name == name; } );
 		if ( it == mInfo->properties.end() )
-			return {};
+			throw std::runtime_error( std::format( "Attempting to get property by name that didn't exist [{}::{}].", mInfo->name, name ) );
 
 		return Property( *it );
 	}
@@ -31,7 +31,7 @@ namespace sl {
 	{
 		auto it = std::ranges::find_if( mInfo->methods, [ name ]( const auto& method ) { return method.name == name; } );
 		if ( it == mInfo->methods.end() )
-			return {};
+			throw std::runtime_error( std::format( "Attempting to get method by name that didn't exist [{}::{}].", mInfo->name, name ) );
 
 		return Method( *it );
 	}

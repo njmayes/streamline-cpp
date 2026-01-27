@@ -15,6 +15,7 @@ namespace sl {
 		{}
 
 		Type GetType() const;
+
 		std::string_view GetName() const
 		{
 			return mProperty->name;
@@ -23,13 +24,14 @@ namespace sl {
 		template < CanReflect T, CanReflect Obj >
 		const T& GetValue( const Obj& obj ) const
 		{
-			using Traits = TypeTraits< T >;
-			using ObjTraits = TypeTraits< Obj >;
+			using Traits = TypeTraits< std::remove_cvref_t< T > >;
+			using ObjTraits = TypeTraits< std::remove_cvref_t< Obj > >;
 
-			if ( Traits::Name != mProperty->prop_type->name )
-				throw BadReflectionCastException( Traits::Name, mProperty->prop_type->name );
+			// Property stores TypeRef; compare canonical base type.
+			if ( mProperty->prop_type.base->name != Traits::Name )
+				throw BadReflectionCastException( Traits::Name, mProperty->prop_type.base->name );
 
-			if ( ObjTraits::Name != mProperty->parent_type->name )
+			if ( mProperty->parent_type->name != ObjTraits::Name )
 				throw BadReflectionCastException( ObjTraits::Name, mProperty->parent_type->name );
 
 			auto instance = GetValue( obj );
@@ -45,10 +47,10 @@ namespace sl {
 		template < CanReflect T, CanReflect Obj >
 		void SetValue( Obj& obj, const T& value )
 		{
-			using Traits = TypeTraits< T >;
+			using Traits = TypeTraits< std::remove_cvref_t< T > >;
 
-			if ( Traits::Name != mProperty->prop_type->name )
-				throw BadReflectionCastException( Traits::Name, mProperty->prop_type->name );
+			if ( mProperty->prop_type.base->name != Traits::Name )
+				throw BadReflectionCastException( Traits::Name, mProperty->prop_type.base->name );
 
 			SetValue( obj, reflect::MakeInstance( value ) );
 		}
@@ -60,6 +62,6 @@ namespace sl {
 		}
 
 	private:
-		const PropertyInfo* mProperty;
+		const PropertyInfo* mProperty = nullptr;
 	};
 } // namespace sl

@@ -195,10 +195,18 @@ namespace sl {
 			, z( c )
 		{}
 
+		void Update( int x2 )
+		{
+			x = x2;
+		}
+
 		SLC_REFLECT_CLASS(
 			ReflectionTest,
 			SLC_CTR( int, float, std::string ),
-			x, y, z
+			x,
+			y,
+			z,
+			Update
 		);
 	};
 
@@ -210,14 +218,32 @@ namespace sl {
 		obj.z = "Hello, Reflection!";
 
 		auto type = Type::Get( "sl::ReflectionTest" );
-		std::cout << "Class Name: " << type.GetName() << "\n";
-		std::cout << "Members:\n";
+		std::println( "Class Name: {}", type.GetName() );
+		std::println( "Members:" );
 		for ( auto const& member : type.GetProperties() )
 		{
-			std::cout << std::format( " - {}: {}\n", member.GetName(), member.GetType().GetName() );
+			std::println( "\t- {}: {} ({})", member.GetName(), member.GetValue( obj ), member.GetType().GetName() );
 		}
 
+		std::println();
+
 		auto obj2 = type.Instantiate< ReflectionTest >( 7, 2.71f, std::string{ "Instantiated via Reflection" } );
+		std::println( "Class Name: {}", type.GetName() );
+		std::println( "Members:" );
+		for ( auto const& member : type.GetProperties() )
+		{
+			std::println( "\t- {}: {} ({})", member.GetName(), member.GetValue( obj2 ), member.GetType().GetName() );
+		}
+
+		auto obj3 = type.Instantiate< ReflectionTest >( obj );
+
+		type.GetMethod( "Update" ).Invoke< void >( obj3, 100 );
+
+		auto prop = type.GetProperty( "x" );
+		auto const& test = prop.GetValue< int >( obj3 );
+		prop.SetValue( obj3, 200 );
+
+		obj3.x = 300;
 	}
 
 } // namespace sl

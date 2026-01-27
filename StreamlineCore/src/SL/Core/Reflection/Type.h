@@ -3,6 +3,11 @@
 #include "Property.h"
 #include "Method.h"
 
+#include <algorithm>
+#include <ranges>
+#include <stdexcept>
+#include <vector>
+
 namespace sl {
 
 	/// <summary>
@@ -47,8 +52,8 @@ namespace sl {
 			requires std::constructible_from< T, Args... >
 		T Instantiate( Args&&... args ) const
 		{
-			if ( mInfo->name != TypeTraits< T >::Name )
-				throw BadReflectionCastException( TypeTraits< T >::Name, mInfo->name );
+			if ( mInfo->name != TypeTraits< std::remove_cvref_t< T > >::Name )
+				throw BadReflectionCastException( TypeTraits< std::remove_cvref_t< T > >::Name, mInfo->name );
 
 			auto ctr = FindConstructor< Args&&... >();
 			if ( not ctr )
@@ -83,8 +88,9 @@ namespace sl {
 		template < CanReflect T >
 		bool IsSubclassOf() const
 		{
-			return IsSubclassOf( T::ReflectionData::Info );
+			return IsSubclassOf( Type::Get< T >() );
 		}
+
 		bool IsSubclassOf( const Type& other ) const;
 
 		auto operator<=>( const Type& ) const = default;
@@ -118,13 +124,13 @@ namespace sl {
 		{
 			using ArgTypes = TypeList< Args... >;
 
-			auto is_covertible = [ & ]< std::size_t I >( const TypeInfo* ctr_arg ) {
-				using ArgType = ArgTypes::template Type< I >;
+			auto is_convertible = [ & ]< std::size_t I >( const TypeRef& ctr_arg ) {
+				using ArgType = typename ArgTypes::template Type< I >;
 				return IsConvertibleTo< ArgType >( ctr_arg );
 			};
 
 			auto match_param = [ & ]< std::size_t... Is >( const ConstructorInfo& ctr, std::index_sequence< Is... > ) {
-				return ( ... and is_covertible.template operator()< Is >( ctr.arguments[ Is ] ) );
+				return ( ... and is_convertible.template operator()< Is >( ctr.arguments[ Is ] ) );
 			};
 
 			auto match_parameters = [ & ]( const ConstructorInfo& ctr ) {
@@ -139,43 +145,70 @@ namespace sl {
 		}
 
 	private:
-		const TypeInfo* mInfo;
+		TypeInfo const* mInfo = nullptr;
 
 		template < typename Arg >
-		static bool IsConvertibleTo( const TypeInfo* target )
+		static bool IsConvertibleTo( const TypeRef& target )
 		{
 			using Traits = TypeTraits< Arg >;
 			using BaseTraits = TypeTraits< std::remove_cvref_t< Arg > >;
 
 			SLC_TODO( "Support conversions between types, not just between value categories of same type" );
-			if ( BaseTraits::Name != target->name )
+			if ( BaseTraits::Name != target.base->name )
 				return false;
+
+			auto target_is_ref = target.ref != RefKind::None;
 
 			if constexpr ( Traits::IsLValueReference )
 			{
 				if constexpr ( Traits::IsConst )
 				{
-					// const& parameter can be used for const& argument as well as for lvalue arguments of types with copy constructor
-					return ( target->rttt.is_const and target->rttt.is_lvalue_reference ) or
-						   ( not target->rttt.is_reference and target->rttt.is_copy_constructible );
+					// const& parameter:
+					// - accepts const& argument to const& parameter
+					// - accepts lvalue argument to by-value parameter (copy)
+					return ( target.is_const and target.ref == RefKind::LValue ) or
+						   ( not target_is_ref and target.base->rttt.is_copy_constructible );
 				}
 				else
 				{
-					//& parameter can be used for & argument as well as for lvalue arguments of types with copy constructor
-					return ( target->rttt.is_lvalue_reference ) or
-						   ( not target->rttt.is_reference and target->rttt.is_copy_constructible );
+					// & parameter:
+					// - accepts & argument to & or const& parameter
+					// - accepts lvalue argument to by-value parameter (copy)
+					return ( target.ref == RefKind::LValue ) or
+						   ( not target_is_ref and target.base->rttt.is_copy_constructible );
 				}
 			}
 			else if constexpr ( Traits::IsRValueReference )
 			{
-				//&& parameter can be used for && argument or lvalue arguments with move constructor
-				return ( target->rttt.is_rvalue_reference ) or
-					   ( not target->rttt.is_reference and target->rttt.is_move_constructible );
+				// && parameter:
+				// - accepts && argument to && parameter
+				// - accepts rvalue argument to by-value parameter (move)
+				return ( target.ref == RefKind::RValue ) or
+					   ( not target_is_ref and target.base->rttt.is_move_constructible );
 			}
 			else
 			{
-				// Value paramater can be used for any argument type (except rvalue ref)
-				return not target->rttt.is_rvalue_reference;
+				// Value argument:
+				// - can bind to by-value / (const&) / (&) parameters via copy
+				// - cannot satisfy && parameter
+				if ( target.ref == RefKind::RValue )
+					return false;
+
+				// If parameter is by-value, any value arg is fine.
+				if ( not target_is_ref )
+					return true;
+
+				// If parameter is reference:
+				// - & param needs lvalue (we have a value here) -> allow only if copyable and target is const&
+				//   (since we can create a temporary and bind const&)
+				if ( target.ref == RefKind::LValue )
+				{
+					if ( target.is_const )
+						return target.base->rttt.is_copy_constructible;
+					return false;
+				}
+
+				return false;
 			}
 		}
 	};

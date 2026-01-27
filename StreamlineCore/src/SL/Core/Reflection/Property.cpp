@@ -5,6 +5,6 @@ namespace sl {
 
 	Type Property::GetType() const
 	{
-		return mProperty->prop_type;
+		return mProperty->prop_type.base;
 	}
 } // namespace sl

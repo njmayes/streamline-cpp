@@ -3,6 +3,14 @@
 #include "SL/Core/Common/Base.h"
 #include "SL/Core/Types/Any.h"
 
+#include <cstddef>
+#include <cstdint>
+#include <optional>
+#include <type_traits>
+#include <utility>
+#include <vector>
+#include <format>
+
 namespace sl {
 
 	namespace detail {
@@ -43,7 +51,8 @@ namespace sl {
 		{};
 
 		template < typename D, typename Unique, std::size_t I >
-		struct NumBases< D, Unique, I, decltype( adl_ViewBase( BaseViewer< D, I >{} ), void() ) > : std::integral_constant< std::size_t, NumBases< D, Unique, I + 1, void >::value >
+		struct NumBases< D, Unique, I, decltype( adl_ViewBase( BaseViewer< D, I >{} ), void() ) >
+			: std::integral_constant< std::size_t, NumBases< D, Unique, I + 1, void >::value >
 		{};
 
 		template < typename D, typename B >
@@ -238,6 +247,33 @@ namespace sl {
 	template < typename T >
 	concept CanReflect = detail::IsReflectableType< T > or detail::IsBuiltInReflectable< T >;
 
+	// -----------------------------
+	// TypeRef: "usage" of a type
+	// -----------------------------
+
+	enum class RefKind : std::uint8_t
+	{
+		None,
+		LValue,
+		RValue
+	};
+
+	struct TypeRef
+	{
+		const TypeInfo* base = nullptr;
+
+		bool is_const = false;
+		bool is_volatile = false;
+
+		bool is_pointer = false;
+		RefKind ref = RefKind::None;
+
+		bool is_array = false;
+		std::size_t array_extent = 0; // 0 => unbounded/unknown
+
+		auto operator<=>( const TypeRef& other ) const = default;
+	};
+
 	struct Instance
 	{
 		const TypeInfo* type = nullptr;
@@ -269,11 +305,13 @@ namespace sl {
 	using FunctionInvoker = std::function< Instance( std::vector< Instance > ) >;
 	using MethodInvoker = std::function< Instance( Instance, std::vector< Instance > ) >;
 
+	using StreamInsertInvoker = std::function< void( std::ostream&, Instance const& ) >;
+
 	struct PropertyInfo
 	{
 		std::string_view name;
 		const TypeInfo* parent_type;
-		const TypeInfo* prop_type;
+		TypeRef prop_type;
 		GetFunction accessor;
 		SetFunction setter;
 	};
@@ -282,15 +320,15 @@ namespace sl {
 	{
 		std::string_view name;
 		const TypeInfo* parent_type;
-		const TypeInfo* return_type;
-		std::vector< const TypeInfo* > arguments;
+		std::optional< TypeRef > return_type; // empty => void
+		std::vector< TypeRef > arguments;
 		MethodInvoker invoker;
 	};
 
 	struct ConstructorInfo
 	{
 		const TypeInfo* parent_type;
-		std::vector< const TypeInfo* > arguments;
+		std::vector< TypeRef > arguments;
 		ConstructorInvoker invoker;
 	};
 
@@ -311,13 +349,52 @@ namespace sl {
 		std::optional< DestructorInfo > destructor;
 		std::vector< MethodInfo > methods;
 		std::vector< PropertyInfo > properties;
+
+		std::optional< StreamInsertInvoker > stream_insert;
 	};
 
 	struct FunctionInfo
 	{
 		std::string_view name;
-		const TypeInfo* return_type;
-		std::vector< const TypeInfo* > arguments;
+		std::optional< TypeRef > return_type; // empty => void
+		std::vector< TypeRef > arguments;
 		FunctionInvoker invoker;
 	};
+
 } // namespace sl
+
+namespace std {
+
+	template <>
+	struct formatter< sl::Instance, char >
+	{
+		constexpr auto parse( format_parse_context& ctx )
+		{
+			auto it = ctx.begin();
+			if ( it != ctx.end() && *it != '}' )
+				throw format_error( "Invalid format for sl::Instance" );
+			return it;
+		}
+
+		template < typename FormatContext >
+		auto format( sl::Instance const& inst, FormatContext& ctx ) const
+		{
+			if ( inst.IsVoid() || inst.type == nullptr )
+				return format_to( ctx.out(), "<void>" );
+
+			auto const* ti = inst.type;
+
+			if ( ti->stream_insert.has_value() )
+			{
+				ostringstream oss;
+				( *ti->stream_insert )( oss, inst );
+				return format_to( ctx.out(), "{}", oss.str() );
+			}
+
+			std::string msg;
+			msg += "No formatter registered for reflected type: ";
+			msg += ti->name;
+			throw std::format_error( msg );
+		}
+	};
+} // namespace std

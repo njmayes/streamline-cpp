@@ -19,6 +19,7 @@ namespace sl {
 			return mMethod->name;
 		}
 
+		// New: return/args are stored as TypeRef (base + qualifiers)
 		Type GetReturnType() const;
 		std::vector< Type > GetArgumentTypes() const;
 
@@ -30,16 +31,25 @@ namespace sl {
 		template < typename T, CanReflect Obj, CanReflect... Args >
 		T Invoke( Obj&& obj, Args&&... args ) const
 		{
-			using ReturnTraits = TypeTraits< T >;
+			using ReturnTraits = TypeTraits< std::remove_cvref_t< T > >;
 			using ObjTraits = TypeTraits< std::remove_cvref_t< Obj > >;
 
+			// Return type check: compare canonical base type names.
 			if constexpr ( not std::is_void_v< T > )
 			{
-				if ( ReturnTraits::Name != mMethod->return_type->name )
-					throw BadReflectionCastException( ReturnTraits::Name, mMethod->return_type->name );
+				if ( not mMethod->return_type.has_value() )
+					throw BadReflectionCastException( ReturnTraits::Name, "void" );
+
+				if ( mMethod->return_type->base->name != ReturnTraits::Name )
+					throw BadReflectionCastException( ReturnTraits::Name, mMethod->return_type->base->name );
+			}
+			else
+			{
+				// If caller expects void, any return type is fine. (You can tighten this if you want.)
 			}
 
-			if ( ObjTraits::Name != mMethod->parent_type->name )
+			// Parent object type check (canonical)
+			if ( mMethod->parent_type->name != ObjTraits::Name )
 				throw BadReflectionCastException( ObjTraits::Name, mMethod->parent_type->name );
 
 			if ( sizeof...( Args ) != mMethod->arguments.size() )
@@ -50,7 +60,11 @@ namespace sl {
 			};
 
 			std::vector< Instance > instanced_args = { make_instance_arg( std::forward< Args >( args ) )... };
-			auto result = mMethod->invoker( reflect::MakeInstance( std::forward< Obj >( obj ) ), std::move( instanced_args ) );
+
+			auto result = mMethod->invoker(
+				reflect::MakeInstance( std::forward< Obj >( obj ) ),
+				std::move( instanced_args )
+			);
 
 			if constexpr ( std::is_void_v< T > )
 				return;
@@ -59,6 +73,6 @@ namespace sl {
 		}
 
 	private:
-		const MethodInfo* mMethod;
+		const MethodInfo* mMethod = nullptr;
 	};
 } // namespace sl

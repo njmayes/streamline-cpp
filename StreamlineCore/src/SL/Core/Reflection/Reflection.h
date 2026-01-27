@@ -3,6 +3,14 @@
 #include "Core.h"
 #include "Exception.h"
 
+#include <cstddef>
+#include <cstdint>
+#include <string_view>
+#include <type_traits>
+#include <unordered_map>
+#include <utility>
+#include <vector>
+
 namespace sl::reflect {
 
 	class Reflection
@@ -11,10 +19,14 @@ namespace sl::reflect {
 		template < typename T >
 		static const TypeInfo* GetInfo()
 		{
-			using Traits = TypeTraits< T >;
+			using NoRef = std::remove_reference_t< T >;
+			using NoPtr = std::remove_pointer_t< NoRef >;
+			using Base = std::remove_cv_t< NoPtr >;
+
+			using Traits = TypeTraits< Base >;
 
 			if ( not sReflectionData.contains( Traits::Name ) )
-				Register< T >();
+				Register< Base >();
 
 			return &sReflectionData[ Traits::Name ];
 		}
@@ -37,22 +49,22 @@ namespace sl::reflect {
 
 			ConstructorInfo ctr;
 			ctr.parent_type = type_info;
-			ctr.arguments = { GetInfo< std::remove_cvref_t< Args > >()... };
+			ctr.arguments = { MakeTypeRef< Args >()... };
 
-			ctr.invoker = []( std::vector< Instance > instanced_args = {} ) {
-				auto gen_tuple_val = []< std::size_t I >( Instance object ) {
+			ctr.invoker = []( std::vector< Instance > instanced_args = {} ) -> Instance {
+				auto generate_tuple_val = []< std::size_t I >( Instance& object ) -> decltype( auto ) {
 					using ArgType = typename Params::template Type< I >;
-					return object.data.Get< ArgType >();
+					return object.data.template Get< ArgType >();
 				};
 
-				auto gen_tuple = [ & ]< std::size_t... Is >( std::vector< Instance > args, std::index_sequence< Is... > ) -> Params::TupleType {
-					return std::make_tuple( gen_tuple_val.template operator()< Is >( std::move( args[ Is ] ) )... );
+				auto generate_tuple = [ & ]< std::size_t... Is >( std::vector< Instance >& args, std::index_sequence< Is... > ) -> Params::TupleType {
+					return typename Params::TupleType { generate_tuple_val.template operator()< Is >( args[ Is ] )... };
 				};
 
-				auto tuple_params = gen_tuple( std::move( instanced_args ), std::make_index_sequence< Params::Size >() );
+				auto tuple_params = generate_tuple( instanced_args, std::make_index_sequence< Params::Size >() );
 
-				auto ctr_func = []( Args&&... args ) {
-					return T( std::forward< Args >( args )... );
+				auto ctr_func = []< typename... U >( U&&... u ) {
+					return T( std::forward< U >( u )... );
 				};
 
 				return Instance(
@@ -72,7 +84,7 @@ namespace sl::reflect {
 			DestructorInfo dtr;
 			dtr.parent_type = type_info;
 			dtr.invoker = []( Instance object ) {
-				if ( object.type->name != TypeTraits< T >::Name )
+				if ( object.type->name != TypeTraits< std::remove_cvref_t< T > >::Name )
 					return;
 				object.data.Get< T& >().~T();
 			};
@@ -91,12 +103,44 @@ namespace sl::reflect {
 
 	private:
 		template < typename T >
+		static TypeRef MakeTypeRef()
+		{
+			using NoRef = std::remove_reference_t< T >;
+			using NoPtr = std::remove_pointer_t< NoRef >;
+			using Base = std::remove_cv_t< NoPtr >;
+
+			TypeRef out{};
+			out.base = GetInfo< Base >();
+
+			out.is_pointer = std::is_pointer_v< NoRef >;
+
+			if constexpr ( std::is_lvalue_reference_v< T > )
+				out.ref = RefKind::LValue;
+			else if constexpr ( std::is_rvalue_reference_v< T > )
+				out.ref = RefKind::RValue;
+			else
+				out.ref = RefKind::None;
+
+			out.is_const = std::is_const_v< NoPtr >;
+			out.is_volatile = std::is_volatile_v< NoPtr >;
+
+			if constexpr ( std::is_array_v< NoRef > )
+			{
+				out.is_array = true;
+				if constexpr ( std::is_bounded_array_v< NoRef > )
+					out.array_extent = std::extent_v< NoRef >;
+			}
+
+			return out;
+		}
+
+		template < typename T >
 		static TypeInfo* GetInfoForAddition()
 		{
-			using Traits = TypeTraits< T >;
+			using Traits = TypeTraits< std::remove_cvref_t< T > >;
 
 			if ( not sReflectionData.contains( Traits::Name ) )
-				Register< T >();
+				Register< std::remove_cvref_t< T > >();
 
 			return &sReflectionData[ Traits::Name ];
 		}
@@ -129,6 +173,11 @@ namespace sl::reflect {
 
 				T::_reflection_data::Build();
 			}
+
+			if constexpr ( requires( std::ostream& os, T const& v ) { os << v; } )
+			{
+				RegisterStreamInsert< T >();
+			}
 		}
 
 		template < typename T, typename... Ts >
@@ -157,7 +206,7 @@ namespace sl::reflect {
 			prop.name = name;
 			prop.parent_type = type_info;
 
-			prop.prop_type = GetInfo< PropType >();
+			prop.prop_type = MakeTypeRef< PropType >();
 
 			prop.accessor = [ accessor ]( Instance ctx ) {
 				return Instance(
@@ -179,39 +228,37 @@ namespace sl::reflect {
 			auto* type_info = GetInfoForAddition< T >();
 
 			using MemberTraits = FunctionTraits< MemberType >;
-			using ArgTypes = MemberTraits::Arguments;
+			using ArgTypes = typename MemberTraits::Arguments;
 			using ReturnType = typename MemberTraits::ReturnType;
 
 			SCONSTEXPR bool IsReturnVoid = std::same_as< ReturnType, void >;
 
-			auto get_arg_types = []< std::size_t... Is >( std::index_sequence< Is... > ) -> std::vector< const TypeInfo* > {
-				return { GetInfo< typename ArgTypes::template Type< Is > >()... };
+			auto get_arg_types = []< std::size_t... Is >( std::index_sequence< Is... > ) -> std::vector< TypeRef > {
+				return { MakeTypeRef< typename ArgTypes::template Type< Is > >()... };
 			};
-
-			auto arg_types = get_arg_types( std::make_index_sequence< ArgTypes::Size >() );
 
 			MethodInfo method;
 			method.name = name;
 			method.parent_type = type_info;
-			method.arguments = std::move( arg_types );
+			method.arguments = get_arg_types( std::make_index_sequence< ArgTypes::Size >() );
 			if constexpr ( not IsReturnVoid )
-				method.return_type = GetInfo< ReturnType >();
+				method.return_type = MakeTypeRef< ReturnType >();
 
 			method.invoker = [ accessor ]( Instance ctx, std::vector< Instance > args = {} ) -> Instance {
-				auto gen_tuple_val = []< std::size_t I >( Instance& object ) {
-					using ArgType = ArgTypes::template Type< I >;
+				auto generate_tuple_val = []< std::size_t I >( Instance& object ) {
+					using ArgType = typename ArgTypes::template Type< I >;
 					return object.data.Get< ArgType >();
 				};
 
-				auto gen_tuple = [ & ]< std::size_t... Is >( std::vector< Instance >& args, std::index_sequence< Is... > ) {
-					return std::make_tuple( gen_tuple_val.template operator()< Is >( args[ Is ] )... );
+				auto generate_tuple = [ & ]< std::size_t... Is >( std::vector< Instance >& argv, std::index_sequence< Is... > ) {
+					return std::make_tuple( generate_tuple_val.template operator()< Is >( argv[ Is ] )... );
 				};
 
-				auto tuple_params = gen_tuple( args, std::make_index_sequence< ArgTypes::Size >() );
+				auto tuple_params = generate_tuple( args, std::make_index_sequence< ArgTypes::Size >() );
 
 				if constexpr ( IsReturnVoid )
 				{
-					auto func = [ ctx, accessor ]< typename... Args >( Args&&... argv ) {
+					auto func = [ ctx, accessor ]< typename... Args >( Args&&... argv ) mutable {
 						auto& ctx_ref = ctx.data.Get< T& >();
 						( ctx_ref.*accessor )( std::forward< Args >( argv )... );
 					};
@@ -220,7 +267,7 @@ namespace sl::reflect {
 				}
 				else
 				{
-					auto func = [ ctx, accessor ]< typename... Args >( Args&&... argv ) -> ReturnType {
+					auto func = [ ctx, accessor ]< typename... Args >( Args&&... argv ) mutable -> ReturnType {
 						auto& ctx_ref = ctx.data.Get< T& >();
 						return ( ctx_ref.*accessor )( std::forward< Args >( argv )... );
 					};
@@ -233,6 +280,28 @@ namespace sl::reflect {
 			};
 
 			type_info->methods.push_back( std::move( method ) );
+		}
+
+		template < typename T >
+		static void RegisterStreamInsert()
+		{
+			static_assert(
+				requires( std::ostream& os, T const& v ) { os << v; },
+				"RegisterStreamInsert<T> requires: std::ostream& operator<<(std::ostream&, T const&)"
+			);
+
+			auto* type_info = GetInfoForAddition< T >();
+
+			type_info->stream_insert = []( std::ostream& os, Instance const& value ) {
+				if constexpr ( std::is_copy_constructible_v< T > )
+				{
+					os << value.data.template Get< T >();
+				}
+				else
+				{
+					os << value.data.template Get< T const& >();
+				}
+			};
 		}
 
 	private:
@@ -275,7 +344,6 @@ namespace sl::reflect {
 		}                                                                                   \
 		inline static const TypeInfo* Info = ::sl::reflect::Reflection::GetInfo< CLASS >(); \
 	};
-
 
 #define SLC_REMOVE_PAREN( ... ) ArgumentType< void( __VA_ARGS__ ) >::type
 
