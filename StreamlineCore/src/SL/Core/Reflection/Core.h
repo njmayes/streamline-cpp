@@ -13,87 +13,6 @@
 
 namespace sl {
 
-	namespace detail {
-
-		template < typename T >
-		struct tag
-		{
-			using type = T;
-		};
-
-		constexpr void adl_ViewBase()
-		{} // A dummy ADL target.
-
-		template < typename D, std::size_t I >
-		struct BaseViewer
-		{
-#if defined( __GNUC__ ) && !defined( __clang__ )
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wnon-template-friend"
-#endif
-			friend constexpr auto adl_ViewBase( BaseViewer );
-#if defined( __GNUC__ ) && !defined( __clang__ )
-#pragma GCC diagnostic pop
-#endif
-		};
-
-		template < typename D, std::size_t I, typename B >
-		struct BaseWriter
-		{
-			friend constexpr auto adl_ViewBase( BaseViewer< D, I > )
-			{
-				return tag< B >{};
-			}
-		};
-
-		template < typename D, typename Unique, std::size_t I = 0, typename = void >
-		struct NumBases : std::integral_constant< std::size_t, I >
-		{};
-
-		template < typename D, typename Unique, std::size_t I >
-		struct NumBases< D, Unique, I, decltype( adl_ViewBase( BaseViewer< D, I >{} ), void() ) >
-			: std::integral_constant< std::size_t, NumBases< D, Unique, I + 1, void >::value >
-		{};
-
-		template < typename D, typename B >
-		struct BaseInserter : BaseWriter< D, NumBases< D, B >::value, B >
-		{};
-
-		template < typename T >
-		constexpr void adl_RegisterBases( void* )
-		{} // A dummy ADL target.
-
-		template < typename T >
-		struct RegisterBases : decltype( adl_RegisterBases< T >( ( T* )nullptr ), tag< void >() )
-		{};
-
-		template < typename T, typename I >
-		struct BaseListLow
-		{};
-
-		template < typename T, std::size_t... I >
-		struct BaseListLow< T, std::index_sequence< I... > >
-		{
-			static constexpr TypeList< decltype( adl_ViewBase( BaseViewer< T, I >{} ) )... > helper()
-			{}
-			using type = decltype( helper() );
-		};
-
-#if defined( __GNUC__ ) && defined( __clang__ )
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-value"
-#endif
-		template < typename T >
-		struct BaseList : BaseListLow< T, std::make_index_sequence< ( RegisterBases< T >{}, NumBases< T, void >::value ) > >
-		{};
-#if defined( __GNUC__ ) && defined( __clang__ )
-#pragma GCC diagnostic pop
-#endif
-	} // namespace detail
-
-	template < typename T >
-	using BaseClassList = detail::BaseList< T >::type;
-
 	struct RuntimeTypeTraits
 	{
 		bool is_void;
@@ -212,13 +131,6 @@ namespace sl {
 	template < typename T >
 	struct Reflectable
 	{
-		template <
-			typename D,
-			std::enable_if_t< std::is_base_of_v< T, D >, std::nullptr_t > = nullptr,
-			typename detail::BaseInserter< D, T >::nonExistent = nullptr >
-		friend constexpr void adl_RegisterBases( void* )
-		{}
-
 	protected:
 		template < typename... Args >
 		using Ctr = detail::Ctr< T, Args... >;
@@ -344,7 +256,6 @@ namespace sl {
 
 		RuntimeTypeTraits rttt;
 
-		std::vector< const TypeInfo* > base_types;
 		std::vector< ConstructorInfo > constructors;
 		std::optional< DestructorInfo > destructor;
 		std::vector< MethodInfo > methods;

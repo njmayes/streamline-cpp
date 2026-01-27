@@ -4,13 +4,6 @@
 
 namespace sl {
 
-	std::vector< Type > Type::GetBaseClasses() const
-	{
-		return mInfo->base_types |
-			   std::views::transform( []( const auto& type ) { return Type( type ); } ) |
-			   std::ranges::to< std::vector >();
-	}
-
 	Property Type::GetProperty( std::string_view name ) const
 	{
 		auto it = std::ranges::find_if( mInfo->properties, [ name ]( const auto& prop ) { return prop.name == name; } );
@@ -41,11 +34,5 @@ namespace sl {
 		return mInfo->methods |
 			   std::views::transform( []( const auto& method ) { return Method( method ); } ) |
 			   std::ranges::to< std::vector >();
-	}
-
-	bool Type::IsSubclassOf( const Type& other ) const
-	{
-		auto&& base_classes = GetBaseClasses();
-		return std::any_of( std::ranges::begin(base_classes), std::ranges::end(base_classes), [ other ]( auto const& type ) { return type == other; } );
 	}
 } // namespace sl

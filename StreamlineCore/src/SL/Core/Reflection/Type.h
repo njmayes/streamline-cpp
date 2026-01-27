@@ -77,21 +77,11 @@ namespace sl {
 			return GetMethod( name ).Invoke< T >( std::forward< Obj >( obj ), std::forward< Args >( args )... );
 		}
 
-		std::vector< Type > GetBaseClasses() const;
-
 		Property GetProperty( std::string_view name ) const;
 		std::vector< Property > GetProperties() const;
 
 		Method GetMethod( std::string_view name ) const;
 		std::vector< Method > GetMethods() const;
-
-		template < CanReflect T >
-		bool IsSubclassOf() const
-		{
-			return IsSubclassOf( Type::Get< T >() );
-		}
-
-		bool IsSubclassOf( const Type& other ) const;
 
 		auto operator<=>( const Type& ) const = default;
 		operator bool() const

@@ -159,6 +159,6 @@
 #define SLC_NONE()
 
 
-#define SLC_FOR_EACH( macro, ... ) SLC_FOR_EACH_SEP( macro, SLC_NONE, __VA_ARGS__ )
+#define SLC_FOR_EACH( macro, ... ) __VA_OPT__( SLC_FOR_EACH_SEP( macro, SLC_NONE, __VA_ARGS__ ) )
 
-#define SLC_FOR_EACH_I( macro, ... ) SLC_FOR_EACH_I_SEP( macro, SLC_NONE, __VA_ARGS__ )
+#define SLC_FOR_EACH_I( macro, ... ) __VA_OPT__( SLC_FOR_EACH_I_SEP( macro, SLC_NONE, __VA_ARGS__ ) )

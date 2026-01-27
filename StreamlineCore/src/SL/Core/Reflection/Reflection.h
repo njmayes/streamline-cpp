@@ -156,11 +156,8 @@ namespace sl::reflect {
 
 			sReflectionData.emplace( Traits::Name, std::move( new_type ) );
 
-			SCONSTEXPR bool IsReflectableType = std::derived_from< T, Reflectable< T > >;
-			if constexpr ( IsReflectableType )
+			if constexpr ( detail::IsReflectableType< T > )
 			{
-				RegisterBaseClasses< T >( BaseClassList< T >{} );
-
 				if constexpr ( std::is_default_constructible_v< T > )
 					RegisterConstructor( detail::Ctr< T >{} );
 				if constexpr ( std::is_copy_constructible_v< T > )
@@ -178,21 +175,6 @@ namespace sl::reflect {
 			{
 				RegisterStreamInsert< T >();
 			}
-		}
-
-		template < typename T, typename... Ts >
-		static void RegisterBaseClasses( TypeList< Ts... > )
-		{
-			auto* type_info = GetInfoForAddition< T >();
-
-			( [ = ]() {
-				using BaseType = typename Ts::type;
-				if constexpr ( not std::same_as< T, BaseType > and CanReflect< BaseType > )
-				{
-					type_info->base_types.push_back( GetInfo< BaseType >() );
-				}
-			}(),
-			  ... );
 		}
 
 		template < typename T, typename MemberType >

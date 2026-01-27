@@ -19,7 +19,6 @@ namespace sl {
 			return mMethod->name;
 		}
 
-		// New: return/args are stored as TypeRef (base + qualifiers)
 		Type GetReturnType() const;
 		std::vector< Type > GetArgumentTypes() const;
 
@@ -42,10 +41,6 @@ namespace sl {
 
 				if ( mMethod->return_type->base->name != ReturnTraits::Name )
 					throw BadReflectionCastException( ReturnTraits::Name, mMethod->return_type->base->name );
-			}
-			else
-			{
-				// If caller expects void, any return type is fine. (You can tighten this if you want.)
 			}
 
 			// Parent object type check (canonical)

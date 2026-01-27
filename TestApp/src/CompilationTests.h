@@ -219,21 +219,20 @@ namespace sl {
 
 		auto type = Type::Get( "sl::ReflectionTest" );
 		std::println( "Class Name: {}", type.GetName() );
-		std::println( "Members:" );
+		std::println( "Properties:" );
 		for ( auto const& member : type.GetProperties() )
 		{
 			std::println( "\t- {}: {} ({})", member.GetName(), member.GetValue( obj ), member.GetType().GetName() );
+		}
+		std::println( "Methods:" );
+		for ( auto const& member : type.GetMethods() )
+		{
+			std::println( "\t- {}", member.GetName() );
 		}
 
 		std::println();
 
 		auto obj2 = type.Instantiate< ReflectionTest >( 7, 2.71f, std::string{ "Instantiated via Reflection" } );
-		std::println( "Class Name: {}", type.GetName() );
-		std::println( "Members:" );
-		for ( auto const& member : type.GetProperties() )
-		{
-			std::println( "\t- {}: {} ({})", member.GetName(), member.GetValue( obj2 ), member.GetType().GetName() );
-		}
 
 		auto obj3 = type.Instantiate< ReflectionTest >( obj );
 
