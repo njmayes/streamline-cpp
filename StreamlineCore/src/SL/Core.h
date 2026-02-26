@@ -3,9 +3,6 @@
 #include "SL/Core/Common/Application.h"
 #include "SL/Core/Common/Environment.h"
 
-#include "SL/Core/Collections/Grid.h"
-#include "SL/Core/Collections/StaticMap.h"
-
 #include "SL/Core/Filesystem/Utils.h"
 #include "SL/Core/Filesystem/Dialog.h"
 #include "SL/Core/Filesystem/SharedFile.h"
@@ -28,10 +25,13 @@
 
 #include "SL/Core/Threading/ThreadPool.h"
 
+#include "SL/Core/Types/Grid.h"
 #include "SL/Core/Types/Enum.h"
 #include "SL/Core/Types/Option.h"
 #include "SL/Core/Types/Result.h"
 #include "SL/Core/Types/Buffer.h"
+#include "SL/Core/Types/SmallVector.h"
+#include "SL/Core/Types/StaticMap.h"
 #include "SL/Core/Types/StaticString.h"
 #include "SL/Core/Types/Timer.h"
 #include "SL/Core/Types/ScopedTimer.h"
