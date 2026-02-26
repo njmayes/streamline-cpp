@@ -2,10 +2,10 @@
 
 #include "SL/Core/Logging/Log.h"
 
-#ifdef SLC_PLATFORM_WINDOWS
+#ifdef SL_PLATFORM_WINDOWS
 #define NOMINMAX
 #include <windows.h>
-#elif defined( SLC_PLATFORM_LINUX )
+#elif defined( SL_PLATFORM_LINUX )
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -14,9 +14,9 @@
 
 namespace sl::fs {
 
-#ifdef SLC_PLATFORM_WINDOWS
+#ifdef SL_PLATFORM_WINDOWS
 	using Handle = HANDLE;
-#elif defined( SLC_PLATFORM_LINUX )
+#elif defined( SL_PLATFORM_LINUX )
 	using Handle = int;
 #endif
 
@@ -27,7 +27,7 @@ namespace sl::fs {
 		std::optional< Handle > map_handle{};
 	};
 
-#ifdef SLC_PLATFORM_WINDOWS
+#ifdef SL_PLATFORM_WINDOWS
 	void PrintError()
 	{
 		DWORD err = ::GetLastError();
@@ -125,7 +125,7 @@ namespace sl::fs {
 	}
 #endif
 
-#ifdef SLC_PLATFORM_LINUX
+#ifdef SL_PLATFORM_LINUX
 	FileDescriptor CreateSharedFile( std::string_view name )
 	{
 		int fd = open( name.data(), O_RDWR | O_CREAT, 0666 );

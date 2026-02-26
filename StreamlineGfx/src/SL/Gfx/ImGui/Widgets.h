@@ -6,6 +6,8 @@
 #include "Widgets/MenuBar.h"
 #include "Widgets/PopUp.h"
 
+#include "SL/Core/Reflection/Type.h"
+
 namespace sl {
 
 	template < typename T >
@@ -95,25 +97,19 @@ namespace sl {
 			}
 		}
 
-		static void BeginMenuBar();
-		static void AddMenuBarHeading( std::string_view heading );
-		static void AddMenuBarItem( std::string_view heading, Action<>&& action );
-		static void AddMenuBarItem( std::string_view heading, std::string_view shortcut, Action<>&& action );
-		static void AddMenuBarItem( std::string_view heading, bool& displayed );
-		static void AddMenuBarSeparator();
-		static void EndMenuBar();
-
-		static void OpenPopup( std::string_view popupName );
-		static void BeginPopup( std::string_view popupName );
-		static void AddPopupItem( std::string_view heading, Action<>&& action );
-		static void EndPopup();
-
-		static void BeginContextPopup();
-		static void AddContextItem( std::string_view heading, Action<>&& action );
-		static void EndContextPopup();
+		static ui::MenuBar BeginMenuBar();
+		static ui::PopUp BeginPopup( std::string_view popupName );
+		static ui::PopUpContext BeginContextPopup();
 
 		static void Label( std::string_view fmt );
 		static void LabelWrapped( std::string_view fmt );
+
+		template < CanReflect T >
+		static void EditGeneric( std::string_view label, T& value )
+		{
+			auto instance = reflect::MakeInstance( value );
+			EditGenericInternal( label, instance );
+		}
 
 		static void StringEdit( std::string_view label, std::string& field, ImGuiInputTextFlags flags = 0, Action<>&& = {} );
 		static void PathEdit( std::string_view label, std::filesystem::path& field, ImGuiInputTextFlags flags = 0, Action<>&& = {} );
@@ -191,13 +187,13 @@ namespace sl {
 			Vector2EditInternalRef( label, imValues, resetVal, colWidth );
 			values = Utils::FromImVec< T >( imValues );
 		}
-		//template < VecSized< ImVec3 > T >
-		//static void Vector3Edit( std::string_view label, T& values, float resetVal = 0.0f, float colWidth = 100.0f )
+		// template < VecSized< ImVec3 > T >
+		// static void Vector3Edit( std::string_view label, T& values, float resetVal = 0.0f, float colWidth = 100.0f )
 		//{
 		//	ImVec3 imValues = Utils::ToImVec< ImVec3 >( values );
 		//	Vector3EditInternalRef( label, imValues, resetVal, colWidth );
 		//	values = Utils::FromImVec< T >( imValues );
-		//}
+		// }
 		template < VecSized< ImVec4 > T >
 		static void Vector4Edit( std::string_view label, T& values, float resetVal = 0.0f, float colWidth = 100.0f )
 		{
@@ -215,8 +211,8 @@ namespace sl {
 				onEdit( Utils::FromImVec< T >( newValues ) );
 			}
 		}
-		//template < VecSized< ImVec3 > T, IsAction< const ImVec3& > Func >
-		//static void Vector3Edit( std::string_view label, T values, Func&& onEdit, float resetVal = 0.0f, float colWidth = 100.0f )
+		// template < VecSized< ImVec3 > T, IsAction< const ImVec3& > Func >
+		// static void Vector3Edit( std::string_view label, T values, Func&& onEdit, float resetVal = 0.0f, float colWidth = 100.0f )
 		//{
 		//	auto cmpVal = Utils::ToImVec< ImVec3 >( values );
 		//	auto newValues = Vector3EditInternal( label, cmpVal, resetVal, colWidth );
@@ -224,7 +220,7 @@ namespace sl {
 		//	{
 		//		onEdit( Utils::FromImVec< T >( newValues ) );
 		//	}
-		//}
+		// }
 		template < VecSized< ImVec4 > T, IsAction< const ImVec4& > Func >
 		static void Vector4Edit( std::string_view label, T values, Func&& onEdit, float resetVal = 0.0f, float colWidth = 100.0f )
 		{
@@ -394,16 +390,18 @@ namespace sl {
 		static bool ButtonInternal( std::string_view label );
 		static bool ButtonInternal( std::string_view label, const ImVec2& size );
 
+		static void EditGenericInternal( std::string_view label, Instance value );
+
 		static int64_t ScalarEdit( std::string_view label, int64_t field );
 		static uint64_t UScalarEdit( std::string_view label, uint64_t field );
 
 		static float FloatEditInternal( std::string_view label, float field, float speed, float min, float max );
 
 		static void Vector2EditInternalRef( std::string_view label, ImVec2& values, float resetVal = 0.0f, float colWidth = 100.0f );
-		//static void Vector3EditInternalRef( std::string_view label, ImVec3& values, float resetVal = 0.0f, float colWidth = 100.0f );
+		// static void Vector3EditInternalRef( std::string_view label, ImVec3& values, float resetVal = 0.0f, float colWidth = 100.0f );
 		static void Vector4EditInternalRef( std::string_view label, ImVec4& values, float resetVal = 0.0f, float colWidth = 100.0f );
 		static ImVec2 Vector2EditInternal( std::string_view label, ImVec2 values, float resetVal = 0.0f, float colWidth = 100.0f );
-		//static ImVec3 Vector3EditInternal( std::string_view label, ImVec3 values, float resetVal = 0.0f, float colWidth = 100.0f );
+		// static ImVec3 Vector3EditInternal( std::string_view label, ImVec3 values, float resetVal = 0.0f, float colWidth = 100.0f );
 		static ImVec4 Vector4EditInternal( std::string_view label, ImVec4 values, float resetVal = 0.0f, float colWidth = 100.0f );
 
 		static void ColourEditInternal( std::string_view label, ImVec4& colour );
@@ -418,10 +416,5 @@ namespace sl {
 		static bool BeginCombo( std::string_view label, std::string_view preview );
 		static bool ComboboxEntry( std::string_view preview, const IComboEntry* entry );
 		static void EndCombo();
-
-	private:
-		inline static ui::MenuBar sCurrentMenuBar;
-		inline static ui::PopUp sCurrentPopup;
-		inline static ui::PopUpContext sCurrentPopupCtx;
 	};
 } // namespace sl

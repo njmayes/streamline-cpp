@@ -7,9 +7,9 @@ namespace sl {
 	inline std::tm GetLocalTime( std::time_t const* timer )
 	{
 		std::tm bt{};
-#if defined( SLC_PLATFORM_LINUX )
+#if defined( SL_PLATFORM_LINUX )
 		localtime_r( timer, &bt );
-#elif defined( SLC_PLATFORM_WINDOWS )
+#elif defined( SL_PLATFORM_WINDOWS )
 		localtime_s( &bt, timer );
 #else
 		static std::mutex mtx;

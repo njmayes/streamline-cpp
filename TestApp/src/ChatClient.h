@@ -9,7 +9,7 @@
 class ChatLayer : public sl::ApplicationLayer
 {
 public:
-	SLC_LISTENING_EVENTS( NetworkIn );
+	SL_LISTENING_EVENTS( NetworkIn );
 
 	void OnAttach() override
 	{}
@@ -54,6 +54,8 @@ public:
 	}
 	void OnDisconnect( sl::net::ConnectionPtr )
 	{}
+
+	void OnOverlayRender() override;
 };
 
 class ChatClient : public sl::GuiApplication

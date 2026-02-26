@@ -6,12 +6,12 @@ namespace sl {
 
 	using EventTypeFlag = size_t;
 
-#define SLC_MAKE_EVENT_FLAG_BITS( i, event ) event = MakeBit( i )
-#define SLC_MAKE_EVENT_FLAGS( ... )                                                \
+#define SL_MAKE_EVENT_FLAG_BITS( i, event ) event = MakeBit( i )
+#define SL_MAKE_EVENT_FLAGS( ... )                                                \
 	namespace EventType {                                                          \
 		enum : ::sl::EventTypeFlag                                                \
 		{                                                                          \
-			SLC_FOR_EACH_I_SEP( SLC_MAKE_EVENT_FLAG_BITS, SLC_COMMA, __VA_ARGS__ ) \
+			SL_FOR_EACH_I_SEP( SL_MAKE_EVENT_FLAG_BITS, SL_COMMA, __VA_ARGS__ ) \
 		};                                                                         \
 	}
 
@@ -44,7 +44,7 @@ namespace sl {
 		}
 	} // namespace detail
 	
-	SLC_MAKE_EVENT_FLAGS(
+	SL_MAKE_EVENT_FLAGS(
 		WindowClose, WindowResize, WindowFocus, WindowLostFocus, WindowMoved,
 		AppTick, AppUpdate, AppRender,
 		KeyPressed, KeyReleased, KeyTyped,

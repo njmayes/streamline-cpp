@@ -7,7 +7,7 @@
 #include <string_view>
 #include <source_location>
 
-#define SLC_FUNC_SIG_STRING std::string_view{ std::source_location::current().function_name() }
+#define SL_FUNC_SIG_STRING std::string_view{ std::source_location::current().function_name() }
 
 namespace sl {
 
@@ -45,7 +45,7 @@ namespace sl {
 			// "consteval std::string_view detail::GetLongName() [with T = Foo]"
 			constexpr std::string_view prefix = "T = ";
 			constexpr std::string_view suffix = "]";
-			return Extract( SLC_FUNC_SIG_STRING, prefix, suffix );
+			return Extract( SL_FUNC_SIG_STRING, prefix, suffix );
 
 #elif defined( _MSC_VER )
 			// Example MSVC __FUNCSIG__:
@@ -54,7 +54,7 @@ namespace sl {
 			constexpr std::string_view prefix2 = "class ";
 			constexpr std::string_view prefix3 = "struct ";
 			constexpr std::string_view suffix = ">(void)";
-			return Trim( Trim( Extract( SLC_FUNC_SIG_STRING, prefix1, suffix ), prefix2, {} ), prefix3, {} );
+			return Trim( Trim( Extract( SL_FUNC_SIG_STRING, prefix1, suffix ), prefix2, {} ), prefix3, {} );
 #endif
 		}
 	} // namespace detail

@@ -298,7 +298,7 @@ namespace sl {
 
 			std::vector< GLchar > infoLog( max_length );
 			glGetProgramInfoLog( program, max_length, &max_length, infoLog.data() );
-			log::Error( "Shader linking failed ({0}):\n{1}", mFilepath, infoLog.data() );
+			log::Error( "Shader linking failed ({0}):\n{1}", mFilepath, infoLog.empty() ? "" : infoLog.data() );
 
 			glDeleteProgram( program );
 

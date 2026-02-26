@@ -37,8 +37,8 @@ namespace sl::json {
 	}
 }
 
-#define SLC_JSON_SERIALISE(CLASS, ...) NLOHMANN_DEFINE_TYPE_INTRUSIVE(CLASS, __VA_ARGS__)
-#define SLC_JSON_SERIALISE_ENUM(ENUM_TYPE)														\
+#define SL_JSON_SERIALISE(CLASS, ...) NLOHMANN_DEFINE_TYPE_INTRUSIVE(CLASS, __VA_ARGS__)
+#define SL_JSON_SERIALISE_ENUM(ENUM_TYPE)														\
     template<typename BasicJsonType>                                                            \
     inline void to_json(BasicJsonType& j, const ENUM_TYPE& e)                                   \
     {                                                                                           \

@@ -1,8 +1,8 @@
 #include "SharedMutex.h"
 
-#ifdef SLC_PLATFORM_WINDOWS
+#ifdef SL_PLATFORM_WINDOWS
 #include <windows.h>
-#elif defined( SLC_PLATFORM_LINUX )
+#elif defined( SL_PLATFORM_LINUX )
 #include <semaphore.h>
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -14,14 +14,14 @@ namespace sl::ipc {
 	{
 		std::string_view name;
 		bool owner{};
-#ifdef SLC_PLATFORM_WINDOWS
+#ifdef SL_PLATFORM_WINDOWS
 		HANDLE handle;
-#elif defined( SLC_PLATFORM_LINUX )
+#elif defined( SL_PLATFORM_LINUX )
 		sem_t* sem{};
 #endif
 	};
 
-#ifdef SLC_PLATFORM_WINDOWS
+#ifdef SL_PLATFORM_WINDOWS
 	MutexDescriptor CreateSharedMutex( std::string_view name )
 	{
 		MutexDescriptor desc{};
@@ -71,7 +71,7 @@ namespace sl::ipc {
 	}
 #endif
 
-#ifdef SLC_PLATFORM_LINUX
+#ifdef SL_PLATFORM_LINUX
 	MutexDescriptor CreateSharedMutex( std::string_view name )
 	{
 		MutexDescriptor desc{};

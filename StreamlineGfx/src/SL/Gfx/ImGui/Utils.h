@@ -46,9 +46,9 @@ namespace sl {
 
 		template < typename T >
 			requires VecSized< ImVec2, T >
-		static T CursorPos()
+		static T GetCursorPos()
 		{
-			return FromImVec< T >( CursorPosInternal() );
+			return FromImVec< T >( GetCursorPosInternal() );
 		}
 		static void SetCursorPos( float x, float y );
 		static void SetCursorPosX( float pos );
@@ -158,7 +158,7 @@ namespace sl {
 		static void SetKeyboardFocusHere();
 
 	private:
-		static ImVec2 CursorPosInternal();
+		static ImVec2 GetCursorPosInternal();
 		static ImVec2 GetMainWindowCentreInternal();
 
 		static void SetNextWindowSizeInternal( const ImVec2& size, ImGuiCond cond = ImGuiCond_FirstUseEver );

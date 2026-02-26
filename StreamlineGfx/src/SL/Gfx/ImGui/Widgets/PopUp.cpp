@@ -6,15 +6,15 @@ namespace sl::ui {
 
 	PopUp::~PopUp()
 	{
-		if (mPopUpItems.empty())
+		if ( mPopUpItems.empty() )
 			return;
 
-		if (!ImGui::BeginPopup(mStrID.data()))
+		if ( !ImGui::BeginPopup( mStrID.data() ) )
 			return;
 
-		auto selected_popups = mPopUpItems | std::views::filter([](const auto& item) { return ImGui::MenuItem(item.label.data()); });
+		auto selected_popups = mPopUpItems | std::views::filter( []( const auto& item ) { return ImGui::MenuItem( item.label.data() ); } );
 
-		for (const PopUpItem& item : selected_popups)
+		for ( const PopUpItem& item : selected_popups )
 		{
 			item.action();
 			ImGui::CloseCurrentPopup();
@@ -23,28 +23,30 @@ namespace sl::ui {
 		ImGui::EndPopup();
 	}
 
-	void PopUp::AddPopUpItem(std::string_view label, Action<>&& action)
+	PopUp& PopUp::AddPopUpItem( std::string_view label, Action<>&& action )
 	{
-		mPopUpItems.emplace_back(label, std::move(action));
+		mPopUpItems.emplace_back( label, std::move( action ) );
+		return *this;
 	}
 
 	PopUpContext::~PopUpContext()
 	{
-		if (mPopUpItems.empty())
+		if ( mPopUpItems.empty() )
 			return;
 
-		if (!ImGui::BeginPopupContextItem())
+		if ( !ImGui::BeginPopupContextItem() )
 			return;
 
-		auto selected_popups = mPopUpItems | std::views::filter([](const auto& item) { return ImGui::MenuItem(item.label.data()); });
-		for (const PopUpItem& item : selected_popups)
+		auto selected_popups = mPopUpItems | std::views::filter( []( const auto& item ) { return ImGui::MenuItem( item.label.data() ); } );
+		for ( const PopUpItem& item : selected_popups )
 			item.action();
 
 		ImGui::EndPopup();
 	}
 
-	void PopUpContext::AddPopUpItem(std::string_view label, Action<>&& action)
+	PopUpContext& PopUpContext::AddPopUpItem( std::string_view label, Action<>&& action )
 	{
-		mPopUpItems.emplace_back(label, std::move(action));
+		mPopUpItems.emplace_back( label, std::move( action ) );
+		return *this;
 	}
-}
+} // namespace sl::ui

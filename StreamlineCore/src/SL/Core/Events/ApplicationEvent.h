@@ -12,22 +12,22 @@ namespace sl {
 			: width( w ), height( h )
 		{}
 
-		SLC_EVENT_DATA_TYPE( WindowResize )
+		SL_EVENT_DATA_TYPE( WindowResize )
 	};
 
 	struct WindowCloseEvent : public EventBase
 	{
-		SLC_EVENT_DATA_TYPE( WindowClose )
+		SL_EVENT_DATA_TYPE( WindowClose )
 	};
 
 	struct WindowFocusEvent : public EventBase
 	{
-		SLC_EVENT_DATA_TYPE( WindowFocus )
+		SL_EVENT_DATA_TYPE( WindowFocus )
 	};
 
 	struct WindowFocusLostEvent : public EventBase
 	{
-		SLC_EVENT_DATA_TYPE( WindowLostFocus )
+		SL_EVENT_DATA_TYPE( WindowLostFocus )
 	};
 
 	struct WindowMovedEvent : public EventBase
@@ -38,22 +38,22 @@ namespace sl {
 			: xpos( x ), ypos( y )
 		{}
 
-		SLC_EVENT_DATA_TYPE( WindowMoved )
+		SL_EVENT_DATA_TYPE( WindowMoved )
 	};
 
 
 	struct AppTickEvent : public EventBase
 	{
-		SLC_EVENT_DATA_TYPE( AppTick )
+		SL_EVENT_DATA_TYPE( AppTick )
 	};
 
 	struct AppUpdateEvent : public EventBase
 	{
-		SLC_EVENT_DATA_TYPE( AppUpdate )
+		SL_EVENT_DATA_TYPE( AppUpdate )
 	};
 
 	struct AppRenderEvent : public EventBase
 	{
-		SLC_EVENT_DATA_TYPE( AppRender )
+		SL_EVENT_DATA_TYPE( AppRender )
 	};
 } // namespace sl

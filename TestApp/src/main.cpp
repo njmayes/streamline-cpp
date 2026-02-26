@@ -62,6 +62,15 @@ sl::Application* CreateApplication( sl::CommandLineArgs args )
 
 int main( int argc, char** argv )
 {
+	try
+	{
+		sl::ReflectionTestFunc();
+	}
+	catch ( const std::exception& e )
+	{
+		std::cerr << "Reflection test failed: " << e.what() << std::endl;
+	}
+
 	sl::CommandLineArgs args{ argc, argv };
 	sl::Application::Run( CreateApplication, args );
 }

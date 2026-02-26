@@ -192,39 +192,39 @@ namespace sl {
 	} // namespace InstrumentorUtils
 } // namespace sl
 
-#ifdef SLC_PROFILE
+#ifdef SL_PROFILE
 // Resolve which function signature macro will be used. Note that this only
 // is resolved when the (pre)compiler starts, so the syntax highlighting
 // could mark the wrong one in your editor!
 #if defined( __GNUC__ ) || ( defined( __MWERKS__ ) && ( __MWERKS__ >= 0x3000 ) ) || ( defined( __ICC ) && ( __ICC >= 600 ) ) || defined( __ghs__ )
-#define SLC_FUNC_SIG __PRETTY_FUNCTION__
+#define SL_FUNC_SIG __PRETTY_FUNCTION__
 #elif defined( __DMC__ ) && ( __DMC__ >= 0x810 )
-#define SLC_FUNC_SIG __PRETTY_FUNCTION__
+#define SL_FUNC_SIG __PRETTY_FUNCTION__
 #elif ( defined( __FUNCSIG__ ) || ( _MSC_VER ) )
-#define SLC_FUNC_SIG __FUNCSIG__
+#define SL_FUNC_SIG __FUNCSIG__
 #elif ( defined( __INTEL_COMPILER ) && ( __INTEL_COMPILER >= 600 ) ) || ( defined( __IBMCPP__ ) && ( __IBMCPP__ >= 500 ) )
-#define SLC_FUNC_SIG __FUNCTION__
+#define SL_FUNC_SIG __FUNCTION__
 #elif defined( __BORLANDC__ ) && ( __BORLANDC__ >= 0x550 )
-#define SLC_FUNC_SIG __FUNC__
+#define SL_FUNC_SIG __FUNC__
 #elif defined( __STDC_VERSION__ ) && ( __STDC_VERSION__ >= 199901 )
-#define SLC_FUNC_SIG __func__
+#define SL_FUNC_SIG __func__
 #elif defined( __cplusplus ) && ( __cplusplus >= 201103 )
-#define SLC_FUNC_SIG __func__
+#define SL_FUNC_SIG __func__
 #else
-#define SLC_FUNC_SIG "SLC_FUNC_SIG unknown!"
+#define SL_FUNC_SIG "SL_FUNC_SIG unknown!"
 #endif
 
-#define SLC_PROFILE_BEGIN_SESSION( name, filepath ) ::sl::Instrumentor::Get().BeginSession( name, filepath )
-#define SLC_PROFILE_END_SESSION() ::sl::Instrumentor::Get().EndSession()
-#define SLC_PROFILE_SCOPE_LINE2( name, line )                                                           \
+#define SL_PROFILE_BEGIN_SESSION( name, filepath ) ::sl::Instrumentor::Get().BeginSession( name, filepath )
+#define SL_PROFILE_END_SESSION() ::sl::Instrumentor::Get().EndSession()
+#define SL_PROFILE_SCOPE_LINE2( name, line )                                                           \
 	constexpr auto fixedName##line = ::sl::InstrumentorUtils::CleanupOutputString( name, "__cdecl " ); \
 	::sl::InstrumentationTimer timer##line( fixedName##line.Data )
-#define SLC_PROFILE_SCOPE_LINE( name, line ) SLC_PROFILE_SCOPE_LINE2( name, line )
-#define SLC_PROFILE_SCOPE( name ) SLC_PROFILE_SCOPE_LINE( name, __LINE__ )
-#define SLC_PROFILE_FUNCTION() SLC_PROFILE_SCOPE( SLC_FUNC_SIG )
+#define SL_PROFILE_SCOPE_LINE( name, line ) SL_PROFILE_SCOPE_LINE2( name, line )
+#define SL_PROFILE_SCOPE( name ) SL_PROFILE_SCOPE_LINE( name, __LINE__ )
+#define SL_PROFILE_FUNCTION() SL_PROFILE_SCOPE( SL_FUNC_SIG )
 #else
-#define SLC_PROFILE_BEGIN_SESSION( name, filepath )
-#define SLC_PROFILE_END_SESSION()
-#define SLC_PROFILE_SCOPE( name )
-#define SLC_PROFILE_FUNCTION()
+#define SL_PROFILE_BEGIN_SESSION( name, filepath )
+#define SL_PROFILE_END_SESSION()
+#define SL_PROFILE_SCOPE( name )
+#define SL_PROFILE_FUNCTION()
 #endif

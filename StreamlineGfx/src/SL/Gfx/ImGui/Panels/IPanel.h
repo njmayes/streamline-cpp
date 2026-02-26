@@ -15,7 +15,7 @@ namespace sl {
 		virtual void OnEvent( Event& e ) override
 		{}
 
-		SLC_LISTENING_EVENTS( None )
+		SL_LISTENING_EVENTS( None )
 	};
 
 	template < typename T >

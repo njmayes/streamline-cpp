@@ -20,7 +20,7 @@ namespace sl::ui {
 		PopUp(std::string_view strID) : mStrID(strID) {}
 		~PopUp();
 
-		void AddPopUpItem(std::string_view label, Action<>&& action);
+		PopUp& AddPopUpItem(std::string_view label, Action<>&& action);
 
 	private:
 		std::string_view mStrID;
@@ -32,7 +32,7 @@ namespace sl::ui {
 	public:
 		~PopUpContext();
 
-		void AddPopUpItem(std::string_view label, Action<>&& action);
+		PopUpContext& AddPopUpItem( std::string_view label, Action<>&& action );
 
 	private:
 		std::vector<PopUpItem> mPopUpItems;

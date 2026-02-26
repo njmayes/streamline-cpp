@@ -46,10 +46,12 @@ namespace sl::ui {
 		~MenuBar();
 
 	public:
-		void AddHeading( std::string_view heading );
-		void AddMenuItemAction( std::string_view label, std::string_view shortcut, Action<>&& action );
-		void AddMenuItemSwitch( std::string_view label, std::string_view shortcut, bool& show );
-		void AddSeparator();
+		MenuBar& AddHeading( std::string_view heading );
+		MenuBar& AddMenuItemAction( std::string_view label, Action<>&& action );
+		MenuBar& AddMenuItemSwitch( std::string_view label, bool& show );
+		MenuBar& AddMenuItemAction( std::string_view label, std::string_view shortcut, Action<>&& action );
+		MenuBar& AddMenuItemSwitch( std::string_view label, std::string_view shortcut, bool& show );
+		MenuBar& AddSeparator();
 
 	private:
 		std::vector< MenuHeading > mMenuItems;

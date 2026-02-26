@@ -12,7 +12,7 @@ namespace sl {
 
 	std::optional< MessageBuffer > LogMemoryArena::RequestBuffer( std::size_t size )
 	{
-		SLC_PROFILE_FUNCTION();
+		SL_PROFILE_FUNCTION();
 
 		auto available = mCapacity - mUsed;
 		if ( available < size )
@@ -25,7 +25,7 @@ namespace sl {
 
 	void LogMemoryArena::ReleaseBuffers()
 	{
-		SLC_PROFILE_FUNCTION();
+		SL_PROFILE_FUNCTION();
 
 		mUsed = 0;
 	}

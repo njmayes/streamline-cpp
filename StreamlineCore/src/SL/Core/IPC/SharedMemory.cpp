@@ -2,9 +2,9 @@
 
 #include "SharedMutex.h"
 
-#ifdef SLC_PLATFORM_WINDOWS
+#ifdef SL_PLATFORM_WINDOWS
 #include <windows.h>
-#elif defined( SLC_PLATFORM_LINUX )
+#elif defined( SL_PLATFORM_LINUX )
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -13,9 +13,9 @@
 
 namespace sl::ipc {
 
-#ifdef SLC_PLATFORM_WINDOWS
+#ifdef SL_PLATFORM_WINDOWS
 	using FileHandle = HANDLE;
-#elif defined( SLC_PLATFORM_LINUX )
+#elif defined( SL_PLATFORM_LINUX )
 	using FileHandle = int;
 #endif
 
@@ -31,7 +31,7 @@ namespace sl::ipc {
 		std::size_t ref_count;
 	};
 
-#ifdef SLC_PLATFORM_WINDOWS
+#ifdef SL_PLATFORM_WINDOWS
 	std::tuple< BufferView, BufferView, FileDescriptor > CreateSharedBuffer( std::string_view name, std::size_t size )
 	{
 		auto constexpr offset = sizeof( BufferHeader );
@@ -116,7 +116,7 @@ namespace sl::ipc {
 	}
 #endif
 
-#ifdef SLC_PLATFORM_LINUX
+#ifdef SL_PLATFORM_LINUX
 	std::tuple< BufferView, BufferView, FileDescriptor > CreateSharedBuffer( std::string_view name, std::size_t size )
 	{
 		auto constexpr offset = sizeof( BufferHeader );

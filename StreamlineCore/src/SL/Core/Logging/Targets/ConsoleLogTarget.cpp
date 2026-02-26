@@ -7,9 +7,9 @@
 #include <thread>
 #include <system_error>
 
-#ifdef SLC_PLATFORM_WINDOWS
+#ifdef SL_PLATFORM_WINDOWS
 #include "Windows.h"
-#elif defined( SLC_PLATFORM_LINUX )
+#elif defined( SL_PLATFORM_LINUX )
 #include <unistd.h>
 #endif
 
@@ -19,7 +19,7 @@ namespace {
 
 	static void SetupConsoleNative()
 	{
-#ifdef SLC_PLATFORM_WINDOWS
+#ifdef SL_PLATFORM_WINDOWS
 		HANDLE hStdOut = GetStdHandle( STD_OUTPUT_HANDLE );
 		if ( hStdOut == INVALID_HANDLE_VALUE )
 		{
@@ -50,12 +50,12 @@ namespace {
 			Logger::GetErrorLogger().Log( LogLevel::Error, "Failed to set console mode [{}]", message );
 			return;
 		}
-#endif // SLC_PLATFORM_WINDOWS
+#endif // SL_PLATFORM_WINDOWS
 	}
 
 	static void WriteToConsoleNative( std::span< const char > buffer, std::size_t count )
 	{
-#ifdef SLC_PLATFORM_WINDOWS
+#ifdef SL_PLATFORM_WINDOWS
 		HANDLE hStdOut = GetStdHandle( STD_OUTPUT_HANDLE );
 		if ( hStdOut == INVALID_HANDLE_VALUE )
 		{
@@ -77,7 +77,7 @@ namespace {
 			Logger::GetErrorLogger().Log( LogLevel::Error, "Failed to write to stdout [{}]", message );
 			return;
 		}
-#elif defined( SLC_PLATFORM_LINUX )
+#elif defined( SL_PLATFORM_LINUX )
 		auto result = ::write( STDOUT_FILENO, buffer.data(), count );
 		if ( result == -1 )
 		{
@@ -92,9 +92,9 @@ namespace {
 
 	static void FlushConsoleNative()
 	{
-#ifdef SLC_PLATFORM_WINDOWS
+#ifdef SL_PLATFORM_WINDOWS
 		// Used WriteConsoleA - flush not necessary
-#elif defined( SLC_PLATFORM_LINUX )
+#elif defined( SL_PLATFORM_LINUX )
 		// Used ::write - flush not necessary
 #else
 		std::fflush( stdout );
@@ -127,7 +127,7 @@ namespace sl {
 
 	void ConsoleLogTarget::PopulateBuffer( std::span< MessageEntry > data )
 	{
-		SLC_PROFILE_FUNCTION();
+		SL_PROFILE_FUNCTION();
 
 		auto filtered_data = data | std::views::filter( [ this ]( auto const& entry ) { return ShouldWriteMessage( entry ); } );
 

@@ -21,7 +21,7 @@ namespace sl {
 		return ImGui::IsMouseReleased( button );
 	}
 
-	ImVec2 Utils::CursorPosInternal()
+	ImVec2 Utils::GetCursorPosInternal()
 	{
 		return ImGui::GetCursorPos();
 	}

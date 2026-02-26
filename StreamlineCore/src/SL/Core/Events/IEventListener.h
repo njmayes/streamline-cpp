@@ -34,12 +34,12 @@ namespace sl {
 	template < typename T >
 	concept IsEventListener = DerivedFromOnly< T, IEventListener >;
 
-#define SLC_MAKE_EVENT_FLAG( event ) ::sl::EventType::event
+#define SL_MAKE_EVENT_FLAG( event ) ::sl::EventType::event
 
-#define SLC_LISTENING_EVENTS( ... )                                                                                  \
+#define SL_LISTENING_EVENTS( ... )                                                                                  \
 	static constexpr ::sl::EventTypeFlag GetStaticType()                                                            \
 	{                                                                                                                \
-		return ::sl::detail::BuildEventTypeMask( SLC_FOR_EACH_SEP( SLC_MAKE_EVENT_FLAG, SLC_COMMA, __VA_ARGS__ ) ); \
+		return ::sl::detail::BuildEventTypeMask( SL_FOR_EACH_SEP( SL_MAKE_EVENT_FLAG, SL_COMMA, __VA_ARGS__ ) ); \
 	}                                                                                                                \
 	virtual constexpr ::sl::EventTypeFlag GetListeningEvents() const override                                       \
 	{                                                                                                                \

@@ -17,7 +17,7 @@ namespace sl {
 		friend struct EventConcept;
 	};
 
-#define SLC_EVENT_DATA_TYPE( type )             \
+#define SL_EVENT_DATA_TYPE( type )             \
 	static ::sl::EventTypeFlag GetStaticType() \
 	{                                           \
 		return EventType::type;                 \
@@ -25,7 +25,7 @@ namespace sl {
 
 	/// <summary>
 	/// Event types must derive from EventBase and implement a static function
-	/// that returns the event's type. Use the SLC_EVENT_DATA_TYPE(type) macro
+	/// that returns the event's type. Use the SL_EVENT_DATA_TYPE(type) macro
 	/// to help implement this.
 	/// </summary>
 	template < typename T >
@@ -94,7 +94,7 @@ namespace sl {
 		friend class Event;
 	};
 
-#define SLC_BIND_EVENT_FUNC( fn ) [ this ]( ::sl::IsEvent auto& event ) -> bool { return this->fn( event ); }
+#define SL_BIND_EVENT_FUNC( fn ) [ this ]( ::sl::IsEvent auto& event ) -> bool { return this->fn( event ); }
 
 	/// <summary>
 	/// Type erased event class. Contains a pointer to the base event concept
@@ -114,7 +114,7 @@ namespace sl {
 
 		/// <summary>
 		/// Pass a predicate invocable object that takes an event type reference
-		/// as a parameter. Use the SLC_BIND_EVENT_FUNC macro for assistance
+		/// as a parameter. Use the SL_BIND_EVENT_FUNC macro for assistance
 		/// binding member functions.
 		/// </summary>
 		template < IsEvent T, IsPredicate< T& > Func >

@@ -14,7 +14,7 @@ namespace sl {
 
 	void ILogTarget::WriteTarget( std::span< MessageEntry > data )
 	{
-		SLC_PROFILE_FUNCTION();
+		SL_PROFILE_FUNCTION();
 
 		PopulateBuffer( data );
 
@@ -26,7 +26,7 @@ namespace sl {
 
 	void ILogTarget::PopulateBuffer( std::span< MessageEntry > data )
 	{
-		SLC_PROFILE_FUNCTION();
+		SL_PROFILE_FUNCTION();
 
 		auto filtered_data = data | std::views::filter( [ this ]( auto const& entry ) { return ShouldWriteMessage( entry ); } ) | std::ranges::to< std::vector >();
 
@@ -49,9 +49,9 @@ namespace sl {
 
 	void ILogTarget::PopulateBufferNewLine()
 	{
-#ifdef SLC_PLATFORM_WINDOWS
+#ifdef SL_PLATFORM_WINDOWS
 		WriteCharToBuffer( '\r' );
-#endif // SLC_PLATFORM_WINDOWS
+#endif // SL_PLATFORM_WINDOWS
 
 		WriteCharToBuffer( '\n' );
 	}

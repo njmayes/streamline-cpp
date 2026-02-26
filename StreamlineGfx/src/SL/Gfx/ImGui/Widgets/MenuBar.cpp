@@ -41,26 +41,50 @@ namespace sl::ui {
 		ImGui::EndMenuBar();
 	}
 
-	void MenuBar::AddHeading( std::string_view heading )
+	MenuBar& MenuBar::AddHeading( std::string_view heading )
 	{
 		mMenuItems.emplace_back( heading );
+		
+		return *this;
 	}
 
-	void MenuBar::AddMenuItemAction( std::string_view label, std::string_view shortcut, Action<>&& action )
+	MenuBar& MenuBar::AddMenuItemAction( std::string_view label, Action<>&& action )
+	{
+		MenuHeading& last_menu = mMenuItems.back();
+		last_menu.menu.emplace_back( MenuItemType::Action, label, "", std::move( action ) );
+
+		return *this;
+	}
+
+	MenuBar& MenuBar::AddMenuItemSwitch( std::string_view label, bool& show )
+	{
+		MenuHeading& last_menu = mMenuItems.back();
+		last_menu.menu.emplace_back( MenuItemType::Switch, label, "", show );
+
+		return *this;
+	}
+
+	MenuBar& MenuBar::AddMenuItemAction( std::string_view label, std::string_view shortcut, Action<>&& action )
 	{
 		MenuHeading& last_menu = mMenuItems.back();
 		last_menu.menu.emplace_back( MenuItemType::Action, label, shortcut, std::move( action ) );
+		
+		return *this;
 	}
 
-	void MenuBar::AddMenuItemSwitch( std::string_view label, std::string_view shortcut, bool& show )
+	MenuBar& MenuBar::AddMenuItemSwitch( std::string_view label, std::string_view shortcut, bool& show )
 	{
 		MenuHeading& last_menu = mMenuItems.back();
 		last_menu.menu.emplace_back( MenuItemType::Switch, label, shortcut, show );
+		
+		return *this;
 	}
 
-	void MenuBar::AddSeparator()
+	MenuBar& MenuBar::AddSeparator()
 	{
 		MenuHeading& last_menu = mMenuItems.back();
 		last_menu.menu.emplace_back( MenuItemType::Separator );
+		
+		return *this;
 	}
 } // namespace sl::ui

@@ -302,7 +302,7 @@ namespace sl::reflect {
 
 } // namespace sl::reflect
 
-#define SLC_REFLECT_MEMBER_IMPL( member )                                                              \
+#define SL_REFLECT_MEMBER_IMPL( member )                                                               \
 	{                                                                                                  \
 		auto invoker = []< typename _refl > {                                                          \
 			if constexpr ( std::derived_from< _refl, ::sl::detail::CtrBase > )                         \
@@ -314,21 +314,30 @@ namespace sl::reflect {
 		invoker.template operator()< MemberType >();                                                   \
 	}
 
-#define SLC_REFLECT_CLASS( CLASS, ... )                                                     \
-	using Reflectable< CLASS >::Ctr;                                                        \
-	using Reflectable< CLASS >::ArgumentType;                                               \
-	struct _reflection_data                                                                 \
-	{                                                                                       \
-		static void Build()                                                                 \
-		{                                                                                   \
-			using ClassType = CLASS;                                                        \
-			SLC_FOR_EACH( SLC_REFLECT_MEMBER_IMPL, __VA_ARGS__ )                            \
-		}                                                                                   \
-		inline static const TypeInfo* Info = ::sl::reflect::Reflection::GetInfo< CLASS >(); \
+#define SL_REFLECT_CLASS( CLASS, ... )                                                            \
+	template < typename... Args >                                                                 \
+	using _ctr = ::sl::detail::Ctr< CLASS, Args... >;                                             \
+                                                                                                  \
+	template < typename _R >                                                                      \
+	struct _arg_type;                                                                             \
+	template < typename _R, typename _U >                                                         \
+	struct _arg_type< _R( _U ) >                                                                  \
+	{                                                                                             \
+		using type = _U;                                                                          \
+	};                                                                                            \
+                                                                                                  \
+	struct _reflection_data                                                                       \
+	{                                                                                             \
+		static void Build()                                                                       \
+		{                                                                                         \
+			using ClassType = CLASS;                                                              \
+			SL_FOR_EACH( SL_REFLECT_MEMBER_IMPL, __VA_ARGS__ )                                    \
+		}                                                                                         \
+		inline static const ::sl::TypeInfo* Info = ::sl::reflect::Reflection::GetInfo< CLASS >(); \
 	};
 
-#define SLC_REMOVE_PAREN( ... ) ArgumentType< void( __VA_ARGS__ ) >::type
+#define SL_REMOVE_PAREN( ... ) _arg_type< void( __VA_ARGS__ ) >::type
 
-#define SLC_CTR( ... )                              \
-	template SLC_REMOVE_PAREN( Ctr< __VA_ARGS__ > ) \
+#define SL_CTR( ... )                               \
+	template SL_REMOVE_PAREN( _ctr< __VA_ARGS__ > ) \
 	{}

@@ -62,7 +62,7 @@ namespace sl {
 		template < typename... Args >
 		void Log( LogLevel level, std::format_string< Args... > message, Args&&... args )
 		{
-			SLC_PROFILE_FUNCTION();
+			SL_PROFILE_FUNCTION();
 
 			if ( std::to_underlying( level ) < std::to_underlying( mMinLogLevel ) )
 				return;
@@ -71,19 +71,19 @@ namespace sl {
 			if ( not buffer.has_value() )
 			{
 				{
-					SLC_PROFILE_SCOPE( "Logging - Notify" );
+					SL_PROFILE_SCOPE( "Logging - Notify" );
 					mCV.notify_one();
 				}
 
 				{
-					SLC_PROFILE_SCOPE( "Logging - Wait" );
+					SL_PROFILE_SCOPE( "Logging - Wait" );
 
 					std::unique_lock< std::mutex > lock( mQueueMutex );
 					mCV.wait( lock, [ this ] { return mMessageQueue.size() < mMaxMessagesBeforeFlush; } );
 				}
 
 				{
-					SLC_PROFILE_SCOPE( "Logging - Get Buffer Retry" );
+					SL_PROFILE_SCOPE( "Logging - Get Buffer Retry" );
 
 					buffer = mArena.RequestBuffer( mMessageSizeLimit );
 					ASSERT( buffer.has_value(), "Still could not create message buffer despite flush" );
@@ -95,7 +95,7 @@ namespace sl {
 
 			std::size_t formatted_size{};
 			{
-				SLC_PROFILE_SCOPE( "Logging - Format message" );
+				SL_PROFILE_SCOPE( "Logging - Format message" );
 
 				auto formatted_message = GetFormatMessage( message, std::forward< Args >( args )... );
 				auto format_result = std::format_to_n( buffer->begin(), mMessageSizeLimit, "[{}] {}: {}", level_string, mTimestampCache.format_string.data(), formatted_message.data() );
@@ -107,7 +107,7 @@ namespace sl {
 				mStats.large_message_count++;
 
 			{
-				SLC_PROFILE_SCOPE( "Logging - Lock queue and push" );
+				SL_PROFILE_SCOPE( "Logging - Lock queue and push" );
 
 				std::lock_guard< std::mutex > lock( mQueueMutex );
 				mMessageQueue.emplace_back( *buffer, formatted_size, level );
@@ -125,7 +125,7 @@ namespace sl {
 		template < typename... Args >
 		TemporaryBuffer GetFormatMessage( std::format_string< Args... > message, Args&&... args )
 		{
-			SLC_PROFILE_FUNCTION();
+			SL_PROFILE_FUNCTION();
 
 			TemporaryBuffer temp{};
 			auto result = std::format_to_n( temp.data(), temp.size(), message, std::forward< Args >( args )... );

@@ -68,7 +68,7 @@ namespace sl {
 	class Application : public IEventListener
 	{
 	public:
-		SLC_LISTENING_EVENTS( None )
+		SL_LISTENING_EVENTS( None )
 
 		static void Run( ApplicationFactory factory, CommandLineArgs args );
 

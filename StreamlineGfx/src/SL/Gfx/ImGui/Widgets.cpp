@@ -164,75 +164,21 @@ namespace sl {
 		ImGui::TreePop();
 	}
 
-	void Widgets::BeginMenuBar()
+	ui::MenuBar Widgets::BeginMenuBar()
 	{
-		sCurrentMenuBar = ui::MenuBar();
+		return ui::MenuBar();
 	}
 
-	void Widgets::AddMenuBarHeading( std::string_view heading )
+	ui::PopUp Widgets::BeginPopup( std::string_view popupName )
 	{
-		sCurrentMenuBar.AddHeading( heading );
+		return ui::PopUp( popupName );
 	}
 
-	void Widgets::AddMenuBarItem( std::string_view heading, Action<>&& action )
+	ui::PopUpContext Widgets::BeginContextPopup()
 	{
-		sCurrentMenuBar.AddMenuItemAction( heading, "", std::move( action ) );
+		return ui::PopUpContext();
 	}
 
-	void Widgets::AddMenuBarItem( std::string_view heading, std::string_view shortcut, Action<>&& action )
-	{
-		sCurrentMenuBar.AddMenuItemAction( heading, shortcut, std::move( action ) );
-	}
-
-	void Widgets::AddMenuBarItem( std::string_view heading, bool& displayed )
-	{
-		sCurrentMenuBar.AddMenuItemSwitch( heading, "", displayed );
-	}
-
-	void Widgets::AddMenuBarSeparator()
-	{
-		sCurrentMenuBar.AddSeparator();
-	}
-
-	void Widgets::EndMenuBar()
-	{
-		sCurrentMenuBar = ui::MenuBar();
-	}
-
-	void Widgets::OpenPopup( std::string_view popupName )
-	{
-		ImGui::OpenPopup( popupName.data() );
-	}
-
-	void Widgets::BeginPopup( std::string_view popupName )
-	{
-		sCurrentPopup = ui::PopUp( popupName );
-	}
-
-	void Widgets::AddPopupItem( std::string_view heading, Action<>&& action )
-	{
-		sCurrentPopup.AddPopUpItem( heading, std::move( action ) );
-	}
-
-	void Widgets::EndPopup()
-	{
-		sCurrentPopup = ui::PopUp();
-	}
-
-	void Widgets::BeginContextPopup()
-	{
-		sCurrentPopupCtx = ui::PopUpContext();
-	}
-
-	void Widgets::AddContextItem( std::string_view heading, Action<>&& action )
-	{
-		sCurrentPopupCtx.AddPopUpItem( heading, std::move( action ) );
-	}
-
-	void Widgets::EndContextPopup()
-	{
-		sCurrentPopupCtx = ui::PopUpContext();
-	}
 
 	void Widgets::Label( std::string_view text )
 	{
@@ -325,6 +271,45 @@ namespace sl {
 		return ImGui::Button( label.data(), size );
 	}
 
+	void Widgets::EditGenericInternal( std::string_view label, Instance value )
+	{
+		auto offset = Utils::GetCursorPos< ImVec2 >().x;
+
+		Label( label );
+
+		auto type = Type( value.type );
+		for ( Property prop : type.GetProperties() )
+		{
+			auto prop_instance = prop.GetValue( value );
+			auto prop_type = prop.GetType();
+			auto const& prop_traits = prop_type.GetTraits();
+
+			Utils::SetCursorPosX( offset + 8 );
+			if ( prop_traits.is_signed )
+			{
+				auto value = prop_instance.data.Get< int64_t >();
+				auto new_value = ScalarEdit( prop.GetName(), value );
+				prop.SetValue( prop_instance, new_value );
+			}
+			else if ( prop_traits.is_unsigned )
+			{
+				auto value = prop_instance.data.Get< uint64_t >();
+				auto new_value = UScalarEdit( prop.GetName(), value );
+				prop.SetValue( prop_instance, new_value );
+			}
+			else if ( prop_traits.is_floating_point )
+			{
+				auto value = prop_instance.data.Get< float >();
+				auto new_value = FloatEditInternal( prop.GetName(), value, 1, 0, 0 );
+				prop.SetValue( prop_instance, new_value );
+			}
+			else
+			{
+				EditGenericInternal( prop.GetName(), prop_instance );
+			}
+		}
+	}
+
 	void Widgets::Vector2EditInternalRef( std::string_view label, ImVec2& values, float resetVal, float colWidth )
 	{
 		ImGuiIO& io = ImGui::GetIO();
@@ -377,7 +362,7 @@ namespace sl {
 		ImGui::PopID();
 	}
 
-	//void Widgets::Vector3EditInternalRef( std::string_view label, ImVec3& values, float resetVal, float colWidth )
+	// void Widgets::Vector3EditInternalRef( std::string_view label, ImVec3& values, float resetVal, float colWidth )
 	//{
 	//	ImGuiIO& io = ImGui::GetIO();
 	//	auto bold_font = io.Fonts->Fonts[ 0 ];
@@ -577,7 +562,7 @@ namespace sl {
 		return values;
 	}
 
-	//ImVec3 Widgets::Vector3EditInternal( std::string_view label, ImVec3 values, float resetVal, float colWidth )
+	// ImVec3 Widgets::Vector3EditInternal( std::string_view label, ImVec3 values, float resetVal, float colWidth )
 	//{
 	//	ImGuiIO& io = ImGui::GetIO();
 	//	auto bold_font = io.Fonts->Fonts[ 0 ];

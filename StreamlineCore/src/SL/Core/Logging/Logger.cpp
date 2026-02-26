@@ -59,7 +59,7 @@ namespace sl {
 
 	void Logger::Log( LogLevel level, std::string_view message )
 	{
-		SLC_PROFILE_FUNCTION();
+		SL_PROFILE_FUNCTION();
 
 		if ( std::to_underlying( level ) < std::to_underlying( mMinLogLevel ) )
 			return;
@@ -68,19 +68,19 @@ namespace sl {
 		if ( not buffer.has_value() )
 		{
 			{
-				SLC_PROFILE_SCOPE( "Logging - Notify" );
+				SL_PROFILE_SCOPE( "Logging - Notify" );
 
 				mCV.notify_one();
 			}
 			{
-				SLC_PROFILE_SCOPE( "Logging - Wait" );
+				SL_PROFILE_SCOPE( "Logging - Wait" );
 
 				std::unique_lock< std::mutex > lock( mQueueMutex );
 				mCV.wait( lock, [ this ] { return mMessageQueue.size() < mMaxMessagesBeforeFlush; } );
 			}
 
 			{
-				SLC_PROFILE_SCOPE( "Logging - Get Buffer Retry" );
+				SL_PROFILE_SCOPE( "Logging - Get Buffer Retry" );
 
 				buffer = mArena.RequestBuffer( mMessageSizeLimit );
 				ASSERT( buffer.has_value(), "Still could not create message buffer despite flush" );
@@ -93,7 +93,7 @@ namespace sl {
 
 		std::size_t formatted_size{};
 		{
-			SLC_PROFILE_SCOPE( "Logging - Format message" );
+			SL_PROFILE_SCOPE( "Logging - Format message" );
 
 			auto format_result = std::format_to_n( buffer->begin(), mMessageSizeLimit, "[{}] {}: {}", level_string, mTimestampCache.format_string.data(), message.data() );
 			formatted_size = std::min( static_cast< std::size_t >( format_result.size ), mMessageSizeLimit );
@@ -103,7 +103,7 @@ namespace sl {
 			mStats.large_message_count++;
 
 		{
-			SLC_PROFILE_SCOPE( "Logging - Lock queue and push" );
+			SL_PROFILE_SCOPE( "Logging - Lock queue and push" );
 
 			std::lock_guard< std::mutex > lock( mQueueMutex );
 			mMessageQueue.emplace_back( *buffer, formatted_size, level );
@@ -135,10 +135,10 @@ namespace sl {
 
 	void sl::Logger::Flush()
 	{
-		SLC_PROFILE_FUNCTION();
+		SL_PROFILE_FUNCTION();
 
 		{
-			SLC_PROFILE_SCOPE( "Pre-write" );
+			SL_PROFILE_SCOPE( "Pre-write" );
 
 			for ( auto const& target : mLogTargets )
 			{
@@ -147,7 +147,7 @@ namespace sl {
 		}
 
 		{
-			SLC_PROFILE_SCOPE( "Writing" );
+			SL_PROFILE_SCOPE( "Writing" );
 
 			for ( auto const& target : mLogTargets )
 			{
@@ -157,20 +157,20 @@ namespace sl {
 		}
 
 		{
-			SLC_PROFILE_SCOPE( "Cleanup" );
+			SL_PROFILE_SCOPE( "Cleanup" );
 
 			{
-				SLC_PROFILE_SCOPE( "Cleanup - Release buffer" );
+				SL_PROFILE_SCOPE( "Cleanup - Release buffer" );
 				mArena.ReleaseBuffers();
 			}
 			{
-				SLC_PROFILE_SCOPE( "Cleanup - Clear queue" );
+				SL_PROFILE_SCOPE( "Cleanup - Clear queue" );
 				mMessageQueue.clear();
 			}
 		}
 
 		{
-			SLC_PROFILE_SCOPE( "Stats" );
+			SL_PROFILE_SCOPE( "Stats" );
 
 			mStats.total_flushes++;
 			mStats.large_message_count = 0;
@@ -184,39 +184,39 @@ namespace sl {
 
 	void Logger::UpdateCurrentTimestamp()
 	{
-		SLC_PROFILE_FUNCTION();
+		SL_PROFILE_FUNCTION();
 
 		std::chrono::system_clock::time_point now;
 		{
-			SLC_PROFILE_SCOPE( "Update timestamp - Get time" );
+			SL_PROFILE_SCOPE( "Update timestamp - Get time" );
 			now = std::chrono::system_clock::now();
 		}
 
 		{
-			SLC_PROFILE_SCOPE( "Update timestamp - Check if time is same" );
+			SL_PROFILE_SCOPE( "Update timestamp - Check if time is same" );
 			if ( std::chrono::floor< std::chrono::seconds >( now ) == std::chrono::floor< std::chrono::seconds >( mTimestampCache.timestamp ) )
 				return;
 		}
 
 		std::time_t now_c{};
 		{
-			SLC_PROFILE_SCOPE( "Update timestamp - To time_t" );
+			SL_PROFILE_SCOPE( "Update timestamp - To time_t" );
 			now_c = std::chrono::system_clock::to_time_t( now );
 		}
 
 		std::tm time{};
 		{
-			SLC_PROFILE_SCOPE( "Update timestamp - Get local time" );
+			SL_PROFILE_SCOPE( "Update timestamp - Get local time" );
 			time = GetLocalTime( &now_c );
 		}
 
 		{
-			SLC_PROFILE_SCOPE( "Update timestamp - update saved timestamp" );
+			SL_PROFILE_SCOPE( "Update timestamp - update saved timestamp" );
 			mTimestampCache.timestamp = now;
 		}
 
 		{
-			SLC_PROFILE_SCOPE( "Update timestamp - Format time" );
+			SL_PROFILE_SCOPE( "Update timestamp - Format time" );
 			std::strftime( mTimestampCache.format_string.data(), mTimestampCache.format_string.size(), "%F %T", &time );
 		}
 	}

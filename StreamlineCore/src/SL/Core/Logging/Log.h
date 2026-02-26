@@ -19,81 +19,82 @@ namespace sl::log {
 	 *	Logging Functions
 	 */
 
-	inline void Trace( std::string_view message )
+	inline void Log( LogLevel level, std::string_view message )
 	{
 		auto& logger = Logger::GetGlobalLogger();
-		logger.Log( LogLevel::Trace, message );
+		logger.Log( level, message );
+	}
+
+	template < typename... Args >
+	void Log( LogLevel level, std::format_string< Args... > message, Args&&... args )
+	{
+		auto& logger = Logger::GetGlobalLogger();
+		logger.Log( level, message, std::forward< Args >( args )... );
+	}
+
+	inline void Trace( std::string_view message )
+	{
+		Log( LogLevel::Trace, message );
 	}
 
 	template < typename... Args >
 	void Trace( std::format_string< Args... > message, Args&&... args )
 	{
-		auto& logger = Logger::GetGlobalLogger();
-		logger.Log( LogLevel::Trace, message, std::forward< Args >( args )... );
+		Log( LogLevel::Trace, message, std::forward< Args >( args )... );
 	}
 
 	inline void Debug( std::string_view message )
 	{
-		auto& logger = Logger::GetGlobalLogger();
-		logger.Log( LogLevel::Debug, message );
+		Log( LogLevel::Debug, message );
 	}
 
 	template < typename... Args >
 	void Debug( std::format_string< Args... > message, Args&&... args )
 	{
-		auto& logger = Logger::GetGlobalLogger();
-		logger.Log( LogLevel::Debug, message, std::forward< Args >( args )... );
+		Log( LogLevel::Debug, message, std::forward< Args >( args )... );
 	}
 
 	inline void Info( std::string_view message )
 	{
-		auto& logger = Logger::GetGlobalLogger();
-		logger.Log( LogLevel::Info, message );
+		Log( LogLevel::Info, message );
 	}
 
 	template < typename... Args >
 	void Info( std::format_string< Args... > message, Args&&... args )
 	{
-		auto& logger = Logger::GetGlobalLogger();
-		logger.Log( LogLevel::Info, message, std::forward< Args >( args )... );
+		Log( LogLevel::Info, message, std::forward< Args >( args )... );
 	}
 
 	inline void Warn( std::string_view message )
 	{
-		auto& logger = Logger::GetGlobalLogger();
-		logger.Log( LogLevel::Warning, message );
+		Log( LogLevel::Warning, message );
 	}
 
 	template < typename... Args >
 	static void Warn( std::format_string< Args... > message, Args&&... args )
 	{
-		auto& logger = Logger::GetGlobalLogger();
-		logger.Log( LogLevel::Warning, message, std::forward< Args >( args )... );
+		Log( LogLevel::Warning, message, std::forward< Args >( args )... );
 	}
 
 	inline void Error( std::string_view message )
 	{
-		auto& logger = Logger::GetGlobalLogger();
-		logger.Log( LogLevel::Error, message );
+		Log( LogLevel::Error, message );
 	}
 
 	template < typename... Args >
 	static void Error( std::format_string< Args... > message, Args&&... args )
 	{
-		auto& logger = Logger::GetGlobalLogger();
-		logger.Log( LogLevel::Error, message, std::forward< Args >( args )... );
+		Log( LogLevel::Error, message, std::forward< Args >( args )... );
 	}
 
 	inline void Fatal( std::string_view message )
 	{
-		auto& logger = Logger::GetGlobalLogger();
-		logger.Log( LogLevel::Fatal, message );
+		Log( LogLevel::Fatal, message );
 	}
 
 	template < typename... Args >
 	static void Fatal( std::format_string< Args... > message, Args&&... args )
 	{
-		auto& logger = Logger::GetGlobalLogger();
-		logger.Log( LogLevel::Fatal, message, std::forward< Args >( args )... );
+		Log( LogLevel::Fatal, message, std::forward< Args >( args )... );
 	}
 } // namespace sl::log

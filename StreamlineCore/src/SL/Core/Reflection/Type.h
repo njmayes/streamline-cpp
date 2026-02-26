@@ -18,8 +18,8 @@ namespace sl {
 	/// The first is to inherit from Reflectable&lt;T&gt;, which provides the minimum data in order to register a type in the reflection database,
 	/// such as base classes, type traits, as well as default, copy, and move constructors and the destructor where applicable.
 	///
-	/// In order to reflect further object data, such as class members (data and functions) and additional constructors, use the SLC_REFLECT_CLASS
-	/// macro in the class scope, listing constructors using the SLC_CTR macro, and members using their unqualified name.
+	/// In order to reflect further object data, such as class members (data and functions) and additional constructors, use the SL_REFLECT_CLASS
+	/// macro in the class scope, listing constructors using the SL_CTR macro, and members using their unqualified name.
 	/// </summary>
 	///
 	/// <example>
@@ -30,8 +30,8 @@ namespace sl {
 	///		int bar;
 	///		void baz() {}
 	///
-	///		SLC_REFLECT_CLASS(Foo,
-	///			SLC_CTR(double, int),
+	///		SL_REFLECT_CLASS(Foo,
+	///			SL_CTR(double, int),
 	///			bar, baz
 	///		)
 	/// };
@@ -89,6 +89,11 @@ namespace sl {
 			return mInfo;
 		}
 
+		RuntimeTypeTraits const& GetTraits() const
+		{
+			return mInfo->rttt;
+		}
+
 	public:
 		template < CanReflect T >
 		static Type Get()
@@ -143,7 +148,7 @@ namespace sl {
 			using Traits = TypeTraits< Arg >;
 			using BaseTraits = TypeTraits< std::remove_cvref_t< Arg > >;
 
-			SLC_TODO( "Support conversions between types, not just between value categories of same type" );
+			SL_TODO( "Support conversions between types, not just between value categories of same type" );
 			if ( BaseTraits::Name != target.base->name )
 				return false;
 

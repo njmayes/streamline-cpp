@@ -3,6 +3,25 @@
 #include "SL/Core/Common/Time.h"
 #include "SL/Gfx/ImGui/Widgets.h"
 
+struct TestStruct
+{
+	int a{};
+	float b{};
+
+	SL_REFLECT_CLASS( TestStruct, a, b );
+};
+
+struct TestNestedStruct
+{
+	uint8_t c{};
+	double d{};
+	TestStruct e{};
+
+	SL_REFLECT_CLASS( TestNestedStruct, c, d, e );
+};
+
+static TestNestedStruct sTestStruct{};
+
 static std::string GetTimestamp()
 {
 	std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
@@ -17,8 +36,8 @@ static std::string GetTimestamp()
 
 void ChatLayer::OnOverlayRender()
 {
-	using sl::Widgets;
 	using sl::Utils;
+	using sl::Widgets;
 
 	Widgets::BeginWindow( "Chat Client", ImGuiWindowFlags_NoTitleBar );
 
@@ -57,7 +76,7 @@ void ChatLayer::OnUpdate( sl::Timestep )
 
 void ChatLayer::OnEvent( sl::Event& e )
 {
-	e.Dispatch< sl::NetworkInEvent >( SLC_BIND_EVENT_FUNC( OnMessageReceived ) );
+	e.Dispatch< sl::NetworkInEvent >( SL_BIND_EVENT_FUNC( OnMessageReceived ) );
 }
 
 bool ChatLayer::OnMessageReceived( sl::NetworkInEvent& e )
@@ -117,6 +136,17 @@ void ChatLayer::OpenUsernameEntryIfNeeded()
 ClientLayer::ClientLayer( sl::net::ClientContextOptions const& opts )
 	: sl::net::ClientLayer( opts )
 {
+}
+
+void ClientLayer::OnOverlayRender()
+{
+	using sl::Widgets;
+
+	Widgets::BeginWindow( "TestWindow" );
+
+	Widgets::EditGeneric( "TestNestedStruct", sTestStruct );
+
+	Widgets::EndWindow();
 }
 
 ChatClient::ChatClient( sl::Ref< sl::GuiApplicationSpecification > spec, sl::net::ClientContextOptions const& opts )

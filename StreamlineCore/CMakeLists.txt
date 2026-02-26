@@ -23,8 +23,8 @@ target_sources(streamline-core
 
 target_compile_definitions(streamline-core
     PUBLIC
-        $<$<CONFIG:Debug>:SLC_DEBUG=1>
-        $<$<CONFIG:Release>:SLC_RELEASE=1>
+        $<$<CONFIG:Debug>:SL_DEBUG=1>
+        $<$<CONFIG:Release>:SL_RELEASE=1>
 )
 
 # -------------------------------------------------------------
@@ -131,5 +131,10 @@ if (WIN32)
             Winmm
             Version
             Bcrypt
+    )
+elseif(UNIX AND NOT APPLE)
+    target_link_libraries(streamline-core
+        PUBLIC
+            dl
     )
 endif()

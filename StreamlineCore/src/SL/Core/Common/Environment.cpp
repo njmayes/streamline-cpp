@@ -8,9 +8,9 @@ namespace sl::env {
 
 	bool SetVar( std::string_view env_name, std::string_view env_val )
 	{
-#ifdef SLC_PLATFORM_WINDOWS
+#ifdef SL_PLATFORM_WINDOWS
 		int error = _putenv_s( env_name.data(), env_val.data() );
-#elif defined( SLC_PLATFORM_LINUX )
+#elif defined( SL_PLATFORM_LINUX )
 		int error = setenv( env_name.data(), env_val.data(), 1 );
 #else
 		int error = -1;
@@ -26,7 +26,7 @@ namespace sl::env {
 
 	std::optional< std::string > GetVar( std::string_view env_name )
 	{
-#ifdef SLC_PLATFORM_WINDOWS
+#ifdef SL_PLATFORM_WINDOWS
 		int error;
 		std::size_t required_size = 0;
 		error = getenv_s( &required_size, nullptr, 0, env_name.data() );
@@ -47,7 +47,7 @@ namespace sl::env {
 		}
 
 		return result;
-#elif defined( SLC_PLATFORM_LINUX )
+#elif defined( SL_PLATFORM_LINUX )
     	const char* val = std::getenv(env_name.data());
 		return val ? std::optional<std::string>{val} : std::nullopt;
 #else

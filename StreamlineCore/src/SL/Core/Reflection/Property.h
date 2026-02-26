@@ -41,7 +41,12 @@ namespace sl {
 		template < CanReflect Obj >
 		Instance GetValue( const Obj& obj ) const
 		{
-			return mProperty->accessor( reflect::MakeInstance( obj ) );
+			return GetValue( reflect::MakeInstance( obj ) );
+		}
+
+		Instance GetValue( Instance instance ) const
+		{
+			return mProperty->accessor( instance );
 		}
 
 		template < CanReflect T, CanReflect Obj >
@@ -55,10 +60,26 @@ namespace sl {
 			SetValue( obj, reflect::MakeInstance( value ) );
 		}
 
+		template < CanReflect T >
+		void SetValue( Instance obj, const T& value )
+		{
+			using Traits = TypeTraits< std::remove_cvref_t< T > >;
+
+			if ( mProperty->prop_type.base->name != Traits::Name )
+				throw BadReflectionCastException( Traits::Name, mProperty->prop_type.base->name );
+
+			SetValue( obj, reflect::MakeInstance( value ) );
+		}
+
 		template < CanReflect Obj >
 		void SetValue( Obj& obj, Instance value )
 		{
-			return mProperty->setter( reflect::MakeInstance( obj ), std::move( value ) );
+			SetValue( reflect::MakeInstance( obj ), std::move( value ) );
+		}
+
+		void SetValue( Instance obj, Instance value )
+		{
+			mProperty->setter( obj, std::move( value ) );
 		}
 
 	private:

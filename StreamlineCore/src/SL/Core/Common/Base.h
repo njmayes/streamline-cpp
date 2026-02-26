@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Macros.h"
+#include "Platform.h"
 #include "Reflection.h"
 #include "Enum.h"
 #include "Environment.h"

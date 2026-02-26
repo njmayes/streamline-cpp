@@ -71,7 +71,7 @@ namespace sl {
 	{
 		int a, b;
 
-		SLC_JSON_SERIALISE( SerialisationTest, a, b );
+		SL_JSON_SERIALISE( SerialisationTest, a, b );
 	};
 
 	inline FooResult GetInput()
@@ -182,7 +182,7 @@ namespace sl {
 		auto dVal = f.UnwrapOrElse( []() { return 0; } );
 	}
 
-	struct ReflectionTest : Reflectable< ReflectionTest >
+	struct ReflectionTest
 	{
 		int x;
 		float y;
@@ -200,9 +200,9 @@ namespace sl {
 			x = x2;
 		}
 
-		SLC_REFLECT_CLASS(
+		SL_REFLECT_CLASS(
 			ReflectionTest,
-			SLC_CTR( int, float, std::string ),
+			SL_CTR( int, float, std::string ),
 			x,
 			y,
 			z,

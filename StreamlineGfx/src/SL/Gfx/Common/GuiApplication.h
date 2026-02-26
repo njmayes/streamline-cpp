@@ -24,7 +24,7 @@ namespace sl {
 		void OnUpdate( Timestep ts ) override;
 		void OnRender() override;
 
-		SLC_LISTENING_EVENTS( WindowClose, WindowResize )
+		SL_LISTENING_EVENTS( WindowClose, WindowResize )
 
 	private:
 		bool OnWindowClose( WindowCloseEvent& e );

@@ -32,7 +32,7 @@ namespace sl {
 
 	public:
 		void OnEvent( Event& e );
-		SLC_LISTENING_EVENTS( EVENT_CATEGORY_MOUSE, EVENT_CATEGORY_KEY )
+		SL_LISTENING_EVENTS( EVENT_CATEGORY_MOUSE, EVENT_CATEGORY_KEY )
 
 	private:
 		void SetDarkThemeColours();

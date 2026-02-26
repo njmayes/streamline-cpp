@@ -128,26 +128,10 @@ namespace sl {
 		};
 	} // namespace detail
 
-	template < typename T >
-	struct Reflectable
-	{
-	protected:
-		template < typename... Args >
-		using Ctr = detail::Ctr< T, Args... >;
-
-		template < typename R >
-		struct ArgumentType;
-		template < typename R, typename U >
-		struct ArgumentType< R( U ) >
-		{
-			using type = U;
-		};
-	};
-
 	namespace detail {
 
 		template < typename T >
-		concept IsReflectableType = std::derived_from< T, Reflectable< T > > and requires {
+		concept IsReflectableType = requires {
 			{ T::_reflection_data::Build() } -> std::same_as< void >;
 			{ T::_reflection_data::Info } -> std::same_as< const TypeInfo*& >;
 		};
