@@ -5,10 +5,17 @@
 namespace sl::detail {
 
 	template < auto E >
-		requires std::is_scoped_enum_v< decltype( E ) >
+		requires std::is_enum_v< decltype( E ) >
 	struct EnumTag : std::integral_constant< decltype( E ), E >
 	{
-		SCONSTEXPR auto Index = std::to_underlying( E );
+		static consteval std::size_t ComputeIndex()
+		{
+			constexpr auto maybe_index = magic_enum::enum_index( E );
+			static_assert( maybe_index.has_value(), "EnumTag: value not reflectable by magic_enum" );
+			return static_cast< std::size_t >( *maybe_index );
+		}
+
+		static constexpr std::size_t Index = ComputeIndex();
 	};
 
 	template < auto E, typename F >
@@ -75,4 +82,4 @@ namespace sl::detail {
 	{
 		using type = typename FindDefaultHandlerHelper< Cases... >::type;
 	};
-}
+} // namespace sl::detail

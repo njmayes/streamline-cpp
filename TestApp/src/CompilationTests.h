@@ -6,14 +6,19 @@ namespace sl {
 
 	enum class Error
 	{
-		InvalidChar,
+		InvalidChar = 1,
 		InvalidRandom,
+		TestA,
+		TestB
 	};
 
 	using SmartError = sl::SmartEnum<
 		Error,
 		sl::Case< Error::InvalidChar >,
-		sl::Case< Error::InvalidRandom, int > >;
+		sl::Case< Error::InvalidRandom, int >,
+		sl::Case< Error::TestB, int >,
+		sl::Case< Error::TestA, int >
+	>;
 
 	enum class Failure
 	{

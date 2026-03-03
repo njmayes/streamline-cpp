@@ -113,25 +113,52 @@ namespace sl {
 
 		static_assert( AllCasesUniqueAndValid(), "SmartEnum cases do not satisfy conditions" );
 
-		using CaseTypes = TypeList< Cases... >;
-		using ValueTypes = TypeList< typename Cases::Type... >;
+		template < Enum V, typename... Ts >
+		struct FindCase;
 
-		using StorageType = ValueTypes::VariantType;
+		template < Enum V, Enum E, typename U, typename... Rest >
+		struct FindCase< V, Case< E, U >, Rest... >
+			: std::conditional_t< ( E == V ), std::type_identity< Case< E, U > >, FindCase< V, Rest... > >
+		{};
 
-		static constexpr auto EnumElements = std::array< Enum, sizeof...( Cases ) >{ Cases::Value... };
-
-		template < Enum Element >
-		static consteval auto FindEnumIndex()
+		template < Enum V >
+		struct FindCase< V >
 		{
-			auto it = std::find( EnumElements.begin(), EnumElements.end(), Element );
-			return std::distance( EnumElements.begin(), it );
+			// If you hit this, the caller asked for a case that doesn't exist.
+			// The "must provide case for every enum element" static_assert should prevent this.
+		};
+
+
+		static constexpr auto EnumValues = magic_enum::enum_values< Enum >();
+
+		template < std::size_t I >
+		using OrderedCaseAt = typename FindCase< EnumValues[ I ], Cases... >::type;
+
+		template < std::size_t... Is >
+		static consteval auto MakeOrderedCaseTypes( std::index_sequence< Is... > )
+		{
+			return std::type_identity< TypeList< OrderedCaseAt< Is >... > >{};
 		}
+
+		using CaseTypes = typename decltype( MakeOrderedCaseTypes( std::make_index_sequence< magic_enum::enum_count< Enum >() >{} ) )::type;
+
+		template < std::size_t I >
+		using OrderedValueAt = typename OrderedCaseAt< I >::Type;
+
+		template < std::size_t... Is >
+		static consteval auto MakeOrderedValueTypes( std::index_sequence< Is... > )
+		{
+			return std::type_identity< TypeList< OrderedValueAt< Is >... > >{};
+		}
+
+		using ValueTypes = typename decltype( MakeOrderedValueTypes( std::make_index_sequence< magic_enum::enum_count< Enum >() >{} ) )::type;
+		using StorageType = ValueTypes::VariantType;
 
 		template < size_t I >
 		using CaseTypeAt = typename CaseTypes::template Type< I >;
 
 		template < Enum Element >
-		static constexpr auto CaseIndex = FindEnumIndex< Element >();
+		static constexpr std::size_t CaseIndex = detail::EnumTag< Element >::Index;
 
 		template < Enum Element >
 		using ValueTypeAt = typename ValueTypes::template Type< CaseIndex< Element > >;
@@ -325,14 +352,12 @@ namespace sl {
 		constexpr decltype( auto ) GetValue( this Self&& self )
 		{
 			static_assert( HasType< Element >, "Element type must not be empty to unwrap" );
-			constexpr auto Index = detail::EnumTag< Element >::Index;
-
-			return std::get< Index >( std::forward< Self >( self ).mValueData );
+			return std::get< CaseIndex< Element > >( std::forward< Self >( self ).mValueData );
 		}
 
 		constexpr Enum GetEnum() const
 		{
-			return EnumElements[ mValueData.index() ];
+			return EnumValues[ mValueData.index() ];
 		}
 
 	private:
