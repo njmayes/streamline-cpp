@@ -85,11 +85,23 @@ namespace sl {
 		{}
 
 		template < detail::IsLayer T, typename... Args >
-		void PushLayer( Args&&... args )
+		Ref< T > PushLayer( Args&&... args )
 		{
 			auto layer = mEventRuntime->CreateListener< T >( std::forward< Args >( args )... );
 			mLayerStack.emplace_back( layer );
 			layer->OnAttach();
+
+			return layer;
+		}
+
+		template < detail::IsLayer T >
+		void PopLayer( Ref< T > layer )
+		{
+			auto it = std::find_if( mLayerStack.begin(), mLayerStack.end(), [ &layer ]( const auto& l ) { return l == layer; } );
+			if ( it == mLayerStack.end() )
+				throw std::runtime_error( "Layer not found in stack" );
+			layer->OnDetach();
+			mLayerStack.erase( it );
 		}
 
 		template < typename T, typename... Args >
