@@ -10,6 +10,7 @@ sl::Application* NetServerTest( sl::CommandLineArgs const& args )
 	using namespace sl::net;
 
 	auto spec = sl::Ref< sl::ApplicationSpecification >::Create();
+	spec->working_dir = "C:/Users/natha/Desktop/Coding/Projects/WIP/C++/streamline-cpp/TestApp";
 
 	auto opts = sl::Read< ServerContextOptions >(
 		args,
@@ -30,6 +31,7 @@ sl::Application* NetClientTest( sl::CommandLineArgs const& args )
 	using namespace sl::net;
 
 	auto spec = sl::Ref< sl::GuiApplicationSpecification >::Create();
+	spec->working_dir = "C:/Users/natha/Desktop/Coding/Projects/WIP/C++/streamline-cpp/TestApp";
 
 	auto opts = sl::Read< ClientContextOptions >(
 		args,

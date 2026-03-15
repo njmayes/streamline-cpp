@@ -92,49 +92,10 @@ if(NOT TARGET portable-file-dialogs)
 endif()
 
 
-# asio (standalone; treat as header-only interface)
-FetchContent_Declare(
-    asio
-    GIT_REPOSITORY https://github.com/chriskohlhoff/asio.git
-    GIT_TAG        asio-1-30-2
-)
-FetchContent_MakeAvailable(asio)
-
-if(NOT TARGET asio)
-  add_library(asio INTERFACE)
-  target_include_directories(asio INTERFACE ${asio_SOURCE_DIR}/asio/include)
-endif()
-
-find_package(OpenSSL REQUIRED)
-
 target_link_libraries(streamline-core
     PUBLIC
         nlohmann_json::nlohmann_json
         glm::glm
         ${MAGIC_ENUM_TARGET}
         portable-file-dialogs
-        asio
-        OpenSSL::SSL
-        OpenSSL::Crypto
 )
-
-
-
-# -------------------------------------------------------------
-# Platform-specific system libraries
-# -------------------------------------------------------------
-
-if (WIN32)
-    target_link_libraries(streamline-core
-        PUBLIC
-            Ws2_32
-            Winmm
-            Version
-            Bcrypt
-    )
-elseif(UNIX AND NOT APPLE)
-    target_link_libraries(streamline-core
-        PUBLIC
-            dl
-    )
-endif()

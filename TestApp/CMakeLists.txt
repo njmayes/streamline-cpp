@@ -34,4 +34,5 @@ target_link_libraries(streamline-testapp
     PRIVATE
         streamline::core
         streamline::gfx
+        streamline::net
 )

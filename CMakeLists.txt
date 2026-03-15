@@ -10,7 +10,10 @@ include(FetchContent)
 # Options
 # -------------------------------------------------------------
 
-# Turn OFF to build "headless" (core-only) – no Vulkan/GLFW/Glad required
+# Turn OFF to build "standalone" - no OpenSSL required
+option(STREAMLINE_BUILD_NET "Build streamline-net (networking backends)" ON)
+
+# Turn OFF to build "headless" – no Vulkan/GLFW/Glad required
 option(STREAMLINE_BUILD_GFX "Build streamline-gfx (graphics/windowing backends)" ON)
 
 # Build the TestApp executable (example app)
@@ -37,9 +40,14 @@ endif()
 
 add_subdirectory(StreamlineCore)
 
+if(STREAMLINE_BUILD_NET)
+    add_subdirectory(StreamlineNet)
+endif()
+
 if(STREAMLINE_BUILD_GFX)
     add_subdirectory(StreamlineGfx)
 endif()
+
 
 if(STREAMLINE_BUILD_TEST_APP)
     add_subdirectory(TestApp)

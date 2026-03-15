@@ -1,6 +1,7 @@
 #pragma once
 
 #include "SL/Core.h"
+#include "SL/Net.h"
 #include "SL/Gfx.h"
 
 #include <deque>

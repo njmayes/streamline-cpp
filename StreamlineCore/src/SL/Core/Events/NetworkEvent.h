@@ -2,15 +2,15 @@
 
 #include "Event.h"
 
-#include "SL/Core/Networking/Common.h"
+#include "SL/Core/Types/Buffer.h"
 
 namespace sl {
 
 	struct NetworkInEvent : public EventBase
 	{
-		sl::net::Payload data;
+		sl::Buffer data;
 
-		NetworkInEvent( sl::net::Payload payload )
+		NetworkInEvent( sl::Buffer payload )
 			: data( std::move( payload ) )
 		{}
 
@@ -19,9 +19,9 @@ namespace sl {
 
 	struct NetworkOutEvent : public EventBase
 	{
-		sl::net::Payload data;
+		sl::Buffer data;
 
-		NetworkOutEvent( sl::net::Payload payload )
+		NetworkOutEvent( sl::Buffer payload )
 			: data( std::move( payload ) )
 		{}
 

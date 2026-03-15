@@ -16,11 +16,6 @@
 #include "SL/Core/Logging/Targets/FileLogTarget.h"
 #include "SL/Core/Logging/Targets/ConsoleLogTarget.h"
 
-#include "SL/Core/Networking/Context.h"
-#include "SL/Core/Networking/Connection.h"
-#include "SL/Core/Networking/ClientLayer.h"
-#include "SL/Core/Networking/ServerLayer.h"
-
 #include "SL/Core/Reflection/Type.h"
 
 #include "SL/Core/Threading/ThreadPool.h"
