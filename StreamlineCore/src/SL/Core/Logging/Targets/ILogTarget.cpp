@@ -28,16 +28,18 @@ namespace sl {
 	{
 		SL_PROFILE_FUNCTION();
 
-		auto filtered_data = data | std::views::filter( [ this ]( auto const& entry ) { return ShouldWriteMessage( entry ); } ) | std::ranges::to< std::vector >();
-
 		mToWrite = 0;
 
-		for ( auto& entry : filtered_data )
+		for ( auto const& entry : data )
 		{
-			PopulateBufferSingleEntry( entry );
-			PopulateBufferNewLine();
+			if ( ShouldWriteMessage( entry ) )
+			{
+				PopulateBufferSingleEntry( entry );
+				PopulateBufferNewLine();
+			}
 		}
 	}
+
 	void ILogTarget::PopulateBufferSingleEntry( MessageEntry const& entry )
 	{
 		while ( mToWrite + entry.length >= mBuffer.size() ) [[unlikely]]
