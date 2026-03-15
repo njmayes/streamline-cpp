@@ -2,12 +2,15 @@
 
 This is a general purpose C++23 framework/library that contains a collection of shared code from various projects I have made over the years.
 
-The basis of the library uses a mixture of code from my WIP game engine [Labyrinth Engine](https://github.com/amayesingnathan/LabyrinthEngine) 
+The basis of the library comes from my WIP game engine [Labyrinth Engine](https://github.com/amayesingnathan/LabyrinthEngine) 
 as well as my C++20 Dear ImGui wrapper [imgui-cpp](https://github.com/amayesingnathan/imgui-cpp).
 
-This is combined with various other bits of code and ideas, such as Rust-style Enums and Result types complete with a form of basic
-pattern matching and Do notation, or a runtime reflection system, provides a selection of tools to save time rewriting application boilerplate code 
-and reusing code ideas in different places.
+This is combined with various other nice utilities such as:
+* Rust-style enum types - transform a C++ enum into a proper sum type with associated data.
+    * Includes a constexpr friendly match function with O(1) dispatch.
+* A basic runtime reflection system with an API modelled on C#.
+* Logging libary - ~3m messages/sec throughput (not at all widely tested, benchmarking included in source)
+* Memory mapped files (Windows + POSIX support only)
 
 The framework consists of two modules, a core module that provides the basic headless application framework as well as other utilities,
 and an optional graphics module that provides windowing as well as a minimal 2D renderer API that uses OpenGL, combined with Dear ImGui for simple interfaces.
@@ -24,12 +27,13 @@ and an optional graphics module that provides windowing as well as a minimal 2D 
 
 For use as a library, the framework currently only supports CMake, and is most easily consumed using `FetchContent`.
 
-Two CMake options are provided:
+Several CMake options are provided:
 
-* STREAMLINE_BUILD_GFX - Builds the optional graphics library
-* STREAMLINE_BUILD_TEST_APP - Bulds the test app which contains some sample code (requires the graphics library).
+* `STREAMLINE_BUILD_GFX` - Builds the optional graphics library
+* `STREAMLINE_BUILD_TEST_APP` - Bulds the test app which contains some sample code (requires the graphics library).
+* `STREAMLINE_BUILD_BENCHMARK` - Builds the benchmarking application for testing performence.
 
-Both options are off by default.
+`STREAMLINE_BUILD_GFX` is enabled by default, others are disabled by default.
 
 ### Example
 
