@@ -14,7 +14,10 @@ include(FetchContent)
 option(STREAMLINE_BUILD_GFX "Build streamline-gfx (graphics/windowing backends)" ON)
 
 # Build the TestApp executable (example app)
-option(STREAMLINE_BUILD_TEST_APP "Build Streamline TestApp example" ON)
+option(STREAMLINE_BUILD_TEST_APP "Build Streamline TestApp example" OFF)
+
+# Build the benchmarking executable (testing)
+option(STREAMLINE_BUILD_BENCHMARK "Build Streamline benchmarking app" OFF)
 
 if(NOT CMAKE_CONFIGURATION_TYPES)
     set(default_build_type "Debug")
@@ -40,4 +43,8 @@ endif()
 
 if(STREAMLINE_BUILD_TEST_APP)
     add_subdirectory(TestApp)
+endif()
+
+if(STREAMLINE_BUILD_BENCHMARK)
+    add_subdirectory(Benchmarking)
 endif()

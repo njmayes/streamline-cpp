@@ -8,6 +8,7 @@ build/
 .vs/
 .vscode/
 **.sln
+**.slnx
 **.vcxproj
 **.vcxproj.filters
 **.vcxproj.user
@@ -16,6 +17,9 @@ build/
 
 #Cached files
 cache/
+
+#Temp files
+temp/
 
 #Makefiles
 Makefile

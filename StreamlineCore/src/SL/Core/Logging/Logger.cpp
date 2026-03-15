@@ -1,5 +1,7 @@
 #include "Logger.h"
 
+#include "BenchmarkLogger.h"
+
 #include "Targets/FileLogTarget.h"
 
 #include "SL/Core/Common/Time.h"
@@ -219,5 +221,10 @@ namespace sl {
 			SL_PROFILE_SCOPE( "Update timestamp - Format time" );
 			std::strftime( mTimestampCache.format_string.data(), mTimestampCache.format_string.size(), "%F %T", &time );
 		}
+	}
+
+	BenchmarkLogger Logger::GetBenchmarkLogger()
+	{
+		return BenchmarkLogger( *this );
 	}
 } // namespace sl

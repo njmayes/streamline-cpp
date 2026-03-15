@@ -11,9 +11,11 @@
 
 namespace sl {
 
+	struct BenchmarkLogger;
+
 	class Logger
 	{
-	private:
+	public:
 		SCONSTEXPR std::size_t MessageSizeLimit = 512;
 		SCONSTEXPR std::size_t MaxMessagesBeforeFlush = 1024;
 		SCONSTEXPR std::size_t TemporaryBufferSize = MessageSizeLimit;
@@ -134,6 +136,9 @@ namespace sl {
 
 		void UpdateCurrentTimestamp();
 
+	public:
+		BenchmarkLogger GetBenchmarkLogger();
+
 	private:
 		std::thread mWorker;
 		std::mutex mQueueMutex;
@@ -159,5 +164,7 @@ namespace sl {
 
 		std::size_t mMessageSizeLimit;
 		std::size_t mMaxMessagesBeforeFlush;
+
+		friend struct BenchmarkLogger;
 	};
 } // namespace sl

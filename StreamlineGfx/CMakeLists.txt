@@ -168,20 +168,23 @@ target_link_libraries(streamline-gfx
 # shaderc / SPIRV-Cross:
 
 if (MSVC)
-    set(VULKAN_SDK "$ENV{VULKAN_SDK}")
-    set(SHADERC_LIB_DIR     "${VULKAN_SDK}/Lib")
-    set(SPIRV_CROSS_LIB_DIR "${VULKAN_SDK}/Lib")
+    if (NOT DEFINED ENV{VULKAN_SDK})
+        message(FATAL_ERROR "VULKAN_SDK environment variable is not set")
+    endif()
+
+    set(SHADERC_LIB_DIR "$ENV{VULKAN_SDK}/Lib")
+    set(SPIRV_CROSS_LIB_DIR "$ENV{VULKAN_SDK}/Lib")
 
     target_link_libraries(streamline-gfx
         PUBLIC
             $<$<CONFIG:Debug>:${SHADERC_LIB_DIR}/shaderc_sharedd.lib>
-            $<$<CONFIG:Release>:${SHADERC_LIB_DIR}/shaderc_shared.lib>
+            $<$<NOT:$<CONFIG:Debug>>:${SHADERC_LIB_DIR}/shaderc_shared.lib>
 
             $<$<CONFIG:Debug>:${SPIRV_CROSS_LIB_DIR}/spirv-cross-cored.lib>
-            $<$<CONFIG:Release>:${SPIRV_CROSS_LIB_DIR}/spirv-cross-core.lib>
+            $<$<NOT:$<CONFIG:Debug>>:${SPIRV_CROSS_LIB_DIR}/spirv-cross-core.lib>
 
             $<$<CONFIG:Debug>:${SPIRV_CROSS_LIB_DIR}/spirv-cross-glsld.lib>
-            $<$<CONFIG:Release>:${SPIRV_CROSS_LIB_DIR}/spirv-cross-glsl.lib>
+            $<$<NOT:$<CONFIG:Debug>>:${SPIRV_CROSS_LIB_DIR}/spirv-cross-glsl.lib>
     )
 else()
     target_link_libraries(streamline-gfx
