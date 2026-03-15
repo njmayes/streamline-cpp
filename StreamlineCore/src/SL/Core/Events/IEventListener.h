@@ -31,9 +31,6 @@ namespace sl {
 		EventRuntime* mRuntime = nullptr;
 	};
 
-	template < typename T >
-	concept IsEventListener = DerivedFromOnly< T, IEventListener >;
-
 #define SL_MAKE_EVENT_FLAG( event ) ::sl::EventType::event
 
 #define SL_LISTENING_EVENTS( ... )                                                                                  \

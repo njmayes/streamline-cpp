@@ -76,7 +76,7 @@ void ChatLayer::OnUpdate( sl::Timestep )
 
 void ChatLayer::OnEvent( sl::Event& e )
 {
-	e.Dispatch< sl::NetworkInEvent >( SL_BIND_EVENT_FUNC( OnMessageReceived ) );
+	e.Dispatch< sl::NetworkInEvent >( this, &ChatLayer::OnMessageReceived );
 }
 
 bool ChatLayer::OnMessageReceived( sl::NetworkInEvent& e )

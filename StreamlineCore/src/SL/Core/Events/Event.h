@@ -4,6 +4,11 @@
 
 namespace sl {
 
+	class IEventListener;
+	
+	template < typename T >
+	concept IsEventListener = DerivedFromOnly< T, IEventListener >;
+
 	/// <summary>
 	/// The base class for all events that contains metadata like the event type and
 	/// whether the event has been handled. Metadata only accessible from EventConcept.
@@ -94,8 +99,6 @@ namespace sl {
 		friend class Event;
 	};
 
-#define SL_BIND_EVENT_FUNC( fn ) [ this ]( ::sl::IsEvent auto& event ) -> bool { return this->fn( event ); }
-
 	/// <summary>
 	/// Type erased event class. Contains a pointer to the base event concept
 	/// which is allocated externally in EventModelAllocator and passed in.
@@ -130,6 +133,17 @@ namespace sl {
 			bool handled = func( pImpl->object );
 
 			mImpl->SetHandled( handled );
+		}
+
+		template < IsEvent T, IsEventListener Instance, typename MemFn >
+			requires std::is_member_function_pointer_v< std::remove_cvref_t< MemFn > >
+		void Dispatch( Instance* instance, MemFn&& func ) noexcept( noexcept( std::invoke( std::forward< MemFn >( func ), instance, std::declval< T& >() ) ) )
+		{
+			Dispatch< T >(
+				[ &instance, fn = std::forward< MemFn >( func ) ]( T& event ) -> bool {
+					return std::invoke( fn, instance, event );
+				}
+			);
 		}
 
 		bool IsHandled() const
