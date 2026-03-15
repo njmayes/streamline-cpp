@@ -1,10 +1,13 @@
 #include "SharedMutex.h"
 
+#include <string>
+
 #ifdef SL_PLATFORM_WINDOWS
 #include <windows.h>
-#elif defined( SL_PLATFORM_LINUX )
-#include <semaphore.h>
+#elif defined( SL_PLATFORM_LINUX ) || defined( SL_PLATFORM_MACOS )
+#include <cerrno>
 #include <fcntl.h>
+#include <semaphore.h>
 #include <sys/stat.h>
 #endif
 
@@ -12,33 +15,58 @@ namespace sl::ipc {
 
 	struct MutexDescriptor
 	{
-		std::string_view name;
+		std::string name;
 		bool owner{};
+
 #ifdef SL_PLATFORM_WINDOWS
-		HANDLE handle;
-#elif defined( SL_PLATFORM_LINUX )
-		sem_t* sem{};
+		HANDLE handle{};
+#elif defined( SL_PLATFORM_LINUX ) || defined( SL_PLATFORM_MACOS )
+		sem_t* sem{ SEM_FAILED };
 #endif
 	};
+
+#if defined( SL_PLATFORM_LINUX ) || defined( SL_PLATFORM_MACOS )
+	namespace {
+
+		std::string NormaliseSharedMutexName( std::string_view name )
+		{
+			std::string out;
+			out.reserve( name.size() + 1 );
+
+			if ( name.empty() || name.front() != '/' )
+				out.push_back( '/' );
+
+			for ( char ch : name )
+				out.push_back( ch == '/' ? '_' : ch );
+
+			if ( out.size() == 1 )
+				throw std::runtime_error( "Invalid shared mutex name." );
+
+			return out;
+		}
+
+	} // namespace
+#endif
 
 #ifdef SL_PLATFORM_WINDOWS
 	MutexDescriptor CreateSharedMutex( std::string_view name )
 	{
 		MutexDescriptor desc{};
-
-		desc.handle = CreateMutexA( nullptr, FALSE, name.data() );
+		desc.name = std::string{ name };
+		desc.handle = CreateMutexA( nullptr, FALSE, desc.name.c_str() );
 
 		if ( not desc.handle )
 			return {};
 
+		desc.owner = GetLastError() != ERROR_ALREADY_EXISTS;
 		return desc;
 	}
 
 	MutexDescriptor MapSharedMutex( std::string_view name )
 	{
 		MutexDescriptor desc{};
-
-		desc.handle = OpenMutexA( SYNCHRONIZE, FALSE, name.data() );
+		desc.name = std::string{ name };
+		desc.handle = OpenMutexA( SYNCHRONIZE | MUTEX_MODIFY_STATE, FALSE, desc.name.c_str() );
 
 		if ( not desc.handle )
 			return {};
@@ -67,22 +95,21 @@ namespace sl::ipc {
 
 	bool CheckIsValid( MutexDescriptor desc )
 	{
-		return desc.handle;
+		return desc.handle != nullptr;
 	}
 #endif
 
-#ifdef SL_PLATFORM_LINUX
+#if defined( SL_PLATFORM_LINUX ) || defined( SL_PLATFORM_MACOS )
 	MutexDescriptor CreateSharedMutex( std::string_view name )
 	{
 		MutexDescriptor desc{};
+		desc.name = NormaliseSharedMutexName( name );
 
-		int oflag = O_CREAT;
-		auto sem = sem_open( name.data(), oflag, 0666, 1 );
+		auto sem = sem_open( desc.name.c_str(), O_CREAT | O_EXCL, 0666, 1 );
 		if ( sem == SEM_FAILED )
 			return {};
 
 		desc.sem = sem;
-		desc.name = name;
 		desc.owner = true;
 
 		return desc;
@@ -91,30 +118,37 @@ namespace sl::ipc {
 	MutexDescriptor MapSharedMutex( std::string_view name )
 	{
 		MutexDescriptor desc{};
+		desc.name = NormaliseSharedMutexName( name );
 
-		int oflag = 0;
-		auto sem = sem_open( name.data(), oflag, 0666, 1 );
+		auto sem = sem_open( desc.name.c_str(), 0 );
 		if ( sem == SEM_FAILED )
 			return {};
 
 		desc.sem = sem;
-		desc.name = name;
+		desc.owner = false;
 
 		return desc;
 	}
 
 	void CloseSharedMutex( MutexDescriptor desc )
 	{
-		if ( desc.sem )
+		if ( desc.sem != SEM_FAILED )
 			sem_close( desc.sem );
-		if ( desc.owner and not desc.name.empty() )
-			sem_unlink( desc.name.data() );
+
+		if ( desc.owner && !desc.name.empty() )
+			sem_unlink( desc.name.c_str() );
 	}
 
 	void LockSharedMutex( MutexDescriptor desc )
 	{
-		if ( sem_wait( desc.sem ) == -1 )
-			throw std::runtime_error( "Lock mutex failed" );
+		for ( ;; )
+		{
+			if ( sem_wait( desc.sem ) == 0 )
+				return;
+
+			if ( errno != EINTR )
+				throw std::runtime_error( "Lock mutex failed" );
+		}
 	}
 
 	void UnlockSharedMutex( MutexDescriptor desc )
@@ -125,7 +159,40 @@ namespace sl::ipc {
 
 	bool CheckIsValid( MutexDescriptor desc )
 	{
-		return desc.sem;
+		return desc.sem != SEM_FAILED;
+	}
+#endif
+
+#if !defined( SL_PLATFORM_WINDOWS ) && !defined( SL_PLATFORM_LINUX ) && !defined( SL_PLATFORM_MACOS )
+
+	auto CreateSharedMutex( std::string_view name ) -> MutexDescriptor
+	{
+		throw std::runtime_error( "Shared memory is not supported on this platform." );
+	}
+
+	auto MapSharedMutex( std::string_view name ) -> MutexDescriptor
+	{
+		throw std::runtime_error( "Shared memory is not supported on this platform." );
+	}
+
+	void CloseSharedMutex( MutexDescriptor desc )
+	{
+		throw std::runtime_error( "Shared memory is not supported on this platform." );
+	}
+
+	void LockSharedMutex( MutexDescriptor desc )
+	{
+		throw std::runtime_error( "Shared memory is not supported on this platform." );
+	}
+
+	void UnlockSharedMutex( MutexDescriptor desc )
+	{
+		throw std::runtime_error( "Shared memory is not supported on this platform." );
+	}
+
+	bool CheckIsValid( MutexDescriptor desc )
+	{
+		return false;
 	}
 #endif
 
@@ -134,13 +201,16 @@ namespace sl::ipc {
 		MutexDescriptor desc;
 	};
 
-
 	SharedMutex::SharedMutex( std::string_view name )
 		: mImpl{ MakeBox< Impl >() }
 	{
 		mImpl->desc = MapSharedMutex( name );
 		if ( not IsValid() )
+		{
 			mImpl->desc = CreateSharedMutex( name );
+			if ( not IsValid() )
+				mImpl->desc = MapSharedMutex( name );
+		}
 	}
 
 	SharedMutex::SharedMutex( SharedMutex&& ) noexcept = default;
