@@ -22,9 +22,11 @@ namespace sl::detail {
 	struct EnumMatchCaseHandler
 	{
 		F func;
+		static constexpr auto Element = E;
 
 		template < typename... Args >
-		auto operator()( EnumTag< E >, Args&&... args ) const
+			requires std::invocable< F const&, Args... >
+		decltype( auto ) operator()( EnumTag< E >, Args&&... args ) const
 		{
 			return func( std::forward< Args >( args )... );
 		}
@@ -35,13 +37,20 @@ namespace sl::detail {
 	{
 		F func;
 
-		template < typename... Args >
-		auto operator()( std::monostate, Args&&... args ) const
+		decltype( auto ) operator()( std::monostate ) const
+			requires std::invocable< F const& >
 		{
-			return func( std::forward< Args >( args )... );
+			return func();
 		}
 	};
 
+	template< typename T >
+	struct IsEnumMatchCaseHandler : std::false_type
+	{};
+
+	template< auto E, typename F >
+	struct IsEnumMatchCaseHandler< EnumMatchCaseHandler< E, F > > : std::true_type
+	{};
 
 	template < typename... Fs >
 	struct Overload : Fs...

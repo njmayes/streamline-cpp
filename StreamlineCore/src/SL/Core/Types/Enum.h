@@ -248,10 +248,6 @@ namespace sl {
 					else
 						return matcher( tag );
 				}
-				else if constexpr ( HasDefaultMatchFuncWithArg< Matcher, enum_val > )
-				{
-					return matcher( std::monostate{}, *std::get_if< I >( &variant ) );
-				}
 				else if constexpr ( HasDefaultMatchFuncNoArg< Matcher, enum_val > )
 				{
 					return matcher( std::monostate{} );
@@ -304,10 +300,6 @@ namespace sl {
 					else
 						return matcher( tag );
 				}
-				else if constexpr ( HasDefaultMatchFuncWithArg< Matcher, enum_val > )
-				{
-					return matcher( std::monostate{}, *std::get_if< I >( &variant ) );
-				}
 				else if constexpr ( HasDefaultMatchFuncNoArg< Matcher, enum_val > )
 				{
 					return matcher( std::monostate{} );
@@ -335,17 +327,37 @@ namespace sl {
 		template < typename... Handlers >
 		constexpr decltype( auto ) Match( Handlers&&... handlers ) const
 		{
-			auto matcher = detail::Overload{ std::forward< Handlers >( handlers )... };
-			auto table = MakeDispatchTable< decltype( matcher ) >( std::index_sequence_for< Cases... >{} );
+			// Nicer compile error than template hell.
+			if constexpr ( ValidateMatch< Handlers... >() )
+			{
+				auto matcher = detail::Overload{ std::forward< Handlers >( handlers )... };
+				static constexpr auto DispatchTable = MakeDispatchTable< decltype( matcher ) >( std::index_sequence_for< Cases... >{} );
 
-			return table[ mValueData.index() ]( matcher, mValueData );
+				auto&& handler = DispatchTable[ mValueData.index() ];
+				return std::invoke( handler, matcher, mValueData );
+			}
+			else
+			{
+				struct MatchError
+				{};
+				return MatchError{};
+			}
 		}
 
 		template < Enum Element, typename... Args >
-			requires std::constructible_from< ValueTypeAt< Element >, Args... >
 		static constexpr auto Make( Args&&... args )
 		{
-			return SmartEnum( detail::EnumTag< Element >{}, std::forward< Args >( args )... );
+			// Nicer compile error than template hell.
+			if constexpr ( ValidateMake< Element, Args... >() )
+			{
+				return SmartEnum( detail::EnumTag< Element >{}, std::forward< Args >( args )... );
+			}
+			else
+			{
+				struct MakeError
+				{};
+				return MakeError{};
+			}
 		}
 
 		template < Enum Element, typename Self >
@@ -365,6 +377,73 @@ namespace sl {
 		constexpr SmartEnum( detail::EnumTag< Element > tag, Args&&... args )
 			: mValueData( std::in_place_index_t< CaseIndex< Element > >{}, std::forward< Args >( args )... )
 		{}
+
+		template < Enum Element, typename... Args >
+		static constexpr bool ValidateMake()
+		{
+			using T = ValueTypeAt< Element >;
+
+			if constexpr ( std::same_as< T, std::monostate > )
+			{
+				static constexpr bool Valid = sizeof...( Args ) == 0;
+				static_assert(
+					Valid,
+					"SmartEnum::Make<Element>(args...): this enum case does not store a value, so no arguments may be provided."
+				);
+				return Valid;
+			}
+			else
+			{
+				static constexpr bool Valid = std::constructible_from< T, Args... >;
+				static_assert(
+					Valid,
+					"SmartEnum::Make<Element>(args...): the provided arguments do not construct the payload type for this enum case."
+				);
+				return Valid;
+			}
+		}
+
+		template < typename Handler >
+		static constexpr bool ValidateSingleMatch()
+		{
+			using CleanHandler = std::remove_cvref_t< Handler >;
+
+			if constexpr ( detail::IsEnumMatchCaseHandler< CleanHandler >::value )
+			{
+				static constexpr auto Element = CleanHandler::Element;
+				using TargetPayload = ValueTypeAt< Element >;
+
+				if constexpr (std::same_as < TargetPayload, std::monostate >)
+				{
+					static constexpr bool Valid = std::invocable< CleanHandler, detail::EnumTag< Element > >;
+					static_assert( Valid, "SmartEnum::Match: MatchCase<E>(handler) - handler for an empty case must be callable with no arguments." );
+					return Valid;
+				}
+				else
+				{
+					static constexpr bool Valid = std::invocable< CleanHandler, detail::EnumTag< Element >, TargetPayload const& >;
+					static_assert( Valid, "SmartEnum::Match: MatchCase<E>(handler) - handler argument type does not match the payload type for this enum case." );
+					return Valid;
+				}
+			}
+			else if constexpr ( detail::IsDefaultMatchCaseHandler< CleanHandler >::value )
+			{
+				static constexpr bool Valid = std::invocable< CleanHandler, std::monostate >;
+				static_assert( Valid, "SmartEnum::Match: MatchDefault(handler) - handler must be callable with no arguments." );
+				return Valid;
+			}
+			else
+			{
+				static_assert( false, "SmartEnum::Match: all handlers must be produced by MatchCase(...) or MatchDefault(...)." );
+				return false;
+			}
+		}
+
+		template < typename... Handlers >
+		static constexpr bool ValidateMatch()
+		{
+			return ( ... and ValidateSingleMatch< Handlers >() );
+		}
 
 	private:
 		StorageType mValueData;
