@@ -1,8 +1,10 @@
 #pragma once
 
+#include "Detail/Memory.h"
+#include "Reflection.h"
+
 #include <unordered_set>
 #include <memory>
-#include <atomic>
 
 namespace sl {
 
@@ -20,38 +22,15 @@ namespace sl {
 
 	// Shared Pointer (Intrusive)
 
-	class RefCounted;
-
 	template < typename T >
-	concept RefCountable = std::derived_from< T, RefCounted >;
-
-	namespace detail {
-
-		class RefCountedBase
-		{
-		public:
-			uint64_t GetRefCount() const
-			{
-				return mRefCount;
-			}
-
-		protected:
-			void IncRefCount() const
-			{
-				++mRefCount;
-			}
-			void DecRefCount() const
-			{
-				--mRefCount;
-			}
-
-		private:
-			mutable std::atomic_uint64_t mRefCount = 0;
-		};
-	} // namespace detail
+	concept RefCountable = DerivedFromOnly< T, detail::RefCountedBase >;
 
 	class RefCounted : public virtual detail::RefCountedBase
 	{
+	protected:
+		RefCounted() = default;
+		virtual ~RefCounted() = default;
+
 		template < RefCountable T >
 		friend class Ref;
 	};
@@ -70,13 +49,6 @@ namespace sl {
 			inline static std::unordered_set< void const* > sRefSet;
 		};
 	} // namespace detail
-
-	namespace Memory {
-		inline bool IsTracked( void const* data )
-		{
-			return detail::RefTracker::IsTracked( data );
-		}
-	}
 
 	template < RefCountable T >
 	class Ref
@@ -255,7 +227,7 @@ namespace sl {
 	public:
 		WeakRef() = default;
 
-		template< typename U = T >
+		template < typename U = T >
 			requires std::derived_from< U, T >
 		WeakRef( Ref< U > ref )
 		{
