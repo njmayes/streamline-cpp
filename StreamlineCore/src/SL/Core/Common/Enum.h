@@ -89,7 +89,7 @@ namespace sl::Enum {
 	class BitMask
 	{
 	private:
-		SCONSTEVAL bool IsEnumAllFlags()
+		static consteval bool IsEnumAllFlags()
 		{
 			auto values = magic_enum::enum_values< T >();
 
@@ -102,7 +102,7 @@ namespace sl::Enum {
 			return true;
 		}
 
-		SASSERT( IsEnumAllFlags(), "EnumBitMask can only be used with enums that are all bit flags" );
+		SL_COMPILE_CHECK( IsEnumAllFlags(), BitMask, "EnumBitMask can only be used with enums that are all bit flags" );
 
 	public:
 		using Underlying = std::underlying_type_t< T >;

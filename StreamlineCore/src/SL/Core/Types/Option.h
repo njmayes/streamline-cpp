@@ -11,8 +11,8 @@ namespace sl {
 		using BaseType = Result< T, std::monostate >;
 
 	public:
-		SCONSTEXPR auto Some = BaseType::Ok;
-		SCONSTEXPR auto None = BaseType::Err;
+		static constexpr auto Some = BaseType::Ok;
+		static constexpr auto None = BaseType::Err;
 
 	public:
 		constexpr bool IsSome() const noexcept
@@ -186,8 +186,8 @@ namespace sl {
 	} // namespace detail
 
 	template < typename T >
-	SCONSTEXPR detail::SomeFunctor< T > Some;
+	static constexpr detail::SomeFunctor< T > Some;
 
 	template < typename T >
-	SCONSTEXPR detail::NoneFunctor< T > None;
+	static constexpr detail::NoneFunctor< T > None;
 } // namespace sl

@@ -37,12 +37,12 @@ namespace sl {
 	template < Numeric T >
 	struct Limits
 	{
-		SCONSTEXPR T Min = std::numeric_limits< T >::min();
-		SCONSTEXPR T Max = std::numeric_limits< T >::max();
-		SCONSTEXPR T Epsilon = std::numeric_limits< T >::epsilon();
+		static constexpr T Min = std::numeric_limits< T >::min();
+		static constexpr T Max = std::numeric_limits< T >::max();
+		static constexpr T Epsilon = std::numeric_limits< T >::epsilon();
 	};
 
-	SCONSTEXPR size_t MakeBit( int bit )
+	static constexpr size_t MakeBit( int bit )
 	{
 		return 1ull << bit;
 	}

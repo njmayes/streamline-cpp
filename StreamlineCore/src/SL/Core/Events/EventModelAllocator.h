@@ -15,7 +15,7 @@ namespace sl {
 	{
 	private:
 		using TypeName = std::string_view;
-		SCONSTEXPR size_t DefaultModelChunkSize = 16;
+		static constexpr size_t DefaultModelChunkSize = 16;
 
 		struct ModelState
 		{

@@ -213,7 +213,7 @@ namespace sl::reflect {
 			using ArgTypes = typename MemberTraits::Arguments;
 			using ReturnType = typename MemberTraits::ReturnType;
 
-			SCONSTEXPR bool IsReturnVoid = std::same_as< ReturnType, void >;
+			static constexpr bool IsReturnVoid = std::same_as< ReturnType, void >;
 
 			auto get_arg_types = []< std::size_t... Is >( std::index_sequence< Is... > ) -> std::vector< TypeRef > {
 				return { MakeTypeRef< typename ArgTypes::template Type< Is > >()... };

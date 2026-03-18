@@ -140,13 +140,6 @@ ClientLayer::ClientLayer( sl::net::ClientContextOptions const& opts )
 
 void ClientLayer::OnOverlayRender()
 {
-	using sl::Widgets;
-
-	Widgets::BeginWindow( "TestWindow" );
-
-	Widgets::EditGeneric( "TestNestedStruct", sTestStruct );
-
-	Widgets::EndWindow();
 }
 
 ChatClient::ChatClient( sl::Ref< sl::GuiApplicationSpecification > spec, sl::net::ClientContextOptions const& opts )

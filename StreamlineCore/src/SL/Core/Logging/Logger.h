@@ -16,9 +16,9 @@ namespace sl {
 	class Logger
 	{
 	public:
-		SCONSTEXPR std::size_t MessageSizeLimit = 512;
-		SCONSTEXPR std::size_t MaxMessagesBeforeFlush = 1024;
-		SCONSTEXPR std::size_t TemporaryBufferSize = MessageSizeLimit;
+		static constexpr std::size_t MessageSizeLimit = 512;
+		static constexpr std::size_t MaxMessagesBeforeFlush = 1024;
+		static constexpr std::size_t TemporaryBufferSize = MessageSizeLimit;
 
 		using TemporaryBuffer = std::array< char, MessageSizeLimit >;
 
@@ -26,7 +26,7 @@ namespace sl {
 		using Duration = std::chrono::duration< float, std::micro >;
 		using TimePoint = std::chrono::time_point< Clock, Duration >;
 
-		SCONSTEXPR Duration MaxTimeBetweenFlush = Duration{ std::chrono::milliseconds( 100 ) };
+		static constexpr Duration MaxTimeBetweenFlush = Duration{ std::chrono::milliseconds( 100 ) };
 
 		struct LoggerStats
 		{

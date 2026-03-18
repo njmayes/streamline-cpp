@@ -11,7 +11,7 @@ namespace sl {
 	class IAllocator : public RefCounted
 	{
 	public:
-		SCONSTEXPR std::size_t SCALE_FACTOR = 2;
+		static constexpr std::size_t SCALE_FACTOR = 2;
 
 		virtual ~IAllocator() = default;
 

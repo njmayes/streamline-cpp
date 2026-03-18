@@ -54,6 +54,12 @@
 #define SL_STRINGIFY( L ) #L
 #define SL_MAKE_STRING( x ) SL_STRINGIFY( x )
 
+#define SL_COMPILE_CHECK( cond, func, err ) static_assert( cond, "\n\n\t[" SL_STRINGIFY( func ) "] error: " err "\n" )
+
+#define SL_COMPILE_ERROR_IF( cond, func, err ) SL_COMPILE_CHECK( not( cond ), func, err )
+
+#define SL_COMPILE_ERROR( func, err ) SL_COMPILE_CHECK( false, func, err )
+
 #if defined( SL_COMPILER_MSVC )
 #define SL_TODO( x ) __pragma( message( __FILE__ "(" SL_MAKE_STRING( __LINE__ ) ") : TODO - " x ) )
 #elif defined( SL_COMPILER_GCC ) || defined( __clang__ )
@@ -62,11 +68,6 @@
 #define SL_TODO( x )
 #endif
 
-
-#define SASSERT( x, ... ) static_assert( x )
-
-#define SCONSTEXPR static constexpr
-#define SCONSTEVAL static consteval
 
 #define typeof( T ) std::remove_cvref_t< decltype( T ) >
 
@@ -92,11 +93,11 @@
 #define SL_EVAL2( ... ) SL_EVAL1( SL_EVAL1( __VA_ARGS__ ) )
 #define SL_EVAL1( ... ) __VA_ARGS__
 
-#define SL_NARGS_IMPL(                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      \
+#define SL_NARGS_IMPL(                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       \
 	_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, _16, _17, _18, _19, _20, _21, _22, _23, _24, _25, _26, _27, _28, _29, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _60, _61, _62, _63, _64, _65, _66, _67, _68, _69, _70, _71, _72, _73, _74, _75, _76, _77, _78, _79, _80, _81, _82, _83, _84, _85, _86, _87, _88, _89, _90, _91, _92, _93, _94, _95, _96, _97, _98, _99, _100, _101, _102, _103, _104, _105, _106, _107, _108, _109, _110, _111, _112, _113, _114, _115, _116, _117, _118, _119, _120, _121, _122, _123, _124, _125, _126, _127, N, ... \
 ) N
 
-#define SL_NARGS_REVERSE_128                                                                 \
+#define SL_NARGS_REVERSE_128                                                                  \
 	127, 126, 125, 124, 123, 122, 121, 120, 119, 118, 117, 116, 115, 114, 113, 112, 111, 110, \
 		109, 108, 107, 106, 105, 104, 103, 102, 101, 100, 99, 98, 97, 96, 95, 94, 93, 92,     \
 		91, 90, 89, 88, 87, 86, 85, 84, 83, 82, 81, 80, 79, 78, 77, 76, 75, 74,               \
@@ -128,28 +129,28 @@
 	SL_EVAL( SL_FOR_EACH_SEP_INNER( macro, sep, __VA_ARGS__ ) )
 
 #define SL_FOR_EACH_SEP_INNER( macro, sep, a1, ... ) \
-	macro( a1 )                                       \
+	macro( a1 )                                      \
 		__VA_OPT__( SL_OBSTRUCT( SL_FOR_EACH_SEP_CONTINUE )()( macro, sep, __VA_ARGS__ ) )
 
 #define SL_FOR_EACH_SEP_CONTINUE() SL_FOR_EACH_SEP_INNER_NEXT
 #define SL_FOR_EACH_SEP_INNER_NEXT( macro, sep, a1, ... ) \
-	sep() macro( a1 )                                      \
+	sep() macro( a1 )                                     \
 		__VA_OPT__( SL_OBSTRUCT( SL_FOR_EACH_SEP_CONTINUE )()( macro, sep, __VA_ARGS__ ) )
 
 
 #define SL_FOR_EACH_I_SEP( macro, sep, ... ) \
 	SL_EVAL( SL_FOR_EACH_I_SEP_INNER( macro, sep, SL_I0, __VA_ARGS__ ) )
 
-#define SL_FOR_EACH_I_SEP_INNER( macro, sep, i_state, a1, ... )   \
-	macro( SL_I_VALUE( i_state ), a1 )                            \
+#define SL_FOR_EACH_I_SEP_INNER( macro, sep, i_state, a1, ... )  \
+	macro( SL_I_VALUE( i_state ), a1 )                           \
 		__VA_OPT__( SL_OBSTRUCT( SL_FOR_EACH_I_SEP_CONTINUE )()( \
-			macro, sep, SL_I_NEXT( i_state ), __VA_ARGS__         \
+			macro, sep, SL_I_NEXT( i_state ), __VA_ARGS__        \
 		) )
 
 #define SL_FOR_EACH_I_SEP_CONTINUE() SL_FOR_EACH_I_SEP_INNER_NEXT
 #define SL_FOR_EACH_I_SEP_INNER_NEXT( macro, sep, i_state, a1, ... ) \
 	sep() macro( SL_I_VALUE( i_state ), a1 )                         \
-		__VA_OPT__( SL_OBSTRUCT( SL_FOR_EACH_I_SEP_CONTINUE )()(    \
+		__VA_OPT__( SL_OBSTRUCT( SL_FOR_EACH_I_SEP_CONTINUE )()(     \
 			macro, sep, SL_I_NEXT( i_state ), __VA_ARGS__            \
 		) )
 
