@@ -119,6 +119,11 @@ namespace sl {
 		}
 
 	public:
+		static bool Exists()
+		{
+			return sInstance;
+		}
+
 		static void Close();
 		static Application* Get()
 		{
