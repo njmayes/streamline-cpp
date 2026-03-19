@@ -169,6 +169,11 @@ namespace sl {
 		return ui::MenuBar();
 	}
 
+	ui::MainMenuBar Widgets::BeginMainMenuBar()
+	{
+		return ui::MainMenuBar();
+	}
+
 	ui::PopUp Widgets::BeginPopup( std::string_view popupName )
 	{
 		return ui::PopUp( popupName );

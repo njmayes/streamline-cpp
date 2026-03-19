@@ -98,6 +98,7 @@ namespace sl {
 		}
 
 		static ui::MenuBar BeginMenuBar();
+		static ui::MainMenuBar BeginMainMenuBar();
 		static ui::PopUp BeginPopup( std::string_view popupName );
 		static ui::PopUpContext BeginContextPopup();
 
