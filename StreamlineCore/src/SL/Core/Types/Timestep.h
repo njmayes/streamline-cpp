@@ -5,21 +5,30 @@ namespace sl {
 	class Timestep
 	{
 	public:
-		Timestep(float time = 0.0f)
+		Timestep(double time = 0.0)
 			: mTime(time)
 		{
 		}
 
-		operator float() const { return mTime; }
+		operator double() const
+		{
+			return mTime;
+		}
 
-		float GetSeconds() const { return mTime; }
-		float GetMilliseconds() const { return mTime * 1000.f; }
+		double GetSeconds() const
+		{
+			return mTime;
+		}
+		double GetMilliseconds() const
+		{
+			return mTime * 1000.0;
+		}
 
 	private:
-		float mTime;
+		double mTime;
 
 	public:
-		static float Now();
+		static double Now();
 	};
 
 }

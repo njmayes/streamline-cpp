@@ -48,7 +48,7 @@ namespace sl {
 			bool minimised = false;
 			bool block_exit = false;
 			bool block_events = false;
-			float last_frame_time = 0.0f;
+			double last_frame_time = 0.0;
 
 			std::mutex main_thread_queue_mutex;
 			std::vector< Action<> > main_thread_queue;

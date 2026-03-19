@@ -51,7 +51,7 @@ namespace sl {
 
 		while ( sInstance->mState.running )
 		{
-			float time = Timestep::Now();
+			double time = Timestep::Now();
 			Timestep timestep = time - sInstance->mState.last_frame_time;
 			sInstance->mState.last_frame_time = time;
 
