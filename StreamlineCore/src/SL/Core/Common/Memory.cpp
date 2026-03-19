@@ -6,20 +6,20 @@ namespace sl::detail {
 
 	bool RefTracker::IsTracked( void const* data )
 	{
-		ASSERT( data, "Data is null!" );
+		SL_ASSERT( data, "Data is null!" );
 		return sRefSet.count( data ) != 0;
 	}
 
 	void RefTracker::AddToReferenceTracker( void const* data )
 	{
-		ASSERT( data );
+		SL_ASSERT( data );
 		sRefSet.insert( data );
 	}
 
 	void RefTracker::RemoveFromReferenceTracker( void const* data )
 	{
-		ASSERT( data, "Data is null!" );
-		ASSERT( sRefSet.contains( data ), "Ref not being tracked!" );
+		SL_ASSERT( data, "Data is null!" );
+		SL_ASSERT( sRefSet.contains( data ), "Ref not being tracked!" );
 		sRefSet.erase( data );
 	}
 } // namespace sl::detail

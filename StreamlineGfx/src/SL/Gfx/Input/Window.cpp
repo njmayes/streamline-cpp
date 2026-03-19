@@ -61,7 +61,7 @@ namespace sl {
 		if ( sGLFWWindowCount == 0 )
 		{
 			int success = glfwInit();
-			ASSERT( success, "Could not initialize GLFW!" );
+			SL_ASSERT( success, "Could not initialize GLFW!" );
 			glfwSetErrorCallback( GLFWErrorCallback );
 		}
 
@@ -83,11 +83,11 @@ namespace sl {
 			mWindow = glfwCreateWindow( ( int )mData.width, ( int )mData.height, mData.title.c_str(), nullptr, nullptr );
 			++sGLFWWindowCount;
 		}
-		ASSERT( mWindow, "Could not create GLFW window!" );
+		SL_ASSERT( mWindow, "Could not create GLFW window!" );
 
 		glfwMakeContextCurrent( mWindow );
 		int status = gladLoadGL( glfwGetProcAddress );
-		ASSERT( status, "Failed to initialize Glad!" );
+		SL_ASSERT( status, "Failed to initialize Glad!" );
 
 		log::Info( "OpenGL Info:" );
 		log::Info( "\tVendor: {0}", reinterpret_cast< const char* >( glGetString( GL_VENDOR ) ) );

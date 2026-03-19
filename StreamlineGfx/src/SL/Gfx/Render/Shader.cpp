@@ -25,7 +25,7 @@ namespace sl {
 			if ( type == "fragment" || type == "pixel" )
 				return GL_FRAGMENT_SHADER;
 
-			ASSERT( false, "Unknown shader type!" );
+			SL_ASSERT( false, "Unknown shader type!" );
 			return 0;
 		}
 
@@ -38,7 +38,7 @@ namespace sl {
 				case GL_FRAGMENT_SHADER:
 					return shaderc_glsl_fragment_shader;
 			}
-			ASSERT( false );
+			SL_ASSERT( false );
 			return ( shaderc_shader_kind )0;
 		}
 
@@ -51,7 +51,7 @@ namespace sl {
 				case GL_FRAGMENT_SHADER:
 					return "GL_FRAGMENT_SHADER";
 			}
-			ASSERT( false );
+			SL_ASSERT( false );
 			return nullptr;
 		}
 
@@ -77,7 +77,7 @@ namespace sl {
 				case GL_FRAGMENT_SHADER:
 					return ".cached_opengl.frag";
 			}
-			ASSERT( false );
+			SL_ASSERT( false );
 			return "";
 		}
 
@@ -90,7 +90,7 @@ namespace sl {
 				case GL_FRAGMENT_SHADER:
 					return ".cached_vulkan.frag";
 			}
-			ASSERT( false );
+			SL_ASSERT( false );
 			return "";
 		}
 	} // namespace Utils
@@ -146,13 +146,13 @@ namespace sl {
 		while ( pos != std::string::npos )
 		{
 			size_t eol = source.find_first_of( "\r\n", pos );
-			ASSERT( eol != std::string::npos, "Shader syntax error!" );
+			SL_ASSERT( eol != std::string::npos, "Shader syntax error!" );
 			size_t begin = pos + type_token_length + 1;
 			std::string type( source.substr( begin, eol - begin ) );
-			ASSERT( Utils::ShaderTypeFromString( type ), "Invalid shader type given!" );
+			SL_ASSERT( Utils::ShaderTypeFromString( type ), "Invalid shader type given!" );
 
 			size_t nextLinePos = source.find_first_not_of( "\r\n", eol );
-			ASSERT( nextLinePos != std::string::npos, "Shader syntax error!" );
+			SL_ASSERT( nextLinePos != std::string::npos, "Shader syntax error!" );
 			pos = source.find( type_token, nextLinePos );
 			shader_sources[ Utils::ShaderTypeFromString( type ) ] = ( pos == std::string::npos ) ? source.substr( nextLinePos ) : source.substr( nextLinePos, pos - nextLinePos );
 		}
@@ -196,7 +196,7 @@ namespace sl {
 				if ( module.GetCompilationStatus() != shaderc_compilation_status_success )
 				{
 					log::Error( module.GetErrorMessage() );
-					ASSERT( false );
+					SL_ASSERT( false );
 				}
 
 				shader_data[ stage ] = std::vector< uint32_t >( module.cbegin(), module.cend() );
@@ -257,7 +257,7 @@ namespace sl {
 				if ( module.GetCompilationStatus() != shaderc_compilation_status_success )
 				{
 					log::Error( module.GetErrorMessage() );
-					ASSERT( false );
+					SL_ASSERT( false );
 				}
 
 				shader_data[ stage ] = std::vector< uint32_t >( module.cbegin(), module.cend() );

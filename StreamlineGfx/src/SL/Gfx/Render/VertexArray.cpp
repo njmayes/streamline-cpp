@@ -24,7 +24,7 @@ namespace sl {
 				return GL_BOOL;
 		}
 
-		ASSERT( false, "Unknown ShaderDataType!" );
+		SL_ASSERT( false, "Unknown ShaderDataType!" );
 		return 0;
 	}
 
@@ -50,7 +50,7 @@ namespace sl {
 
 	void VertexArray::AddVertexBuffer( const Ref< VertexBuffer >& vertexBuffer )
 	{
-		ASSERT( vertexBuffer->GetLayout().GetElements().size() != 0, "Vertex buffer has no layout!" );
+		SL_ASSERT( vertexBuffer->GetLayout().GetElements().size() != 0, "Vertex buffer has no layout!" );
 
 		glBindVertexArray( mRendererID );
 		vertexBuffer->Bind();
@@ -95,7 +95,7 @@ namespace sl {
 					break;
 				}
 				default:
-					ASSERT( false, "Unknown ShaderDataType!" );
+					SL_ASSERT( false, "Unknown ShaderDataType!" );
 			}
 		}
 

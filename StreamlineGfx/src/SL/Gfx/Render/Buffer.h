@@ -48,7 +48,7 @@ namespace sl {
 				return 1;
 		}
 
-		ASSERT( false, "Unknown ShaderDataType!" );
+		SL_ASSERT( false, "Unknown ShaderDataType!" );
 		return 0;
 	}
 
@@ -93,7 +93,7 @@ namespace sl {
 					return 1;
 			}
 
-			ASSERT( false, "Unknown ShaderDataType!" );
+			SL_ASSERT( false, "Unknown ShaderDataType!" );
 			return 0;
 		}
 	};

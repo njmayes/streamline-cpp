@@ -20,18 +20,18 @@
 
 #ifdef SL_DEBUG
 #define FATAL_ERROR( ... ) assert( false )
-#define ASSERT( x, ... ) assert( x )
+#define SL_ASSERT( x, ... ) assert( x )
 #else
 #define FATAL_ERROR() std::unreachable()
 #if SL_HAS_ATTRIBUTE( assume )
-#define ASSERT( x, ... ) [[assume( x )]]
+#define SL_ASSERT( x, ... ) [[assume( x )]]
 #else
 #if defined( SL_COMPILER_MSVC )
-#define ASSERT( x, ... ) __assume( x )
+#define SL_ASSERT( x, ... ) __assume( x )
 #elif defined( SL_COMPILER_GCC )
-#define ASSERT( x, ... ) __attribute__( ( assume( x ) ) )
+#define SL_ASSERT( x, ... ) __attribute__( ( assume( x ) ) )
 #elif defined( SL_COMPILER_CLANG )
-#define ASSERT( x, ... ) __builtin_assume( x )
+#define SL_ASSERT( x, ... ) __builtin_assume( x )
 #else
 #error "No assume attribute"
 #endif // SL_PLATFORM_LINUX

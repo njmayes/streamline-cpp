@@ -84,7 +84,7 @@ namespace sl {
 					return GL_RED_INTEGER;
 			}
 
-			ASSERT( false );
+			SL_ASSERT( false );
 			return 0;
 		}
 	} // namespace detail
@@ -162,7 +162,7 @@ namespace sl {
 
 		if ( mColourAttachments.size() > 1 )
 		{
-			ASSERT( mColourAttachments.size() <= 4 );
+			SL_ASSERT( mColourAttachments.size() <= 4 );
 			GLenum buffers[ 4 ] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
 			glDrawBuffers( ( int )mColourAttachments.size(), buffers );
 		}
@@ -172,7 +172,7 @@ namespace sl {
 			glDrawBuffer( GL_NONE );
 		}
 
-		ASSERT( glCheckFramebufferStatus( GL_FRAMEBUFFER ) == GL_FRAMEBUFFER_COMPLETE, "Framebuffer is incomplete!" );
+		SL_ASSERT( glCheckFramebufferStatus( GL_FRAMEBUFFER ) == GL_FRAMEBUFFER_COMPLETE, "Framebuffer is incomplete!" );
 
 		glBindFramebuffer( GL_FRAMEBUFFER, 0 );
 	}
@@ -198,7 +198,7 @@ namespace sl {
 
 	int Framebuffer::ReadPixel( uint32_t attachmentIndex, int x, int y ) const
 	{
-		ASSERT( attachmentIndex < mColourAttachments.size() );
+		SL_ASSERT( attachmentIndex < mColourAttachments.size() );
 
 		glReadBuffer( GL_COLOR_ATTACHMENT0 + attachmentIndex );
 		int pixelData;
@@ -208,7 +208,7 @@ namespace sl {
 
 	void Framebuffer::ClearAttachment( uint32_t attachmentIndex, int value )
 	{
-		ASSERT( attachmentIndex < mColourAttachments.size() );
+		SL_ASSERT( attachmentIndex < mColourAttachments.size() );
 
 		auto& spec = mColourAttachmentSpecs[ attachmentIndex ];
 		glClearTexImage( mColourAttachments[ attachmentIndex ], 0, detail::LabyrinthFBTextureFormatToGL( spec.texture_format ), GL_INT, &value );
@@ -216,7 +216,7 @@ namespace sl {
 
 	void Framebuffer::BindColourAttachment( uint32_t index ) const
 	{
-		ASSERT( index < mColourAttachments.size(), "Binding attachment out of range!" );
+		SL_ASSERT( index < mColourAttachments.size(), "Binding attachment out of range!" );
 
 		bool multisample = mSpecification.samples > 1;
 		detail::BindTexture( multisample, mColourAttachments[ index ] );

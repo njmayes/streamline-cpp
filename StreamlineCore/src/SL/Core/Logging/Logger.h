@@ -88,7 +88,7 @@ namespace sl {
 					SL_PROFILE_SCOPE( "Logging - Get Buffer Retry" );
 
 					buffer = mArena.RequestBuffer( mMessageSizeLimit );
-					ASSERT( buffer.has_value(), "Still could not create message buffer despite flush" );
+					SL_ASSERT( buffer.has_value(), "Still could not create message buffer despite flush" );
 				}
 			}
 

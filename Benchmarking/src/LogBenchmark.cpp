@@ -284,7 +284,7 @@ namespace sl::bench {
 				auto const level = keep ? LogLevel::Error : LogLevel::Trace;
 
 				auto buffer = arena.RequestBuffer( logger.MessageSizeLimit() );
-				ASSERT( buffer.has_value(), "Failed to allocate logger benchmark buffer" );
+				SL_ASSERT( buffer.has_value(), "Failed to allocate logger benchmark buffer" );
 
 				auto const& payload = payloads[ i ];
 				auto const copy_size = std::min( message_size, payload.size() );
