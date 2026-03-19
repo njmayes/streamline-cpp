@@ -104,7 +104,7 @@ namespace sl {
 
 	float Utils::FontSize()
 	{
-		return GImGui->Font->LegacySize;
+		return GImGui->Font->FontSize;
 	}
 
 	ImVec2 Utils::FramePadding()
@@ -119,7 +119,7 @@ namespace sl {
 
 	float Utils::LineHeight()
 	{
-		return GImGui->Font->LegacySize + GImGui->Style.FramePadding.y * 2.0f;
+		return GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
 	}
 
 	float Utils::WindowWidth()

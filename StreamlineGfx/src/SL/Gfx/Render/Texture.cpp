@@ -74,6 +74,39 @@ namespace sl {
 		glDeleteTextures( 1, &mRendererID );
 	}
 
+	Texture2D::Texture2D( Texture2D&& other ) noexcept
+		: mWidth( other.mWidth )
+		, mHeight( other.mHeight )
+		, mRendererID( other.mRendererID )
+		, mInternalFormat( other.mInternalFormat )
+		, mDataFormat( other.mDataFormat )
+	{
+		other.mRendererID = 0;
+		other.mWidth = 0;
+		other.mHeight = 0;
+	}
+
+	Texture2D& Texture2D::operator=( Texture2D&& other ) noexcept
+	{
+		if ( this == &other )
+			return *this;
+
+		if ( mRendererID )
+			glDeleteTextures( 1, &mRendererID );
+
+		mWidth = other.mWidth;
+		mHeight = other.mHeight;
+		mRendererID = other.mRendererID;
+		mInternalFormat = other.mInternalFormat;
+		mDataFormat = other.mDataFormat;
+
+		other.mRendererID = 0;
+		other.mWidth = 0;
+		other.mHeight = 0;
+
+		return *this;
+	}
+
 	uint32_t Texture2D::GetSize() const
 	{
 		uint32_t bpp = mDataFormat == GL_RGBA ? 4 : 3;

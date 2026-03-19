@@ -15,9 +15,15 @@ namespace sl {
 		Texture2D( std::string_view path );
 		~Texture2D();
 
+		Texture2D( Texture2D const& ) = delete;
+		Texture2D& operator=( Texture2D const& ) = delete;
+
+		Texture2D( Texture2D&& other ) noexcept;
+		Texture2D& operator=( Texture2D&& other ) noexcept;
+
 		bool Loaded() const
 		{
-			return mRendererID != -1;
+			return mRendererID != 0;
 		}
 
 		uint32_t GetTextureID() const override
@@ -41,7 +47,7 @@ namespace sl {
 
 	private:
 		int mWidth, mHeight;
-		uint32_t mRendererID = -1;
+		uint32_t mRendererID = 0;
 		GLenum mInternalFormat, mDataFormat;
 	};
 
