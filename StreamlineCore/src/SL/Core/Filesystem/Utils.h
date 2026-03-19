@@ -4,8 +4,24 @@
 
 namespace sl::fs {
 
+	std::size_t ReadSizeBytes( std::filesystem::path const& filepath );
+	bool ReadToBuffer( std::filesystem::path const& filepath, char* ptr, std::size_t bytes );
+
 	Buffer ReadToBuffer( std::filesystem::path const& filepath );
 	std::string ReadToString( std::filesystem::path const& filepath );
+
+	template < typename char_t >
+		requires( sizeof( char_t ) == 1 )
+	std::vector< char_t > ReadToVector( std::filesystem::path const& filepath )
+	{
+		const auto size = ReadSizeBytes( filepath );
+		std::vector< char_t > out( size );
+
+		if ( size != 0 && !ReadToBuffer( filepath, reinterpret_cast< char* >( out.data() ), size ) )
+			return {};
+
+		return out;
+	}
 
 	void Write( std::filesystem::path const& filepath, Buffer buffer );
 	void Write( std::filesystem::path const& filepath, std::string_view string );
@@ -18,4 +34,4 @@ namespace sl::fs {
 	void Remove( std::filesystem::path const& filepath );
 	void RemoveDir( std::filesystem::path const& filepath );
 
-} // namespace sl::file
+} // namespace sl::fs
