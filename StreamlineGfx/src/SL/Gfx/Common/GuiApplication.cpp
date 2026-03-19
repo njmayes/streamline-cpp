@@ -9,8 +9,7 @@ namespace sl {
 	GuiApplication::GuiApplication( Ref< GuiApplicationSpecification > spec )
 		: Application( spec )
 	{
-		auto window_props = WindowProperties( spec->name, spec->resolution, spec->fullscreen );
-		mWindow = MakeBox< Window >( window_props );
+		mWindow = MakeBox< Window >( spec->window_props );
 
 		mImGuiController = Application::CreateEventListener< ImGuiController >( mWindow->GetNativeWindow() );
 

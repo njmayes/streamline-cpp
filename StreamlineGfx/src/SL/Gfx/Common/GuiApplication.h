@@ -11,7 +11,7 @@ namespace sl {
 
 	struct GuiApplicationSpecification : public ApplicationSpecification
 	{
-		Resolution resolution = { 1600, 900 };
+		WindowProperties window_props{};
 	};
 
 	class GuiApplication : public Application

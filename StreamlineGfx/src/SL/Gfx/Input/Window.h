@@ -19,16 +19,26 @@ namespace sl {
 		}
 	};
 
+	enum class WindowMode
+	{
+		Windowed,
+		BorderlessFullscreen,
+		ExclusiveFullscreen
+	};
+
 	struct WindowProperties
 	{
 		std::string title;
-		unsigned width;
-		unsigned height;
-		bool fullscreen;
+		Resolution resolution{ 1280, 720 };
 
-		WindowProperties( std::string_view t = "Labyrinth Engine", const Resolution& r = { 1600, 900 }, bool f = false )
-			: title( t ), width( r.width ), height( r.height ), fullscreen( f )
-		{}
+		WindowMode mode = WindowMode::Windowed;
+		bool resizable = true;
+		bool maximised = false;
+		bool centered = true;
+		bool visible = true;
+		bool vsync = true;
+
+		std::optional< std::uint32_t > monitor_index;
 	};
 
 	class Window

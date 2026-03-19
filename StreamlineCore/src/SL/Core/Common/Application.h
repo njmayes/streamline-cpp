@@ -59,7 +59,6 @@ namespace sl {
 	{
 		std::string name = "Streamline Application";
 		std::filesystem::path working_dir;
-		bool fullscreen = false;
 
 		virtual ~ApplicationSpecification()
 		{}
