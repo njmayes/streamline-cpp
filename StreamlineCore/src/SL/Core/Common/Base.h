@@ -68,20 +68,29 @@ namespace sl {
 	{
 		return detail::HashCombine( 0, std::forward< Args >( args )... );
 	}
-
-	constexpr unsigned long long operator "" _KB( unsigned long long value )
-	{
-		static_assert( sizeof( unsigned long long ) >= 8, "Literal operator _KB requires at least 64-bit unsigned long long" );
-		return value * 1024;
-	}
-
-	constexpr unsigned long long operator"" _MB( unsigned long long value )
-	{
-		return value * 1024 * 1024;
-	}
-
-	constexpr unsigned long long operator"" _GB( unsigned long long value )
-	{
-		return value * 1024 * 1024 * 1024;
-	}
 } // namespace sl
+
+
+consteval sl::Byte operator"" _byte( unsigned long long value )
+{
+	if ( value > 0xFF )
+		throw "Byte literal out of range";
+
+	return sl::Byte( value );
+}
+
+constexpr unsigned long long operator"" _KB( unsigned long long value )
+{
+	static_assert( sizeof( unsigned long long ) >= 8, "Literal operator _KB requires at least 64-bit unsigned long long" );
+	return value * 1024;
+}
+
+constexpr unsigned long long operator"" _MB( unsigned long long value )
+{
+	return value * 1024 * 1024;
+}
+
+constexpr unsigned long long operator"" _GB( unsigned long long value )
+{
+	return value * 1024 * 1024 * 1024;
+}
