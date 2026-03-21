@@ -15,7 +15,7 @@ namespace sl::ui {
 		template < typename MenuBarT >
 		MenuBarT& AddMenuItemActionImpl( MenuBarT& bar, std::vector< MenuHeading >& items, std::string_view label, std::string_view shortcut, Action<>&& action )
 		{
-			SL_ASSERT( !items.empty(), "Menu item added without a heading" );
+			SL_VERIFY( !items.empty(), "Menu item added without a heading" );
 			MenuHeading& last_menu = items.back();
 			last_menu.menu.emplace_back( MenuItemType::Action, label, shortcut, std::move( action ) );
 			return bar;
@@ -24,7 +24,7 @@ namespace sl::ui {
 		template < typename MenuBarT >
 		MenuBarT& AddMenuItemSwitchImpl( MenuBarT& bar, std::vector< MenuHeading >& items, std::string_view label, std::string_view shortcut, bool& show )
 		{
-			SL_ASSERT( !items.empty(), "Menu item added without a heading" );
+			SL_VERIFY( !items.empty(), "Menu item added without a heading" );
 			MenuHeading& last_menu = items.back();
 			last_menu.menu.emplace_back( MenuItemType::Switch, label, shortcut, show );
 			return bar;
@@ -40,7 +40,7 @@ namespace sl::ui {
 			Action<>&& action
 		)
 		{
-			SL_ASSERT( !items.empty(), "Menu item added without a heading" );
+			SL_VERIFY( !items.empty(), "Menu item added without a heading" );
 			MenuHeading& last_menu = items.back();
 			last_menu.menu.emplace_back( MenuItemType::Selectable, label, shortcut, selected, std::move( action ) );
 			return bar;
@@ -49,7 +49,7 @@ namespace sl::ui {
 		template < typename MenuBarT >
 		MenuBarT& AddSeparatorImpl( MenuBarT& bar, std::vector< MenuHeading >& items )
 		{
-			SL_ASSERT( !items.empty(), "Menu item added without a heading" );
+			SL_VERIFY( !items.empty(), "Menu item added without a heading" );
 			MenuHeading& last_menu = items.back();
 			last_menu.menu.emplace_back( MenuItemType::Separator );
 			return bar;

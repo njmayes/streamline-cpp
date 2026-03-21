@@ -21,7 +21,7 @@ namespace sl {
 
 	void PixelBuffer::Lock()
 	{
-		SL_ASSERT( !mLocked, "Buffer memory already mapped!" );
+		SL_VERIFY( !mLocked, "Buffer memory already mapped!" );
 
 		mLocked = true;
 
@@ -29,19 +29,19 @@ namespace sl {
 		glBufferData( GL_PIXEL_UNPACK_BUFFER, mSize, nullptr, GL_STREAM_DRAW );
 		void* data = glMapBuffer( GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY );
 
-		SL_ASSERT( data, "Could not read data from pixel buffer!" );
+		SL_VERIFY( data, "Could not read data from pixel buffer!" );
 		mPixels = static_cast< Pixel* >( data );
 	}
 
 	void PixelBuffer::Unlock()
 	{
-		SL_ASSERT( mLocked, "Buffer memory not mapped!" );
+		SL_VERIFY( mLocked, "Buffer memory not mapped!" );
 
 		mLocked = false;
 
 		glBindBuffer( GL_PIXEL_UNPACK_BUFFER, mRendererID );
 		int success = glUnmapBuffer( GL_PIXEL_UNPACK_BUFFER );
-		SL_ASSERT( success, "Could not unmap buffer" );
+		SL_VERIFY( success, "Could not unmap buffer" );
 
 		glTextureSubImage2D( mTexture->GetTextureID(), 0, 0, 0, mWidth, mHeight, GL_RGBA, GL_UNSIGNED_BYTE, 0 );
 		glBindBuffer( GL_PIXEL_UNPACK_BUFFER, 0 );
@@ -54,25 +54,25 @@ namespace sl {
 
 	Pixel& PixelBuffer::At( size_t x, size_t y )
 	{
-		SL_ASSERT( mLocked, "Buffer must be locked!" );
+		SL_VERIFY( mLocked, "Buffer must be locked!" );
 		return mPixels[ MAP( x, y ) ];
 	}
 
 	const Pixel& PixelBuffer::At( size_t x, size_t y ) const
 	{
-		SL_ASSERT( mLocked, "Buffer must be locked!" );
+		SL_VERIFY( mLocked, "Buffer must be locked!" );
 		return mPixels[ MAP( x, y ) ];
 	}
 
 	void PixelBuffer::Set( const Pixel& colour )
 	{
-		SL_ASSERT( mLocked, "Buffer must be locked!" );
+		SL_VERIFY( mLocked, "Buffer must be locked!" );
 		std::fill_n( mPixels, mWidth * mHeight, colour );
 	}
 
 	void PixelBuffer::Set( const Pixel& colour, size_t size, size_t offset )
 	{
-		SL_ASSERT( mLocked, "Buffer must be locked!" );
+		SL_VERIFY( mLocked, "Buffer must be locked!" );
 		std::fill_n( mPixels + offset, size, colour );
 	}
 } // namespace sl

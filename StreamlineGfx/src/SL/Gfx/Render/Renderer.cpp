@@ -34,7 +34,7 @@ namespace sl {
 				return;
 		}
 
-		SL_ASSERT( false, "Unknown severity level!" );
+		SL_FATAL_ERROR( "Unknown severity level!" );
 	}
 
 	void Renderer::Init()

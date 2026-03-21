@@ -6,7 +6,7 @@ namespace sl::detail {
 
 	bool RefTracker::IsTracked( void const* data )
 	{
-		SL_ASSERT( data, "Data is null!" );
+		SL_ASSERT( data, "Data should never be null here" );
 		return sRefSet.count( data ) != 0;
 	}
 
@@ -18,8 +18,10 @@ namespace sl::detail {
 
 	void RefTracker::RemoveFromReferenceTracker( void const* data )
 	{
-		SL_ASSERT( data, "Data is null!" );
-		SL_ASSERT( sRefSet.contains( data ), "Ref not being tracked!" );
-		sRefSet.erase( data );
+		SL_ASSERT( data, "Data should never be null here" );
+
+		auto it = sRefSet.find( data );
+		SL_ASSERT( it != sRefSet.end(), "Ref must always have been tracked" );
+		sRefSet.erase( it );
 	}
 } // namespace sl::detail

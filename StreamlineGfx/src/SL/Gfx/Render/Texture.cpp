@@ -33,7 +33,7 @@ namespace sl {
 
 		if ( stbi_failure_reason() )
 			log::Warn( "{0}", stbi_failure_reason() );
-		SL_ASSERT( data, "Failed to load image!" );
+		SL_VERIFY( data, "Failed to load image!" );
 
 		mWidth = width;
 		mHeight = height;
@@ -53,7 +53,7 @@ namespace sl {
 		mInternalFormat = internal_format;
 		mDataFormat = data_format;
 
-		SL_ASSERT( internal_format & data_format, "Format not supported!" );
+		SL_VERIFY( internal_format & data_format, "Format not supported!" );
 
 		glCreateTextures( GL_TEXTURE_2D, 1, &mRendererID );
 		glTextureStorage2D( mRendererID, 1, internal_format, mWidth, mHeight );
@@ -116,14 +116,14 @@ namespace sl {
 	void Texture2D::SetData( void* data, size_t size )
 	{
 		uint32_t bpp = mDataFormat == GL_RGBA ? 4 : 3;
-		SL_ASSERT( size == mWidth * mHeight * bpp, "Data must be entire texture!" );
+		SL_VERIFY( size == mWidth * mHeight * bpp, "Data must be entire texture!" );
 		glTextureSubImage2D( mRendererID, 0, 0, 0, mWidth, mHeight, mDataFormat, GL_UNSIGNED_BYTE, data );
 	}
 
 	void Texture2D::SetData( Buffer buffer )
 	{
 		uint32_t bpp = mDataFormat == GL_RGBA ? 4 : 3;
-		SL_ASSERT( buffer.Size() == mWidth * mHeight * bpp, "Data must be entire texture!" );
+		SL_VERIFY( buffer.Size() == mWidth * mHeight * bpp, "Data must be entire texture!" );
 		glTextureSubImage2D( mRendererID, 0, 0, 0, mWidth, mHeight, mDataFormat, GL_UNSIGNED_BYTE, buffer.Data() );
 	}
 

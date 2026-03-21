@@ -24,7 +24,6 @@ target_sources(streamline-core
 target_compile_definitions(streamline-core
     PUBLIC
         $<$<CONFIG:Debug>:SL_DEBUG=1>
-        $<$<CONFIG:Release>:SL_RELEASE=1>
 )
 
 # -------------------------------------------------------------

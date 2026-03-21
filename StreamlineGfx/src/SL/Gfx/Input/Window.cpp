@@ -29,7 +29,7 @@ namespace sl {
 			int monitor_count = 0;
 			GLFWmonitor** monitors = glfwGetMonitors( &monitor_count );
 
-			SL_ASSERT( monitors && monitor_count > 0, "No GLFW monitors were found!" );
+			SL_VERIFY( monitors && monitor_count > 0, "No GLFW monitors were found!" );
 
 			std::uint32_t index = monitor_index.value_or( 0u );
 			if ( index >= static_cast< std::uint32_t >( monitor_count ) )
@@ -45,10 +45,10 @@ namespace sl {
 			if ( !monitor )
 				monitor = glfwGetPrimaryMonitor();
 
-			SL_ASSERT( monitor, "Could not resolve target monitor!" );
+			SL_VERIFY( monitor, "Could not resolve target monitor!" );
 
 			const GLFWvidmode* mode = glfwGetVideoMode( monitor );
-			SL_ASSERT( mode, "Could not query monitor video mode!" );
+			SL_VERIFY( mode, "Could not query monitor video mode!" );
 
 			return {
 				.monitor = monitor,
@@ -118,7 +118,7 @@ namespace sl {
 		if ( sGLFWWindowCount == 0 )
 		{
 			const int success = glfwInit();
-			SL_ASSERT( success, "Could not initialize GLFW!" );
+			SL_VERIFY( success, "Could not initialize GLFW!" );
 			glfwSetErrorCallback( GLFWErrorCallback );
 		}
 
@@ -195,7 +195,7 @@ namespace sl {
 		);
 		++sGLFWWindowCount;
 
-		SL_ASSERT( mWindow, "Could not create GLFW window!" );
+		SL_VERIFY( mWindow, "Could not create GLFW window!" );
 
 		if ( props.mode == WindowMode::BorderlessFullscreen )
 		{
@@ -217,7 +217,7 @@ namespace sl {
 		glfwMakeContextCurrent( mWindow );
 
 		const int status = gladLoadGL( glfwGetProcAddress );
-		SL_ASSERT( status, "Failed to initialize Glad!" );
+		SL_VERIFY( status, "Failed to initialize Glad!" );
 
 		log::Info( "OpenGL Info:" );
 		log::Info( "\tVendor: {0}", reinterpret_cast< const char* >( glGetString( GL_VENDOR ) ) );

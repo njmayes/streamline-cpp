@@ -71,7 +71,7 @@ namespace sl {
 		void BindColourAttachment( uint32_t index = 0 ) const;
 		uint32_t GetColourAttachmentRendererID( uint32_t index = 0 ) const
 		{
-			SL_ASSERT( index < mColourAttachments.size() );
+			SL_VERIFY( index < mColourAttachments.size() );
 			return mColourAttachments[ index ];
 		}
 

@@ -25,8 +25,7 @@ namespace sl {
 			if ( type == "fragment" || type == "pixel" )
 				return GL_FRAGMENT_SHADER;
 
-			SL_ASSERT( false, "Unknown shader type!" );
-			return 0;
+			SL_FATAL_ERROR( "Unknown shader type!" );
 		}
 
 		static shaderc_shader_kind GLShaderStageToShaderC( GLenum stage )
@@ -38,8 +37,8 @@ namespace sl {
 				case GL_FRAGMENT_SHADER:
 					return shaderc_glsl_fragment_shader;
 			}
-			SL_ASSERT( false );
-			return ( shaderc_shader_kind )0;
+
+			SL_FATAL_ERROR( "Unknown shader stage!" );
 		}
 
 		static const char* GLShaderStageToString( GLenum stage )
@@ -51,8 +50,8 @@ namespace sl {
 				case GL_FRAGMENT_SHADER:
 					return "GL_FRAGMENT_SHADER";
 			}
-			SL_ASSERT( false );
-			return nullptr;
+
+			SL_FATAL_ERROR( "Unknown shader stage!" );
 		}
 
 		static const char* GetCacheDirectory()
@@ -77,8 +76,8 @@ namespace sl {
 				case GL_FRAGMENT_SHADER:
 					return ".cached_opengl.frag";
 			}
-			SL_ASSERT( false );
-			return "";
+
+			SL_FATAL_ERROR( "Unknown shader extension!" );
 		}
 
 		static const char* GLShaderStageCachedVulkanFileExtension( uint32_t stage )
@@ -90,8 +89,8 @@ namespace sl {
 				case GL_FRAGMENT_SHADER:
 					return ".cached_vulkan.frag";
 			}
-			SL_ASSERT( false );
-			return "";
+
+			SL_FATAL_ERROR( "Unknown shader extension!" );
 		}
 	} // namespace Utils
 
@@ -146,13 +145,13 @@ namespace sl {
 		while ( pos != std::string::npos )
 		{
 			size_t eol = source.find_first_of( "\r\n", pos );
-			SL_ASSERT( eol != std::string::npos, "Shader syntax error!" );
+			SL_VERIFY( eol != std::string::npos, "Shader syntax error!" );
 			size_t begin = pos + type_token_length + 1;
 			std::string type( source.substr( begin, eol - begin ) );
-			SL_ASSERT( Utils::ShaderTypeFromString( type ), "Invalid shader type given!" );
+			SL_VERIFY( Utils::ShaderTypeFromString( type ), "Invalid shader type given!" );
 
 			size_t nextLinePos = source.find_first_not_of( "\r\n", eol );
-			SL_ASSERT( nextLinePos != std::string::npos, "Shader syntax error!" );
+			SL_VERIFY( nextLinePos != std::string::npos, "Shader syntax error!" );
 			pos = source.find( type_token, nextLinePos );
 			shader_sources[ Utils::ShaderTypeFromString( type ) ] = ( pos == std::string::npos ) ? source.substr( nextLinePos ) : source.substr( nextLinePos, pos - nextLinePos );
 		}
@@ -196,7 +195,7 @@ namespace sl {
 				if ( module.GetCompilationStatus() != shaderc_compilation_status_success )
 				{
 					log::Error( module.GetErrorMessage() );
-					SL_ASSERT( false );
+					SL_FATAL_ERROR();
 				}
 
 				shader_data[ stage ] = std::vector< uint32_t >( module.cbegin(), module.cend() );
@@ -257,7 +256,7 @@ namespace sl {
 				if ( module.GetCompilationStatus() != shaderc_compilation_status_success )
 				{
 					log::Error( module.GetErrorMessage() );
-					SL_ASSERT( false );
+					SL_FATAL_ERROR();
 				}
 
 				shader_data[ stage ] = std::vector< uint32_t >( module.cbegin(), module.cend() );

@@ -46,8 +46,7 @@ namespace sl {
 	void Application::Run( ApplicationFactory make_app, CommandLineArgs args )
 	{
 		Application* app = make_app( std::move( args ) );
-		if ( !app )
-			throw std::runtime_error( "No application instance was created!" );
+		SL_VERIFY( app, "No application instance was created!" );
 
 		while ( sInstance->mState.running )
 		{
