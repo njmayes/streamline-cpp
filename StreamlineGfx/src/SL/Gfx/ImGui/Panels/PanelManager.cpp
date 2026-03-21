@@ -35,4 +35,4 @@ namespace sl {
 			Widgets::EndWindow();
 		}
 	}
-} // namespace Laby
+} // namespace sl

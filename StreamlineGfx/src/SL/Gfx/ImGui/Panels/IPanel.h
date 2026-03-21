@@ -20,4 +20,4 @@ namespace sl {
 
 	template < typename T >
 	concept IsPanel = DerivedFromOnly< IPanel, T >;
-} // namespace Laby
+} // namespace sl

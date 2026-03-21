@@ -62,4 +62,4 @@ namespace sl {
 	private:
 		std::vector< PanelEntry > mEditorPanels;
 	};
-} // namespace Laby
+} // namespace sl

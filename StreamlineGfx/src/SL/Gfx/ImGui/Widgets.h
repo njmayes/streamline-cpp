@@ -171,14 +171,13 @@ namespace sl {
 		{
 			field = FloatEditInternal( label, field, speed, min, max );
 		}
-		template < typename Func >
-			requires IsAction< float >
-		static void FloatEdit( std::string_view label, float field, Func&& onEdit, float speed = 1.0f, float min = 0.0f, float max = 0.0f )
+
+		static void FloatEdit( std::string_view label, float field, Action< float > on_edit, float speed = 1.0f, float min = 0.0f, float max = 0.0f )
 		{
 			float result = FloatEditInternal( label, field, speed, min, max );
 
 			if ( field != result )
-				onEdit( result );
+				on_edit( result );
 		}
 
 		template < VecSized< ImVec2 > T >
@@ -303,9 +302,9 @@ namespace sl {
 				elseAction();
 		}
 
-		static void Checkbox( std::string_view label, bool& value, IsAction auto&& action = {} )
+		static void Checkbox( std::string_view label, bool& value, Action<> action = {} )
 		{
-			if ( CheckboxInternal( label, value ) )
+			if ( CheckboxInternal( label, value ) and action )
 			{
 				action();
 			}

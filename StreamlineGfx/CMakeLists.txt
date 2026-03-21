@@ -115,6 +115,30 @@ target_link_libraries(imgui_glfw
         glad_gl_core_46
 )
 
+# -------------------------
+# ImGuizmo
+# -------------------------
+
+FetchContent_Declare(
+    imguizmo
+    GIT_REPOSITORY https://github.com/CedricGuillemet/ImGuizmo.git
+    GIT_TAG        master
+)
+FetchContent_MakeAvailable(imguizmo)
+
+add_library(imguizmo STATIC
+    ${imguizmo_SOURCE_DIR}/ImGuizmo.cpp
+)
+
+target_include_directories(imguizmo
+    PUBLIC
+        ${imguizmo_SOURCE_DIR}
+)
+target_link_libraries(imguizmo
+    PUBLIC
+        imgui_glfw
+)
+
 # Attach gfx deps to streamline-gfx
 target_link_libraries(streamline-gfx
     PUBLIC
@@ -122,6 +146,7 @@ target_link_libraries(streamline-gfx
         glfw
         glad_gl_core_46
         imgui_glfw
+        imguizmo
 )
 
 # -------------------------------------------------------------
