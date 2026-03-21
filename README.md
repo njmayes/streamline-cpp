@@ -43,7 +43,7 @@ All options are disabled by default.
 CMakeLists.txt
 ```cmake
 set(STREAMLINE_BUILD_GFX ON CACHE BOOL "Build gfx lib" FORCE)
-set(STREAMLINE_BUILD_GFX ON CACHE BOOL "Build net lib" FORCE)
+set(STREAMLINE_BUILD_NET ON CACHE BOOL "Build net lib" FORCE)
 set(STREAMLINE_BUILD_TEST_APP OFF CACHE BOOL "Don't build test app" FORCE)
 set(STREAMLINE_BUILD_BENCHMARK OFF CACHE BOOL "Don't build benchmarking app" FORCE)
 
