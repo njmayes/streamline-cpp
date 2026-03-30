@@ -57,15 +57,6 @@ namespace sl::detail {
 	struct IsEnumMatchCaseHandler< EnumMatchCaseHandler< E, F > > : std::true_type
 	{};
 
-	template < typename... Fs >
-	struct Overload : Fs...
-	{
-		using Fs::operator()...;
-	};
-
-	template < typename... Fs >
-	Overload( Fs... ) -> Overload< Fs... >;
-
 	template < typename T >
 	struct IsOverload : std::false_type
 	{};

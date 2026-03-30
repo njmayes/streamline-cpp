@@ -16,7 +16,10 @@ namespace sl {
 
 	using ApplicationFactory = std::function< Application*( CommandLineArgs ) >;
 
-	class ApplicationLayer : public IEventListener
+	using ApplicationEventRuntime = EventRuntimeMTOrdered< CoreEventList >;
+	using ApplicationEventListener = typename ApplicationEventRuntime::Listener;
+
+	class ApplicationLayer : public ApplicationEventListener
 	{
 	public:
 		virtual ~ApplicationLayer() = default;
@@ -34,7 +37,6 @@ namespace sl {
 		concept IsLayer = DerivedFromOnly< T, ApplicationLayer >;
 
 		using LayerStack = std::vector< Ref< ApplicationLayer > >;
-
 
 		template < typename T, typename... Args >
 		concept AppSystem = requires( Args&&... args ) { T::Init(std::forward<Args>(args)...); T::Shutdown(); };
@@ -64,11 +66,9 @@ namespace sl {
 		{}
 	};
 
-	class Application : public IEventListener
+	class Application : public ApplicationEventListener
 	{
 	public:
-		SL_LISTENING_EVENTS( None )
-
 		static void Run( ApplicationFactory factory, CommandLineArgs args );
 
 	public:
@@ -150,7 +150,7 @@ namespace sl {
 		static void BlockEvents( bool block );
 		static bool AreEventsBlocked();
 
-		template < IsEventListener T, typename... Args >
+		template < typename T, typename... Args >
 		static Ref< T > CreateEventListener( Args&&... args )
 		{
 			if ( not sInstance )
@@ -159,7 +159,8 @@ namespace sl {
 			return sInstance->mEventRuntime->CreateListener< T >( std::forward< Args >( args )... );
 		}
 
-		template < IsEvent TEvent, typename... TArgs >
+		template < typename TEvent, typename... TArgs >
+			requires IsRuntimeEvent< ApplicationEventRuntime::EventList, TEvent >
 		static void PostEvent( TArgs&&... args )
 		{
 			if ( not sInstance )
@@ -186,7 +187,7 @@ namespace sl {
 		detail::LayerStack mLayerStack;
 		detail::AppSystemCleanups mAppSystems;
 
-		Box< EventRuntime > mEventRuntime;
+		Box< ApplicationEventRuntime > mEventRuntime;
 
 	private:
 		inline static Application* sInstance = nullptr;

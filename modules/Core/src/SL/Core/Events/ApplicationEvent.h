@@ -4,56 +4,46 @@
 
 namespace sl {
 
-	struct WindowResizeEvent : public EventBase
+	struct WindowResizeEvent
 	{
 		unsigned width, height;
 
 		WindowResizeEvent( unsigned w, unsigned h )
 			: width( w ), height( h )
 		{}
-
-		SL_EVENT_DATA_TYPE( WindowResize )
 	};
 
-	struct WindowCloseEvent : public EventBase
+	struct WindowCloseEvent
 	{
-		SL_EVENT_DATA_TYPE( WindowClose )
 	};
 
-	struct WindowFocusEvent : public EventBase
+	struct WindowFocusEvent
 	{
-		SL_EVENT_DATA_TYPE( WindowFocus )
 	};
 
-	struct WindowFocusLostEvent : public EventBase
+	struct WindowFocusLostEvent
 	{
-		SL_EVENT_DATA_TYPE( WindowLostFocus )
 	};
 
-	struct WindowMovedEvent : public EventBase
+	struct WindowMovedEvent
 	{
 		unsigned xpos, ypos;
 
 		WindowMovedEvent( unsigned x, unsigned y )
 			: xpos( x ), ypos( y )
 		{}
-
-		SL_EVENT_DATA_TYPE( WindowMoved )
 	};
 
 
-	struct AppTickEvent : public EventBase
+	struct AppTickEvent
 	{
-		SL_EVENT_DATA_TYPE( AppTick )
 	};
 
-	struct AppUpdateEvent : public EventBase
+	struct AppUpdateEvent
 	{
-		SL_EVENT_DATA_TYPE( AppUpdate )
 	};
 
-	struct AppRenderEvent : public EventBase
+	struct AppRenderEvent
 	{
-		SL_EVENT_DATA_TYPE( AppRender )
 	};
 } // namespace sl

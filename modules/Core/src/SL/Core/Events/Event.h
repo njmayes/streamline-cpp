@@ -1,177 +1,196 @@
 #pragma once
 
-#include "EventTypes.h"
-#include "SL/Core/Allocators/LinearAllocator.h"
+#include "SL/Core/Common/Reflection.h"
+
+#include <functional>
+#include <type_traits>
+#include <utility>
+#include <variant>
 
 namespace sl {
 
-	class IEventListener;
-	
-	template < typename T >
-	concept IsEventListener = DerivedFromOnly< T, IEventListener >;
-
-	/// <summary>
-	/// The base class for all events that contains metadata like the event type and
-	/// whether the event has been handled. Metadata only accessible from EventConcept.
-	/// </summary>
-	struct EventBase
+	enum class EventRuntimeMode
 	{
-	private:
-		bool handled = false;
-		EventTypeFlag type = EventType::None;
-
-		friend struct EventConcept;
+		SingleThreaded,
+		MultiThreaded
 	};
 
-#define SL_EVENT_DATA_TYPE( type )             \
-	static ::sl::EventTypeFlag GetStaticType() \
-	{                                           \
-		return EventType::type;                 \
+	enum class EventOrdering
+	{
+		Unordered,
+		GlobalOrdered
+	};
+
+	template <
+		typename TEventList,
+		EventRuntimeMode Mode,
+		EventOrdering Ordering >
+	class BasicEventRuntime;
+
+	template < typename TRuntime >
+	class BasicEventListener;
+
+	template < typename TEventList >
+	struct EventRecord;
+
+	template < typename TEventList >
+	class EventView;
+
+	template < typename T >
+	concept IsEventList =
+		requires {
+			typename T::TupleType;
+			typename T::VariantType;
+			{ T::Size } -> std::convertible_to< size_t >;
+		};
+
+	template < typename TEventList, typename TEvent >
+	concept IsRuntimeEvent =
+		IsEventList< TEventList > &&
+		TEventList::template Contains< TEvent >;
+
+
+	namespace detail {
+
+		template < typename Func, typename TEvent >
+		concept DispatchFunctorForEvent =
+			std::is_invocable_v< Func, TEvent& > &&
+			( std::same_as< std::invoke_result_t< Func, TEvent& >, bool > ||
+			  std::same_as< std::invoke_result_t< Func, TEvent& >, void > );
+
+		template < typename TEventList, typename Func, size_t... Is >
+		consteval bool IsDispatchFunctorForListImpl( std::index_sequence< Is... > )
+		{
+			return ( ... || DispatchFunctorForEvent< Func, typename TEventList::template Type< Is > > );
+		}
+
+		template < typename TEventList, typename Func >
+		concept IsDispatchFunctor =
+			IsEventList< TEventList > &&
+			IsDispatchFunctorForListImpl< TEventList, std::remove_cvref_t< Func > >(
+				std::make_index_sequence< TEventList::Size >{}
+			);
+
+		struct OrderedEventTag
+		{
+			explicit OrderedEventTag() = default;
+		};
+
+		inline constexpr OrderedEventTag ordered_event{};
+	} // namespace detail
+
+	template < typename TEventList >
+	struct EventRecord
+	{
+		static_assert( IsEventList< TEventList >, "TEventList must satisfy IsEventList" );
+
+		using EventList = TEventList;
+		using Variant = typename EventList::VariantType;
+
+		Variant data;
+		bool handled = false;
+		std::uint64_t sequence = 0;
+
+		EventRecord() = default;
+
+		template < typename TEvent, typename... Args >
+			requires IsRuntimeEvent< TEventList, TEvent > && std::constructible_from< TEvent, Args... >
+		explicit EventRecord( std::in_place_type_t< TEvent >, Args&&... args )
+			: data( std::in_place_type< TEvent >, std::forward< Args >( args )... )
+		{
+		}
+
+		template < typename TEvent, typename... Args >
+			requires IsRuntimeEvent< TEventList, TEvent > && std::constructible_from< TEvent, Args... >
+		explicit EventRecord( std::in_place_type_t< TEvent >, detail::OrderedEventTag, std::uint64_t seq, Args&&... args )
+			: data( std::in_place_type< TEvent >, std::forward< Args >( args )... )
+			, sequence( seq )
+		{
+		}
+	};
+
+	template < typename Instance, typename MemFn >
+		requires std::is_member_function_pointer_v< std::remove_cvref_t< MemFn > >
+	static auto BindDispatch( Instance* instance, MemFn&& fn )
+	{
+		return [ instance, fn = std::forward< MemFn >( fn ) ]< typename TEvent >( TEvent& event ) -> decltype( auto )
+				   requires requires { std::invoke( fn, instance, event ); }
+		{
+			return std::invoke( fn, instance, event );
+		};
 	}
 
-	/// <summary>
-	/// Event types must derive from EventBase and implement a static function
-	/// that returns the event's type. Use the SL_EVENT_DATA_TYPE(type) macro
-	/// to help implement this.
-	/// </summary>
-	template < typename T >
-	concept IsEvent = DerivedFromOnly< T, EventBase > and LinearAllocatable< T> and requires {
-		{ T::GetStaticType() } -> std::same_as< EventTypeFlag >;
-	};
-
-	/// <summary>
-	/// Type erasure interface base class with access methods for metadata.
-	/// </summary>
-	struct EventConcept
+	template < typename TEventList >
+	class EventView
 	{
-		EventConcept( EventBase* base )
-			: metadata( base )
-		{}
+		static_assert( IsEventList< TEventList >, "TEventList must satisfy IsEventList" );
 
-		bool Handled() const
-		{
-			return metadata->handled;
-		}
-		EventTypeFlag Type() const
-		{
-			return metadata->type;
-		}
-
-	protected:
-		template < IsEvent T >
-		void SetType()
-		{
-			metadata->type = T::GetStaticType();
-		}
-
-		void SetHandled( bool handled = true )
-		{
-			metadata->handled = handled;
-		}
-
-	private:
-		EventBase* metadata;
-
-		friend class Event;
-	};
-
-
-	/// <summary>
-	/// Implementation of type erased event model for a given event type.
-	/// Stores event data and implements interface to access event metadata.
-	/// </summary>
-	/// <typeparam name="T">The event type this class models</typeparam>
-	template < IsEvent T >
-	struct EventModel final : public EventConcept
-	{
-		template < typename... Args >
-			requires std::constructible_from< T, Args... >
-		EventModel( Args&&... args )
-			: EventConcept( &object ), object( std::forward< Args >( args )... )
-		{
-			SetType< T >();
-		}
-
-	private:
-		T object;
-
-		friend class Event;
-	};
-
-	/// <summary>
-	/// Type erased event class. Contains a pointer to the base event concept
-	/// which is allocated externally in EventModelAllocator and passed in.
-	/// Used to dispatch the event to a passed function.
-	/// </summary>
-	class Event
-	{
 	public:
-		Event() = default;
+		using EventList = TEventList;
+		using Record = EventRecord< EventList >;
 
-		template < IsEvent T >
-		Event( EventModel< T >& event )
-			: mImpl( &event )
+		EventView() = default;
+
+		explicit EventView( Record& record )
+			: mRecord( &record )
 		{
 		}
 
-		/// <summary>
-		/// Pass a predicate invocable object that takes an event type reference
-		/// as a parameter. Use the SL_BIND_EVENT_FUNC macro for assistance
-		/// binding member functions.
-		/// </summary>
-		template < IsEvent T, IsPredicate< T& > Func >
-		void Dispatch( Func&& func ) noexcept( noexcept( func( std::declval< T& >() ) ) )
+		template < typename... Funcs >
+			requires( sizeof...( Funcs ) > 0 ) && ( detail::IsDispatchFunctor< EventList, Funcs > && ... )
+		void Dispatch( Funcs&&... funcs )
 		{
-			if ( IsHandled() )
+			if ( !mRecord || mRecord->handled )
 				return;
 
-			if ( GetType() != T::GetStaticType() )
-				return;
+			auto visitor = Overload{ std::forward< Funcs >( funcs )... };
 
-			EventModel< T >* pImpl = static_cast< EventModel< T >* >( mImpl );
-			bool handled = func( pImpl->object );
+			std::visit(
+				[ & ]( auto& event ) {
+					using TEvent = std::remove_cvref_t< decltype( event ) >;
 
-			mImpl->SetHandled( handled );
-		}
+					if constexpr ( std::is_invocable_v< decltype( visitor ), TEvent& > )
+					{
+						using Result = std::invoke_result_t< decltype( visitor ), TEvent& >;
 
-		template < IsEvent T, typename Instance, typename MemFn >
-			requires std::is_member_function_pointer_v< std::remove_cvref_t< MemFn > >
-		void Dispatch( Instance* instance, MemFn&& func ) noexcept( noexcept( std::invoke( std::forward< MemFn >( func ), instance, std::declval< T& >() ) ) )
-		{
-			Dispatch< T >(
-				[ &instance, fn = std::forward< MemFn >( func ) ]( T& event ) -> bool {
-					return std::invoke( fn, instance, event );
-				}
+						if constexpr ( std::is_same_v< Result, bool > )
+						{
+							mRecord->handled = std::invoke( visitor, event );
+						}
+						else
+						{
+							std::invoke( visitor, event );
+						}
+					}
+				},
+				mRecord->data
 			);
 		}
 
 		bool IsHandled() const
 		{
-			return mImpl->Handled();
-		}
-		EventTypeFlag GetType() const
-		{
-			return mImpl->Type();
+			return mRecord && mRecord->handled;
 		}
 
-		operator bool() const
+		explicit operator bool() const
 		{
-			return mImpl != nullptr;
+			return mRecord != nullptr;
 		}
 
 	private:
-		// Handled flag should not be set by the user manually. It should be handled using the Dispatch method instead.
-		// Exception is that ImGuiController has specialised behaviour and needs to be able to set the handled flag
-		// more generally than for individual event types.
 		void SetHandled( bool handled = true )
 		{
-			mImpl->SetHandled( handled );
+			if ( mRecord )
+				mRecord->handled = handled;
 		}
+
+		template < typename >
+		friend class BasicEventListener;
 
 		friend class ImGuiController;
 
 	private:
-		EventConcept* mImpl;
+		Record* mRecord = nullptr;
 	};
 
 } // namespace sl

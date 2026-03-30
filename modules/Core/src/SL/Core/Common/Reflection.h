@@ -7,7 +7,11 @@
 #include <string_view>
 #include <source_location>
 
-#define SL_FUNC_SIG_STRING std::string_view{ std::source_location::current().function_name() }
+#define SL_FUNC_SIG_STRING                              \
+	std::string_view                                    \
+	{                                                   \
+		std::source_location::current().function_name() \
+	}
 
 namespace sl {
 
@@ -107,27 +111,103 @@ namespace sl {
 		A type list for inspecting a list of types.
 	*/
 
+	/*
+			A type list for inspecting a list of types.
+			Nested TypeList arguments are flattened automatically.
+		*/
+
 	template < typename... Ts >
-	struct TypeList
-	{
-		static constexpr size_t Size = sizeof...( Ts );
+	struct TypeList;
 
-		using TupleType = std::tuple< Ts... >;
-		using VariantType = std::variant< Ts... >;
-		using VariantTypeWithMonostate = std::variant< std::monostate, Ts... >;
+	namespace detail {
 
-		template < typename R >
-		static constexpr bool Contains = std::disjunction_v< std::is_same< R, Ts >... >;
+		template < typename T >
+		struct IsTypeListImpl : std::false_type
+		{};
 
-		template < typename R >
-		static constexpr size_t Index = detail::IndexFunction< 0, R, TupleType >();
+		template < typename... Ts >
+		struct IsTypeListImpl< TypeList< Ts... > > : std::true_type
+		{};
 
-		template < size_t I >
-		using Type = std::tuple_element< I, TupleType >::type;
+		template < typename T >
+		inline constexpr bool IsTypeListV = IsTypeListImpl< std::remove_cvref_t< T > >::value;
 
-		template < size_t I >
-		using Traits = TypeTraits< typename std::tuple_element< I, TupleType >::type >;
-	};
+		template < typename... Ts >
+		struct TypeListStorage
+		{
+			static constexpr size_t Size = sizeof...( Ts );
+
+			using TupleType = std::tuple< Ts... >;
+			using VariantType = std::variant< Ts... >;
+			using VariantTypeWithMonostate = std::variant< std::monostate, Ts... >;
+
+			template < typename R >
+			static constexpr bool Contains = std::disjunction_v< std::is_same< R, Ts >... >;
+
+			template < typename R >
+			static constexpr size_t Index = IndexFunction< 0, R, TupleType >();
+
+			template < size_t I >
+			using Type = typename std::tuple_element< I, TupleType >::type;
+
+			template < size_t I >
+			using Traits = TypeTraits< typename std::tuple_element< I, TupleType >::type >;
+		};
+
+		template < typename... Ts >
+		struct TypeListCat;
+
+		template <>
+		struct TypeListCat<>
+		{
+			using Type = TypeListStorage<>;
+		};
+
+		template < typename T, typename... Rest >
+		struct TypeListCat< T, Rest... >
+		{
+		private:
+			using Head = TypeListStorage< T >;
+			using Tail = typename TypeListCat< Rest... >::Type;
+
+			template < typename H, typename TTail >
+			struct Merge;
+
+			template < typename... Hs, typename... Ts >
+			struct Merge< TypeListStorage< Hs... >, TypeListStorage< Ts... > >
+			{
+				using Type = TypeListStorage< Hs..., Ts... >;
+			};
+
+		public:
+			using Type = typename Merge< Head, Tail >::Type;
+		};
+
+		template < typename... Inner, typename... Rest >
+		struct TypeListCat< TypeList< Inner... >, Rest... >
+		{
+		private:
+			using Head = typename TypeListCat< Inner... >::Type;
+			using Tail = typename TypeListCat< Rest... >::Type;
+
+			template < typename H, typename TTail >
+			struct Merge;
+
+			template < typename... Hs, typename... Ts >
+			struct Merge< TypeListStorage< Hs... >, TypeListStorage< Ts... > >
+			{
+				using Type = TypeListStorage< Hs..., Ts... >;
+			};
+
+		public:
+			using Type = typename Merge< Head, Tail >::Type;
+		};
+
+	} // namespace detail
+
+	template < typename... Ts >
+	struct TypeList : detail::TypeListCat< Ts... >::Type
+	{};
 
 
 	/*
@@ -197,6 +277,16 @@ namespace sl {
 	concept Hash =
 		std::regular_invocable< const H&, const Key& > &&
 		std::convertible_to< std::invoke_result_t< const H&, const Key& >, std::size_t >;
+
+
+	template < typename... Fs >
+	struct Overload : Fs...
+	{
+		using Fs::operator()...;
+	};
+
+	template < typename... Fs >
+	Overload( Fs... ) -> Overload< Fs... >;
 
 
 	/*

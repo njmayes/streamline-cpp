@@ -6,26 +6,22 @@
 
 namespace sl {
 
-	struct NetworkInEvent : public EventBase
+	struct NetworkInEvent
 	{
 		sl::Buffer data;
 
 		NetworkInEvent( sl::Buffer payload )
 			: data( std::move( payload ) )
 		{}
-
-		SL_EVENT_DATA_TYPE( NetworkIn )
 	};
 
-	struct NetworkOutEvent : public EventBase
+	struct NetworkOutEvent
 	{
 		sl::Buffer data;
 
 		NetworkOutEvent( sl::Buffer payload )
 			: data( std::move( payload ) )
 		{}
-
-		SL_EVENT_DATA_TYPE( NetworkOut )
 	};
 
 }

@@ -1,18 +1,35 @@
 #pragma once
 
-#include "Event.h"
+#include "EventList.h"
 
 namespace sl {
 
-	class EventRuntime;
+	template <
+		typename TEventList,
+		EventRuntimeMode Mode,
+		EventOrdering Ordering >
+	class BasicEventRuntime;
 
-	class IEventListener : public RefCounted
+	template < typename TRuntime >
+	class BasicEventListener : public RefCounted
 	{
 	public:
-		virtual ~IEventListener();
+		using Runtime = TRuntime;
+		using EventList = typename Runtime::EventList;
+		using Event = typename Runtime::EventType;
 
-		virtual constexpr EventTypeFlag GetListeningEvents() const = 0;
+		static_assert( IsEventList< EventList >, "Runtime::EventList must satisfy IsEventList" );
+
+		using ListeningEvents = TypeList<>;
+
+		virtual ~BasicEventListener()
+		{
+			if ( mRuntime )
+				mRuntime->DeregisterListener( this );
+		}
+
 		virtual void OnEvent( Event& e ) = 0;
+
 		virtual void SetEventCondition( Predicate<>&& condition )
 		{
 			mAcceptCondition = std::move( condition );
@@ -20,26 +37,36 @@ namespace sl {
 
 		bool Accept( Event& event ) const
 		{
-			//   Not already handled			  Correct Event Type				 Satisfies optional extra condition
-			return !event.IsHandled() && ( GetListeningEvents() & event.GetType() ) && mAcceptCondition();
+			if ( event.IsHandled() )
+				return false;
+
+			bool accepts = false;
+
+			std::visit(
+				[ & ]( auto& concrete_event ) {
+					using TEvent = std::remove_cvref_t< decltype( concrete_event ) >;
+					accepts = ListeningEvents::template Contains< TEvent >;
+				},
+				event.mRecord->data
+			);
+
+			return accepts and mAcceptCondition();
 		}
 
 	private:
 		Predicate<> mAcceptCondition = []() { return true; };
 
-		friend class EventRuntime;
-		EventRuntime* mRuntime = nullptr;
+		template < typename, EventRuntimeMode, EventOrdering >
+		friend class BasicEventRuntime;
+
+		Runtime* mRuntime = nullptr;
 	};
 
-#define SL_MAKE_EVENT_FLAG( event ) ::sl::EventType::event
+#define SL_LISTENING_EVENTS( ... )                                 \
+private:                                                           \
+	using DeclaredListeningEvents = ::sl::TypeList< __VA_ARGS__ >; \
+                                                                   \
+public:                                                            \
+	using ListeningEvents = DeclaredListeningEvents;
 
-#define SL_LISTENING_EVENTS( ... )                                                                                  \
-	static constexpr ::sl::EventTypeFlag GetStaticType()                                                            \
-	{                                                                                                                \
-		return ::sl::detail::BuildEventTypeMask( SL_FOR_EACH_SEP( SL_MAKE_EVENT_FLAG, SL_COMMA, __VA_ARGS__ ) ); \
-	}                                                                                                                \
-	virtual constexpr ::sl::EventTypeFlag GetListeningEvents() const override                                       \
-	{                                                                                                                \
-		return GetStaticType();                                                                                      \
-	}
 } // namespace sl

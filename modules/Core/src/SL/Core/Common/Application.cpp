@@ -10,7 +10,7 @@ namespace sl {
 
 		sInstance = this;
 
-		mEventRuntime = MakeBox< EventRuntime >();
+		mEventRuntime = MakeBox< ApplicationEventRuntime >();
 
 		// Manually call RegisterListener for Application it is not created via EventRuntime::CreateListener
 		mEventRuntime->RegisterListener( this );

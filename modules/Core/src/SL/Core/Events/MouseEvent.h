@@ -6,47 +6,39 @@
 
 namespace sl {
 
-	struct MouseMovedEvent : public EventBase
+	struct MouseMovedEvent
 	{
 		float mouse_x, mouse_y;
 
 		MouseMovedEvent( float x, float y )
 			: mouse_x( x ), mouse_y( y )
 		{}
-
-		SL_EVENT_DATA_TYPE( MouseMoved )
 	};
 
-	struct MouseScrolledEvent : public EventBase
+	struct MouseScrolledEvent
 	{
 		float x_offset, y_offset;
 
 		MouseScrolledEvent( float x, float y )
 			: x_offset( x ), y_offset( y )
 		{}
-
-		SL_EVENT_DATA_TYPE( MouseScrolled )
 	};
 
-	struct MouseButtonPressedEvent : public EventBase
+	struct MouseButtonPressedEvent
 	{
 		MouseCode button;
 
 		MouseButtonPressedEvent( MouseCode mouse )
 			: button( mouse )
 		{}
-
-		SL_EVENT_DATA_TYPE( MouseButtonPressed )
 	};
 
-	struct MouseButtonReleasedEvent : public EventBase
+	struct MouseButtonReleasedEvent
 	{
 		MouseCode button;
 
 		MouseButtonReleasedEvent( MouseCode mouse )
 			: button( mouse )
 		{}
-
-		SL_EVENT_DATA_TYPE( MouseButtonReleased )
 	};
 } // namespace sl
