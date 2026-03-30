@@ -17,10 +17,10 @@ option(STREAMLINE_BUILD_NET "Build streamline-net (networking backends)" ON)
 option(STREAMLINE_BUILD_GFX "Build streamline-gfx (graphics/windowing backends)" ON)
 
 # Build the TestApp executable (example app)
-option(STREAMLINE_BUILD_TEST_APP "Build Streamline TestApp example" OFF)
+option(STREAMLINE_BUILD_TEST_APP "Build Streamline test app example" ON)
 
 # Build the benchmarking executable (testing)
-option(STREAMLINE_BUILD_BENCHMARK "Build Streamline benchmarking app" OFF)
+option(STREAMLINE_BUILD_BENCHMARK "Build Streamline benchmarking app" ON)
 
 if(NOT CMAKE_CONFIGURATION_TYPES)
     set(default_build_type "Debug")
@@ -38,21 +38,4 @@ if (MSVC)
     add_compile_options(/Zc:preprocessor)
 endif()
 
-add_subdirectory(StreamlineCore)
-
-if(STREAMLINE_BUILD_NET)
-    add_subdirectory(StreamlineNet)
-endif()
-
-if(STREAMLINE_BUILD_GFX)
-    add_subdirectory(StreamlineGfx)
-endif()
-
-
-if(STREAMLINE_BUILD_TEST_APP)
-    add_subdirectory(TestApp)
-endif()
-
-if(STREAMLINE_BUILD_BENCHMARK)
-    add_subdirectory(Benchmarking)
-endif()
+add_subdirectory(modules)

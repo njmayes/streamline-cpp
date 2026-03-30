@@ -1,6 +1,7 @@
 #pragma once
 
 #include "EventTypes.h"
+#include "SL/Core/Allocators/LinearAllocator.h"
 
 namespace sl {
 
@@ -34,7 +35,7 @@ namespace sl {
 	/// to help implement this.
 	/// </summary>
 	template < typename T >
-	concept IsEvent = DerivedFromOnly< T, EventBase > and requires {
+	concept IsEvent = DerivedFromOnly< T, EventBase > and LinearAllocatable< T> and requires {
 		{ T::GetStaticType() } -> std::same_as< EventTypeFlag >;
 	};
 
@@ -46,8 +47,6 @@ namespace sl {
 		EventConcept( EventBase* base )
 			: metadata( base )
 		{}
-
-		virtual ~EventConcept() = default;
 
 		bool Handled() const
 		{
@@ -135,7 +134,7 @@ namespace sl {
 			mImpl->SetHandled( handled );
 		}
 
-		template < IsEvent T, IsEventListener Instance, typename MemFn >
+		template < IsEvent T, typename Instance, typename MemFn >
 			requires std::is_member_function_pointer_v< std::remove_cvref_t< MemFn > >
 		void Dispatch( Instance* instance, MemFn&& func ) noexcept( noexcept( std::invoke( std::forward< MemFn >( func ), instance, std::declval< T& >() ) ) )
 		{

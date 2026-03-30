@@ -12,6 +12,9 @@ sl::Application* NetServerTest( sl::CommandLineArgs const& args )
 	auto spec = sl::Ref< sl::ApplicationSpecification >::Create();
 	spec->working_dir = "C:/Users/natha/Desktop/Coding/Projects/WIP/C++/streamline-cpp/TestApp";
 
+	spec->working_dir = "C:/Users/NMayes/Desktop/Reference/streamline-cpp/";
+	// spec->working_dir = "/mnt/c/Users/NMayes/Desktop/Reference/streamline-cpp/";
+
 	auto opts = sl::Read< ServerContextOptions >(
 		args,
 		sl::Field< ServerContextOptions >( "num_threads", 'n', &ServerContextOptions::num_threads, 1 ),
@@ -32,6 +35,9 @@ sl::Application* NetClientTest( sl::CommandLineArgs const& args )
 
 	auto spec = sl::Ref< sl::GuiApplicationSpecification >::Create();
 	spec->working_dir = "C:/Users/natha/Desktop/Coding/Projects/WIP/C++/streamline-cpp/TestApp";
+
+	spec->working_dir = "C:/Users/NMayes/Desktop/Reference/streamline-cpp/";
+	// spec->working_dir = "/mnt/c/Users/NMayes/Desktop/Reference/streamline-cpp/";
 
 	auto opts = sl::Read< ClientContextOptions >(
 		args,
@@ -64,6 +70,15 @@ sl::Application* CreateApplication( sl::CommandLineArgs args )
 
 int main( int argc, char** argv )
 {
+	auto test = sl::SmartError::Make< sl::Error::InvalidRandom >( 5 );
+
+	//test.Match(
+	//	sl::MatchCase< sl::Error::InvalidRandom >( []( char e ) {
+
+	//	} ),
+	//	sl::MatchDefault()
+	//);
+
 	try
 	{
 		sl::ReflectionTestFunc();

@@ -206,6 +206,10 @@ namespace sl {
 	template < typename T >
 	struct FunctionTraits;
 
+	template < typename T >
+	struct FunctionTraits : FunctionTraits< decltype( &T::operator() ) >
+	{};
+
 	// std::function specialisation
 	template < typename R, typename... Args >
 	struct FunctionTraits< std::function< R( Args... ) > >

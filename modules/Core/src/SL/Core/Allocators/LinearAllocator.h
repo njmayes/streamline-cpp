@@ -6,11 +6,15 @@
 
 namespace sl {
 
+	template< typename T >
+	concept LinearAllocatable = std::is_trivially_copyable_v< T > and std::is_trivially_destructible_v< T >;
+
 	/// <summary>
 	/// A simple arena allocator for objects of type T.
 	/// </summary>
 	/// <typeparam name="T"></typeparam>
 	template < typename T >
+		requires LinearAllocatable< T >
 	class LinearAllocator : public IAllocator
 	{
 	public:
@@ -40,11 +44,13 @@ namespace sl {
 			mMaxSize = other.mMaxSize;
 			mMemBlock = std::exchange( other.mMemBlock, nullptr );
 			mHead = other.mHead;
+
+			return *this;
 		}
 
 		bool CanAllocate( std::size_t size ) const override
 		{
-			return ( mHead + size ) < ( mMemBlock + mMaxSize );
+			return ( mHead + size ) <= ( mMemBlock + mMaxSize );
 		}
 
 		void ForceReallocate() override
@@ -82,7 +88,7 @@ namespace sl {
 			mMemBlock = static_cast< T* >( ::operator new( mMaxSize * sizeof( T ) ) );
 			mHead = mMemBlock + offset;
 
-			std::memcpy( mMemBlock, tmp, tmp_size );
+			std::memcpy( mMemBlock, tmp, tmp_size * sizeof( T ) );
 			::operator delete( tmp );
 		}
 

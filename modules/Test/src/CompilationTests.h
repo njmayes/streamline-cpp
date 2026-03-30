@@ -17,8 +17,7 @@ namespace sl {
 		sl::Case< Error::InvalidChar >,
 		sl::Case< Error::InvalidRandom, int >,
 		sl::Case< Error::TestB, int >,
-		sl::Case< Error::TestA, int >
-	>;
+		sl::Case< Error::TestA, int > >;
 
 	enum class Failure
 	{
@@ -27,7 +26,7 @@ namespace sl {
 
 	using SmartFailure = sl::SmartEnum<
 		Failure,
-		sl::Case< Failure::RandomFail > >;
+		sl::Case< Failure::RandomFail >>;
 
 	using FooResult = Result< int, SmartError >;
 	using BarResult = Result< float, SmartError >;
