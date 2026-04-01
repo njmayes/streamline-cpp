@@ -20,20 +20,19 @@ namespace sl {
 		inline constexpr EventTypeFlag BenchEventB = MakeBit( 25 );
 		inline constexpr EventTypeFlag BenchEventC = MakeBit( 26 );
 		inline constexpr EventTypeFlag BenchEventD = MakeBit( 27 );
-	}
+	} // namespace EventType
 
-} // namespace sl::EventType
+} // namespace sl
 
 namespace sl::bench {
 
 	struct EventBase
 	{
-
 	};
 
-#define SL_EVENT_DATA_TYPE( type )             \
+#define SL_EVENT_DATA_TYPE( type )       \
 	static EventTypeFlag GetStaticType() \
-	{                                          \
+	{                                    \
 		return EventType::type;          \
 	}
 

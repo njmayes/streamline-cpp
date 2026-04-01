@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <memory>
 #include <mutex>
+#include <new>
 #include <ranges>
 #include <span>
 #include <thread>
@@ -17,6 +18,11 @@ namespace sl {
 
 	template < typename TEventList, EventRuntimeMode Mode, EventOrdering Ordering >
 	struct EventRuntimeQueueTraits;
+
+	struct EventRuntimeConfig
+	{
+		std::size_t initial_buffer_size = 256;
+	};
 
 	template <
 		typename TEventList,
@@ -35,7 +41,16 @@ namespace sl {
 		using QueueState = typename QueueTraits::State;
 
 	public:
-		BasicEventRuntime() = default;
+		BasicEventRuntime()
+			: BasicEventRuntime( EventRuntimeConfig{} )
+		{
+		}
+
+		explicit BasicEventRuntime( EventRuntimeConfig config )
+			: mConfig( config )
+		{
+			QueueTraits::Initialize( *this );
+		}
 
 		~BasicEventRuntime()
 		{
@@ -72,6 +87,11 @@ namespace sl {
 		{
 			ApplyPendingListeners();
 			QueueTraits::Dispatch( *this );
+		}
+
+		const EventRuntimeConfig& GetConfig() const
+		{
+			return mConfig;
 		}
 
 	private:
@@ -113,21 +133,24 @@ namespace sl {
 			mListeners.old_listeners.push_back( listener );
 		}
 
+		void DispatchOne( EventRecordType& record )
+		{
+			EventType event( record );
+
+			for ( Listener* listener : mListeners.listeners )
+			{
+				if ( event.IsHandled() )
+					break;
+
+				if ( listener->Accept( event ) )
+					listener->OnEvent( event );
+			}
+		}
+
 		void DispatchSpan( std::span< EventRecordType > buffer )
 		{
 			for ( EventRecordType& record : buffer )
-			{
-				EventType event( record );
-
-				for ( Listener* listener : mListeners.listeners )
-				{
-					if ( event.IsHandled() )
-						break;
-
-					if ( listener->Accept( event ) )
-						listener->OnEvent( event );
-				}
-			}
+				DispatchOne( record );
 		}
 
 	private:
@@ -149,6 +172,7 @@ namespace sl {
 	private:
 		ListenerState mListeners{};
 		QueueState mQueues{};
+		EventRuntimeConfig mConfig{};
 	};
 
 	// ============================================================
@@ -164,13 +188,15 @@ namespace sl {
 		{
 			std::vector< EventRecordType > write_buffer;
 			std::vector< EventRecordType > dispatch_buffer;
-
-			State()
-			{
-				write_buffer.reserve( 64 );
-				dispatch_buffer.reserve( 64 );
-			}
 		};
+
+		template < typename Runtime >
+		static void Initialize( Runtime& runtime )
+		{
+			const std::size_t n = runtime.GetConfig().initial_buffer_size;
+			runtime.mQueues.write_buffer.reserve( n );
+			runtime.mQueues.dispatch_buffer.reserve( n );
+		}
 
 		template < typename Runtime, typename TEvent, typename... TArgs >
 		static void Post( Runtime& runtime, TArgs&&... args )
@@ -204,13 +230,15 @@ namespace sl {
 			std::vector< EventRecordType > write_buffer;
 			std::vector< EventRecordType > dispatch_buffer;
 			std::uint64_t next_sequence = 0;
-
-			State()
-			{
-				write_buffer.reserve( 64 );
-				dispatch_buffer.reserve( 64 );
-			}
 		};
+
+		template < typename Runtime >
+		static void Initialize( Runtime& runtime )
+		{
+			const std::size_t n = runtime.GetConfig().initial_buffer_size;
+			runtime.mQueues.write_buffer.reserve( n );
+			runtime.mQueues.dispatch_buffer.reserve( n );
+		}
 
 		template < typename Runtime, typename TEvent, typename... TArgs >
 		static void Post( Runtime& runtime, TArgs&&... args )
@@ -241,16 +269,28 @@ namespace sl {
 	{
 		using EventRecordType = EventRecord< TEventList >;
 
+		struct ThreadQueueControl
+		{
+			std::atomic< int > write_index;
+			std::atomic< bool > posting;
+
+			ThreadQueueControl()
+				: write_index( 0 )
+				, posting( false )
+			{
+			}
+		};
+
 		struct ThreadQueue
 		{
 			std::thread::id owner_thread_id{};
+			ThreadQueueControl control{};
 			std::vector< EventRecordType > buffers[ 2 ];
-			std::atomic< int > write_index = 0;
 
-			ThreadQueue()
+			explicit ThreadQueue( std::size_t initial_buffer_size )
 			{
-				buffers[ 0 ].reserve( 64 );
-				buffers[ 1 ].reserve( 64 );
+				buffers[ 0 ].reserve( initial_buffer_size );
+				buffers[ 1 ].reserve( initial_buffer_size );
 			}
 		};
 
@@ -263,15 +303,53 @@ namespace sl {
 
 		struct State
 		{
-			std::atomic< bool > dispatching = false;
-			std::atomic< std::uint32_t > active_posters = 0;
-
+			std::atomic< bool > dispatching{ false };
 			std::mutex registry_lock;
 			std::vector< std::unique_ptr< ThreadQueue > > queues;
+			std::shared_ptr< std::atomic< std::uint64_t > > generation;
 
-			std::shared_ptr< std::atomic< std::uint64_t > > generation =
-				std::make_shared< std::atomic< std::uint64_t > >( 1 );
+			State()
+				: generation( std::make_shared< std::atomic< std::uint64_t > >( 1 ) )
+			{
+			}
 		};
+
+		struct PostingScope
+		{
+			ThreadQueue* queue = nullptr;
+			bool armed = false;
+
+			explicit PostingScope( ThreadQueue& thread_queue )
+				: queue( &thread_queue )
+			{
+			}
+
+			void Enter()
+			{
+				queue->control.posting.store( true, std::memory_order_release );
+				armed = true;
+			}
+
+			void Leave()
+			{
+				if ( !armed )
+					return;
+
+				queue->control.posting.store( false, std::memory_order_release );
+				queue->control.posting.notify_one();
+				armed = false;
+			}
+
+			~PostingScope()
+			{
+				Leave();
+			}
+		};
+
+		template < typename Runtime >
+		static void Initialize( Runtime& )
+		{
+		}
 
 		template < typename Runtime >
 		static ThreadQueue& GetOrCreateThreadQueue( Runtime& runtime )
@@ -297,7 +375,7 @@ namespace sl {
 				}
 			}
 
-			auto queue = std::make_unique< ThreadQueue >();
+			auto queue = std::make_unique< ThreadQueue >( runtime.GetConfig().initial_buffer_size );
 			queue->owner_thread_id = thread_id;
 
 			ThreadQueue* queue_ptr = queue.get();
@@ -312,28 +390,28 @@ namespace sl {
 		template < typename Runtime, typename TEvent, typename... TArgs >
 		static void Post( Runtime& runtime, TArgs&&... args )
 		{
+			ThreadQueue& queue = GetOrCreateThreadQueue( runtime );
+			PostingScope posting_scope( queue );
+
 			for ( ;; )
 			{
 				while ( runtime.mQueues.dispatching.load( std::memory_order_acquire ) )
-					std::this_thread::yield();
+					runtime.mQueues.dispatching.wait( true, std::memory_order_relaxed );
 
-				runtime.mQueues.active_posters.fetch_add( 1, std::memory_order_acq_rel );
+				posting_scope.Enter();
 
 				if ( !runtime.mQueues.dispatching.load( std::memory_order_acquire ) )
 					break;
 
-				runtime.mQueues.active_posters.fetch_sub( 1, std::memory_order_acq_rel );
+				posting_scope.Leave();
 			}
 
-			ThreadQueue& queue = GetOrCreateThreadQueue( runtime );
-			const int write_index = queue.write_index.load( std::memory_order_relaxed );
+			const int write_index = queue.control.write_index.load( std::memory_order_relaxed );
 
 			queue.buffers[ write_index ].emplace_back(
 				std::in_place_type< TEvent >,
 				std::forward< TArgs >( args )...
 			);
-
-			runtime.mQueues.active_posters.fetch_sub( 1, std::memory_order_acq_rel );
 		}
 
 		template < typename Runtime >
@@ -341,17 +419,7 @@ namespace sl {
 		{
 			runtime.mQueues.dispatching.store( true, std::memory_order_release );
 
-			while ( runtime.mQueues.active_posters.load( std::memory_order_acquire ) != 0 )
-				std::this_thread::yield();
-
 			std::vector< ThreadQueue* > queues;
-			{
-				std::scoped_lock registry_lock( runtime.mQueues.registry_lock );
-				queues.reserve( runtime.mQueues.queues.size() );
-				for ( const auto& queue : runtime.mQueues.queues )
-					queues.push_back( queue.get() );
-			}
-
 			struct FrozenQueue
 			{
 				ThreadQueue* queue = nullptr;
@@ -359,16 +427,29 @@ namespace sl {
 			};
 
 			std::vector< FrozenQueue > frozen;
-			frozen.reserve( queues.size() );
 
-			for ( ThreadQueue* queue : queues )
 			{
-				const int old_write = queue->write_index.load( std::memory_order_relaxed );
-				queue->write_index.store( 1 - old_write, std::memory_order_relaxed );
-				frozen.push_back( FrozenQueue{ .queue = queue, .read_index = old_write } );
+				std::scoped_lock registry_lock( runtime.mQueues.registry_lock );
+
+				queues.reserve( runtime.mQueues.queues.size() );
+				for ( const auto& queue : runtime.mQueues.queues )
+					queues.push_back( queue.get() );
+
+				frozen.reserve( queues.size() );
+
+				for ( ThreadQueue* queue : queues )
+				{
+					while ( queue->control.posting.load( std::memory_order_acquire ) )
+						queue->control.posting.wait( true, std::memory_order_relaxed );
+
+					const int old_write = queue->control.write_index.load( std::memory_order_relaxed );
+					queue->control.write_index.store( 1 - old_write, std::memory_order_relaxed );
+					frozen.push_back( FrozenQueue{ .queue = queue, .read_index = old_write } );
+				}
 			}
 
 			runtime.mQueues.dispatching.store( false, std::memory_order_release );
+			runtime.mQueues.dispatching.notify_all();
 
 			for ( const FrozenQueue& frozen_queue : frozen )
 			{
@@ -388,16 +469,28 @@ namespace sl {
 	{
 		using EventRecordType = EventRecord< TEventList >;
 
+		struct ThreadQueueControl
+		{
+			std::atomic< int > write_index;
+			std::atomic< bool > posting;
+
+			ThreadQueueControl()
+				: write_index( 0 )
+				, posting( false )
+			{
+			}
+		};
+
 		struct ThreadQueue
 		{
 			std::thread::id owner_thread_id{};
+			ThreadQueueControl control{};
 			std::vector< EventRecordType > buffers[ 2 ];
-			std::atomic< int > write_index = 0;
 
-			ThreadQueue()
+			explicit ThreadQueue( std::size_t initial_buffer_size )
 			{
-				buffers[ 0 ].reserve( 64 );
-				buffers[ 1 ].reserve( 64 );
+				buffers[ 0 ].reserve( initial_buffer_size );
+				buffers[ 1 ].reserve( initial_buffer_size );
 			}
 		};
 
@@ -410,16 +503,54 @@ namespace sl {
 
 		struct State
 		{
-			std::atomic< bool > dispatching = false;
-			std::atomic< std::uint32_t > active_posters = 0;
-			std::atomic< std::uint64_t > next_sequence = 0;
-
+			std::atomic< bool > dispatching{ false };
+			std::atomic< std::uint64_t > ordering{ 0 };
 			std::mutex registry_lock;
 			std::vector< std::unique_ptr< ThreadQueue > > queues;
+			std::shared_ptr< std::atomic< std::uint64_t > > generation;
 
-			std::shared_ptr< std::atomic< std::uint64_t > > generation =
-				std::make_shared< std::atomic< std::uint64_t > >( 1 );
+			State()
+				: generation( std::make_shared< std::atomic< std::uint64_t > >( 1 ) )
+			{
+			}
 		};
+
+		struct PostingScope
+		{
+			ThreadQueue* queue = nullptr;
+			bool armed = false;
+
+			explicit PostingScope( ThreadQueue& thread_queue )
+				: queue( &thread_queue )
+			{
+			}
+
+			void Enter()
+			{
+				queue->control.posting.store( true, std::memory_order_release );
+				armed = true;
+			}
+
+			void Leave()
+			{
+				if ( !armed )
+					return;
+
+				queue->control.posting.store( false, std::memory_order_release );
+				queue->control.posting.notify_one();
+				armed = false;
+			}
+
+			~PostingScope()
+			{
+				Leave();
+			}
+		};
+
+		template < typename Runtime >
+		static void Initialize( Runtime& )
+		{
+		}
 
 		template < typename Runtime >
 		static ThreadQueue& GetOrCreateThreadQueue( Runtime& runtime )
@@ -445,7 +576,7 @@ namespace sl {
 				}
 			}
 
-			auto queue = std::make_unique< ThreadQueue >();
+			auto queue = std::make_unique< ThreadQueue >( runtime.GetConfig().initial_buffer_size );
 			queue->owner_thread_id = thread_id;
 
 			ThreadQueue* queue_ptr = queue.get();
@@ -460,22 +591,25 @@ namespace sl {
 		template < typename Runtime, typename TEvent, typename... TArgs >
 		static void Post( Runtime& runtime, TArgs&&... args )
 		{
+			ThreadQueue& queue = GetOrCreateThreadQueue( runtime );
+			PostingScope posting_scope( queue );
+
 			for ( ;; )
 			{
 				while ( runtime.mQueues.dispatching.load( std::memory_order_acquire ) )
-					std::this_thread::yield();
+					runtime.mQueues.dispatching.wait( true, std::memory_order_relaxed );
 
-				runtime.mQueues.active_posters.fetch_add( 1, std::memory_order_acq_rel );
+				posting_scope.Enter();
 
 				if ( !runtime.mQueues.dispatching.load( std::memory_order_acquire ) )
 					break;
 
-				runtime.mQueues.active_posters.fetch_sub( 1, std::memory_order_acq_rel );
+				posting_scope.Leave();
 			}
 
-			ThreadQueue& queue = GetOrCreateThreadQueue( runtime );
-			const int write_index = queue.write_index.load( std::memory_order_relaxed );
-			const std::uint64_t sequence = runtime.mQueues.next_sequence.fetch_add( 1, std::memory_order_relaxed );
+			const int write_index = queue.control.write_index.load( std::memory_order_relaxed );
+			const std::uint64_t sequence =
+				runtime.mQueues.ordering.fetch_add( 1, std::memory_order_relaxed );
 
 			queue.buffers[ write_index ].emplace_back(
 				std::in_place_type< TEvent >,
@@ -483,8 +617,6 @@ namespace sl {
 				sequence,
 				std::forward< TArgs >( args )...
 			);
-
-			runtime.mQueues.active_posters.fetch_sub( 1, std::memory_order_acq_rel );
 		}
 
 		template < typename Runtime >
@@ -492,17 +624,7 @@ namespace sl {
 		{
 			runtime.mQueues.dispatching.store( true, std::memory_order_release );
 
-			while ( runtime.mQueues.active_posters.load( std::memory_order_acquire ) != 0 )
-				std::this_thread::yield();
-
 			std::vector< ThreadQueue* > queues;
-			{
-				std::scoped_lock registry_lock( runtime.mQueues.registry_lock );
-				queues.reserve( runtime.mQueues.queues.size() );
-				for ( const auto& queue : runtime.mQueues.queues )
-					queues.push_back( queue.get() );
-			}
-
 			struct FrozenQueue
 			{
 				ThreadQueue* queue = nullptr;
@@ -510,16 +632,29 @@ namespace sl {
 			};
 
 			std::vector< FrozenQueue > frozen;
-			frozen.reserve( queues.size() );
 
-			for ( ThreadQueue* queue : queues )
 			{
-				const int old_write = queue->write_index.load( std::memory_order_relaxed );
-				queue->write_index.store( 1 - old_write, std::memory_order_relaxed );
-				frozen.push_back( FrozenQueue{ .queue = queue, .read_index = old_write } );
+				std::scoped_lock registry_lock( runtime.mQueues.registry_lock );
+
+				queues.reserve( runtime.mQueues.queues.size() );
+				for ( const auto& queue : runtime.mQueues.queues )
+					queues.push_back( queue.get() );
+
+				frozen.reserve( queues.size() );
+
+				for ( ThreadQueue* queue : queues )
+				{
+					while ( queue->control.posting.load( std::memory_order_acquire ) )
+						queue->control.posting.wait( true, std::memory_order_relaxed );
+
+					const int old_write = queue->control.write_index.load( std::memory_order_relaxed );
+					queue->control.write_index.store( 1 - old_write, std::memory_order_relaxed );
+					frozen.push_back( FrozenQueue{ .queue = queue, .read_index = old_write } );
+				}
 			}
 
 			runtime.mQueues.dispatching.store( false, std::memory_order_release );
+			runtime.mQueues.dispatching.notify_all();
 
 			struct Cursor
 			{
@@ -552,7 +687,7 @@ namespace sl {
 				heap.pop_back();
 
 				auto& buffer = frozen[ cursor.frozen_index ].queue->buffers[ frozen[ cursor.frozen_index ].read_index ];
-				runtime.DispatchSpan( std::span< EventRecordType >( &buffer[ cursor.event_index ], 1 ) );
+				runtime.DispatchOne( buffer[ cursor.event_index ] );
 
 				++cursor.event_index;
 				if ( cursor.event_index < buffer.size() )
