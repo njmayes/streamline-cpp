@@ -30,12 +30,12 @@ namespace sl {
 		EventOrdering Ordering = EventOrdering::Unordered >
 	class BasicEventRuntime
 	{
-		static_assert( IsEventList< TEventList >, "TEventList must satisfy IsEventList" );
+		static_assert( IsTypeList< TEventList >, "TEventList must satisfy IsTypeList" );
 
 	public:
 		using EventList = TEventList;
-		using EventRecordType = EventRecord< EventList >;
 		using EventType = EventView< EventList >;
+		using EventRecord = EventType::Record;
 		using Listener = BasicEventListener< BasicEventRuntime< EventList, Mode, Ordering > >;
 		using QueueTraits = EventRuntimeQueueTraits< EventList, Mode, Ordering >;
 		using QueueState = typename QueueTraits::State;
@@ -133,7 +133,7 @@ namespace sl {
 			mListeners.old_listeners.push_back( listener );
 		}
 
-		void DispatchOne( EventRecordType& record )
+		void DispatchOne( EventRecord& record )
 		{
 			EventType event( record );
 
@@ -147,9 +147,9 @@ namespace sl {
 			}
 		}
 
-		void DispatchSpan( std::span< EventRecordType > buffer )
+		void DispatchSpan( std::span< EventRecord > buffer )
 		{
-			for ( EventRecordType& record : buffer )
+			for ( EventRecord& record : buffer )
 				DispatchOne( record );
 		}
 
@@ -182,12 +182,12 @@ namespace sl {
 	template < typename TEventList >
 	struct EventRuntimeQueueTraits< TEventList, EventRuntimeMode::SingleThreaded, EventOrdering::Unordered >
 	{
-		using EventRecordType = EventRecord< TEventList >;
+		using EventRecord = detail::EventRecord< TEventList >;
 
 		struct State
 		{
-			std::vector< EventRecordType > write_buffer;
-			std::vector< EventRecordType > dispatch_buffer;
+			std::vector< EventRecord > write_buffer;
+			std::vector< EventRecord > dispatch_buffer;
 		};
 
 		template < typename Runtime >
@@ -221,14 +221,14 @@ namespace sl {
 	// ============================================================
 
 	template < typename TEventList >
-	struct EventRuntimeQueueTraits< TEventList, EventRuntimeMode::SingleThreaded, EventOrdering::GlobalOrdered >
+	struct EventRuntimeQueueTraits< TEventList, EventRuntimeMode::SingleThreaded, EventOrdering::GlobalOrdered > 
 	{
-		using EventRecordType = EventRecord< TEventList >;
+		using EventRecord = detail::EventRecord< TEventList >;
 
 		struct State
 		{
-			std::vector< EventRecordType > write_buffer;
-			std::vector< EventRecordType > dispatch_buffer;
+			std::vector< EventRecord > write_buffer;
+			std::vector< EventRecord > dispatch_buffer;
 			std::uint64_t next_sequence = 0;
 		};
 
@@ -267,7 +267,7 @@ namespace sl {
 	template < typename TEventList >
 	struct EventRuntimeQueueTraits< TEventList, EventRuntimeMode::MultiThreaded, EventOrdering::Unordered >
 	{
-		using EventRecordType = EventRecord< TEventList >;
+		using EventRecord = detail::EventRecord< TEventList >;
 
 		struct ThreadQueueControl
 		{
@@ -285,7 +285,7 @@ namespace sl {
 		{
 			std::thread::id owner_thread_id{};
 			ThreadQueueControl control{};
-			std::vector< EventRecordType > buffers[ 2 ];
+			std::vector< EventRecord > buffers[ 2 ];
 
 			explicit ThreadQueue( std::size_t initial_buffer_size )
 			{
@@ -467,7 +467,7 @@ namespace sl {
 	template < typename TEventList >
 	struct EventRuntimeQueueTraits< TEventList, EventRuntimeMode::MultiThreaded, EventOrdering::GlobalOrdered >
 	{
-		using EventRecordType = EventRecord< TEventList >;
+		using EventRecord = detail::EventRecord< TEventList >;
 
 		struct ThreadQueueControl
 		{
@@ -485,7 +485,7 @@ namespace sl {
 		{
 			std::thread::id owner_thread_id{};
 			ThreadQueueControl control{};
-			std::vector< EventRecordType > buffers[ 2 ];
+			std::vector< EventRecord > buffers[ 2 ];
 
 			explicit ThreadQueue( std::size_t initial_buffer_size )
 			{

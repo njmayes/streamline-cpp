@@ -144,6 +144,10 @@
 #endif
 
 
+// typeof macro
+#define SL_TYPEOF( x ) std::remove_cvref_t< decltype( x ) >
+
+
 // Separator macros, for use below
 #define SL_COMMA() ,
 #define SL_NONE()

@@ -17,6 +17,7 @@ namespace sl {
 		Vec2f size = DefaultSize;
 		Vec2f button_size = DefaultButtonSize;
 		float font_scale = DefaultFontScale;
+		bool block_exit = false;
 
 		ModalButtons button_type = ModalButtons::OKCancel;
 	};
@@ -48,10 +49,27 @@ namespace sl {
 				return nullptr;
 			}
 
-			Ref< T > new_modal = Ref< T >::Create( std::forward< Args >( args )... );
+			Ref< T > new_modal = sl::Application::CreateEventListener< T >( std::forward< Args >( args )... );
 			ModalEntry& entry = mEditorModals.emplace_back( init_data, new_modal );
 
+			if ( not mBlockEsc and init_data.block_exit )
+			{
+				mBlockEsc = true;
+				Application::BlockEsc( mBlockEsc );
+			}
+
 			return new_modal;
+		}
+
+		void Close( std::string_view heading )
+		{
+			auto it = Find( heading );
+			if ( it == mEditorModals.end() )
+			{
+				log::Error( "Could not find modal to close." );
+				return;
+			}
+			it->open = false;
 		}
 
 		void AddCallback( std::string_view heading, std::function< void() > function )
@@ -88,5 +106,6 @@ namespace sl {
 
 	private:
 		std::vector< ModalEntry > mEditorModals;
+		bool mBlockEsc = false;
 	};
 } // namespace sl

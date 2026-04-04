@@ -119,6 +119,9 @@ namespace sl {
 	template < typename... Ts >
 	struct TypeList;
 
+	template < typename... Ts >
+	struct RawTypeList;
+
 	namespace detail {
 
 		template < typename T >
@@ -127,6 +130,10 @@ namespace sl {
 
 		template < typename... Ts >
 		struct IsTypeListImpl< TypeList< Ts... > > : std::true_type
+		{};
+
+		template < typename... Ts >
+		struct IsTypeListImpl< RawTypeList< Ts... > > : std::true_type
 		{};
 
 		template < typename T >
@@ -152,6 +159,27 @@ namespace sl {
 
 			template < size_t I >
 			using Traits = TypeTraits< typename std::tuple_element< I, TupleType >::type >;
+
+			template < typename Func >
+				requires( requires( Func&& func ) { { std::forward< Func >( func ).template operator()< Ts >() } -> std::same_as< void >; } && ... )
+			static constexpr void ForEach( Func&& func )
+			{
+				( std::forward< Func >( func ).template operator()< Ts >(), ... );
+			}
+
+			template < typename Pred >
+				requires( requires( Pred&& pred ) { { std::forward< Pred >( pred ).template operator()< Ts >() } -> std::convertible_to< bool >; } && ... )
+			static constexpr bool Any( Pred&& pred )
+			{
+				return ( static_cast< bool >( std::forward< Pred >( pred ).template operator()< Ts >() ) || ... );
+			}
+
+			template < typename Pred >
+				requires( requires( Pred&& pred ) { { std::forward< Pred >( pred ).template operator()< Ts >() } -> std::convertible_to< bool >; } && ... )
+			static constexpr bool All( Pred&& pred )
+			{
+				return ( static_cast< bool >( std::forward< Pred >( pred ).template operator()< Ts >() ) && ... );
+			}
 		};
 
 		template < typename... Ts >
@@ -203,12 +231,26 @@ namespace sl {
 			using Type = typename Merge< Head, Tail >::Type;
 		};
 
+
+		template < bool Flatten, typename... Ts >
+		using TypeListImpl = std::conditional_t< Flatten, typename TypeListCat< Ts... >::Type, TypeListStorage< Ts... > >;
+
 	} // namespace detail
 
+	/*
+	 *	A type list for inspecting a list of types. Can pass nested TypeLists and they will be flattened automatically.
+	 */
+
 	template < typename... Ts >
-	struct TypeList : detail::TypeListCat< Ts... >::Type
+	struct TypeList : detail::TypeListImpl< /*Flatten=*/true, Ts... >
 	{};
 
+	template < typename... Ts >
+	struct RawTypeList : detail::TypeListImpl< /*Flatten=*/false, Ts... >
+	{};
+
+	template < typename T >
+	concept IsTypeList = detail::IsTypeListV< T >;
 
 	/*
 		General purpose conceptzs
@@ -278,87 +320,220 @@ namespace sl {
 		std::regular_invocable< const H&, const Key& > &&
 		std::convertible_to< std::invoke_result_t< const H&, const Key& >, std::size_t >;
 
+	namespace detail {
+		template < typename F >
+		struct OverloadLeaf
+		{
+			using Stored = std::decay_t< F >;
+
+			Stored func;
+
+			template < typename Fn >
+			constexpr explicit OverloadLeaf( Fn&& f )
+				: func( std::forward< Fn >( f ) )
+			{
+			}
+
+			template < typename... Args >
+				requires std::invocable< Stored&, Args... >
+			constexpr decltype( auto ) operator()( Args&&... args ) & noexcept( noexcept( std::invoke( func, std::forward< Args >( args )... ) ) )
+			{
+				return std::invoke( func, std::forward< Args >( args )... );
+			}
+
+			template < typename... Args >
+				requires std::invocable< Stored const&, Args... >
+			constexpr decltype( auto ) operator()( Args&&... args ) const& noexcept( noexcept( std::invoke( func, std::forward< Args >( args )... ) ) )
+			{
+				return std::invoke( func, std::forward< Args >( args )... );
+			}
+
+			template < typename... Args >
+				requires std::invocable< Stored, Args... >
+			constexpr decltype( auto ) operator()( Args&&... args ) && noexcept( noexcept( std::invoke( std::move( func ), std::forward< Args >( args )... ) ) )
+			{
+				return std::invoke( std::move( func ), std::forward< Args >( args )... );
+			}
+
+			template < typename... Args >
+				requires std::invocable< Stored const, Args... >
+			constexpr decltype( auto ) operator()( Args&&... args ) const&& noexcept( noexcept( std::invoke( std::move( func ), std::forward< Args >( args )... ) ) )
+			{
+				return std::invoke( std::move( func ), std::forward< Args >( args )... );
+			}
+		};
+
+	} // namespace detail
 
 	template < typename... Fs >
-	struct Overload : Fs...
+	struct Overload : detail::OverloadLeaf< Fs >...
 	{
-		using Fs::operator()...;
+		using detail::OverloadLeaf< Fs >::operator()...;
+
+		template < typename... Gs >
+		constexpr explicit Overload( Gs&&... fs )
+			: detail::OverloadLeaf< Fs >( std::forward< Gs >( fs ) )...
+		{
+		}
 	};
 
 	template < typename... Fs >
-	Overload( Fs... ) -> Overload< Fs... >;
+	Overload( Fs&&... ) -> Overload< std::decay_t< Fs >... >;
 
 
 	/*
 		Function Traits for inspecting a function type
 	*/
 
+	template < typename T, typename = void >
+	struct FunctionTraits
+	{
+		static constexpr bool Valid = false;
+	};
+
+	// Functor / lambda fallback.
+	// Works for non-generic, non-overloaded operator().
 	template < typename T >
-	struct FunctionTraits;
+	struct FunctionTraits< T, std::void_t< decltype( &std::remove_cvref_t< T >::operator() ) > >
+		: FunctionTraits< decltype( &std::remove_cvref_t< T >::operator() ) >
+	{
+	};
 
-	template < typename T >
-	struct FunctionTraits : FunctionTraits< decltype( &T::operator() ) >
-	{};
-
-	// std::function specialisation
+	// Plain function type
 	template < typename R, typename... Args >
-	struct FunctionTraits< std::function< R( Args... ) > >
+	struct FunctionTraits< R( Args... ), void >
 	{
 		using ReturnType = R;
-		using Arguments = TypeList< Args... >;
+		using Arguments = RawTypeList< Args... >;
+		using FunctionType = R( Args... );
+
+		static constexpr bool Valid = true;
+		static constexpr bool IsNoexcept = false;
+		static constexpr bool IsMemberFunction = false;
 	};
 
-	// Function pointer specialisation
+	// Plain function type noexcept
 	template < typename R, typename... Args >
-	struct FunctionTraits< R ( * )( Args... ) >
+	struct FunctionTraits< R( Args... ) noexcept, void >
 	{
 		using ReturnType = R;
-		using Arguments = TypeList< Args... >;
+		using Arguments = RawTypeList< Args... >;
+
+		static constexpr bool IsNoexcept = true;
+		static constexpr bool IsMemberFunction = false;
 	};
 
-	// Member function pointer specialisations
-	template < typename R, typename O, typename... Args >
-	struct FunctionTraits< R ( O::* )( Args... ) >
+	// Function pointer
+	template < typename R, typename... Args >
+	struct FunctionTraits< R ( * )( Args... ), void > : FunctionTraits< R( Args... ) >
 	{
-		using ObjectType = O;
-		using ReturnType = R;
-		using Arguments = TypeList< Args... >;
 	};
-	template < typename R, typename O, typename... Args >
-	struct FunctionTraits< R ( O::* )( Args... )& >
+
+	// Function pointer noexcept
+	template < typename R, typename... Args >
+	struct FunctionTraits< R ( * )( Args... ) noexcept, void > : FunctionTraits< R( Args... ) noexcept >
 	{
-		using ObjectType = O;
-		using ReturnType = R;
-		using Arguments = TypeList< Args... >;
 	};
-	template < typename R, typename O, typename... Args >
-	struct FunctionTraits< R ( O::* )( Args... ) && >
+
+	// Function lvalue reference
+	template < typename R, typename... Args >
+	struct FunctionTraits< R ( & )( Args... ), void > : FunctionTraits< R( Args... ) >
 	{
-		using ObjectType = O;
-		using ReturnType = R;
-		using Arguments = TypeList< Args... >;
 	};
-	template < typename R, typename O, typename... Args >
-	struct FunctionTraits< R ( O::* )( Args... ) const >
+
+	// Function lvalue reference noexcept
+	template < typename R, typename... Args >
+	struct FunctionTraits< R ( & )( Args... ) noexcept, void > : FunctionTraits< R( Args... ) noexcept >
 	{
-		using ObjectType = const O;
-		using ReturnType = R;
-		using Arguments = TypeList< Args... >;
 	};
-	template < typename R, typename O, typename... Args >
-	struct FunctionTraits< R ( O::* )( Args... ) const& >
+
+	// Function rvalue reference
+	template < typename R, typename... Args >
+	struct FunctionTraits< R ( && )( Args... ), void > : FunctionTraits< R( Args... ) >
 	{
-		using ObjectType = const O;
-		using ReturnType = R;
-		using Arguments = TypeList< Args... >;
 	};
-	template < typename R, typename O, typename... Args >
-	struct FunctionTraits< R ( O::* )( Args... ) const&& >
+
+	// Function rvalue reference noexcept
+	template < typename R, typename... Args >
+	struct FunctionTraits< R ( && )( Args... ) noexcept, void > : FunctionTraits< R( Args... ) noexcept >
 	{
-		using ObjectType = const O;
-		using ReturnType = R;
-		using Arguments = TypeList< Args... >;
 	};
+
+	// std::function
+	template < typename R, typename... Args >
+	struct FunctionTraits< std::function< R( Args... ) >, void > : FunctionTraits< R( Args... ) >
+	{
+	};
+
+#define SL_FUNCTION_TRAITS_MEMBER( CV_QUAL, REF_QUAL, NOEXCEPT_SPEC, IS_NOEXCEPT_VALUE )    \
+	template < typename R, typename O, typename... Args >                                   \
+	struct FunctionTraits< R ( O::* )( Args... ) CV_QUAL REF_QUAL NOEXCEPT_SPEC, void >     \
+	{                                                                                       \
+		using ObjectType = CV_QUAL O;                                                       \
+		using ClassType = O;                                                                \
+		using ReturnType = R;                                                               \
+		using Arguments = RawTypeList< Args... >;                                           \
+		using MemberFunctionPointer = R ( O::* )( Args... ) CV_QUAL REF_QUAL NOEXCEPT_SPEC; \
+                                                                                            \
+                                                                                            \
+		static constexpr bool Valid = true;                                                 \
+		static constexpr bool IsNoexcept = IS_NOEXCEPT_VALUE;                               \
+		static constexpr bool IsMemberFunction = true;                                      \
+		static constexpr bool IsConst = std::is_const_v< CV_QUAL O >;                       \
+		static constexpr bool IsVolatile = std::is_volatile_v< CV_QUAL O >;                 \
+		static constexpr bool IsLvalueQualified = std::is_same_v< int REF_QUAL, int& >;     \
+		static constexpr bool IsRvalueQualified = std::is_same_v< int REF_QUAL, int&& >;    \
+	};
+
+	// no cv, no ref
+	SL_FUNCTION_TRAITS_MEMBER(, , , false )
+	SL_FUNCTION_TRAITS_MEMBER(, , noexcept, true )
+
+	// no cv, &
+	SL_FUNCTION_TRAITS_MEMBER(, &, , false )
+	SL_FUNCTION_TRAITS_MEMBER(, &, noexcept, true )
+
+	// no cv, &&
+	SL_FUNCTION_TRAITS_MEMBER(, &&, , false )
+	SL_FUNCTION_TRAITS_MEMBER(, &&, noexcept, true )
+
+	// const
+	SL_FUNCTION_TRAITS_MEMBER( const, , , false )
+	SL_FUNCTION_TRAITS_MEMBER( const, , noexcept, true )
+
+	// const &
+	SL_FUNCTION_TRAITS_MEMBER( const, &, , false )
+	SL_FUNCTION_TRAITS_MEMBER( const, &, noexcept, true )
+
+	// const &&
+	SL_FUNCTION_TRAITS_MEMBER( const, &&, , false )
+	SL_FUNCTION_TRAITS_MEMBER( const, &&, noexcept, true )
+
+	// volatile
+	SL_FUNCTION_TRAITS_MEMBER( volatile, , , false )
+	SL_FUNCTION_TRAITS_MEMBER( volatile, , noexcept, true )
+
+	// volatile &
+	SL_FUNCTION_TRAITS_MEMBER( volatile, &, , false )
+	SL_FUNCTION_TRAITS_MEMBER( volatile, &, noexcept, true )
+
+	// volatile &&
+	SL_FUNCTION_TRAITS_MEMBER( volatile, &&, , false )
+	SL_FUNCTION_TRAITS_MEMBER( volatile, &&, noexcept, true )
+
+	// const volatile
+	SL_FUNCTION_TRAITS_MEMBER( const volatile, , , false )
+	SL_FUNCTION_TRAITS_MEMBER( const volatile, , noexcept, true )
+
+	// const volatile &
+	SL_FUNCTION_TRAITS_MEMBER( const volatile, &, , false )
+	SL_FUNCTION_TRAITS_MEMBER( const volatile, &, noexcept, true )
+
+	// const volatile &&
+	SL_FUNCTION_TRAITS_MEMBER( const volatile, &&, , false )
+	SL_FUNCTION_TRAITS_MEMBER( const volatile, &&, noexcept, true )
+
+#undef SL_FUNCTION_TRAITS_MEMBER
 
 
 	/*

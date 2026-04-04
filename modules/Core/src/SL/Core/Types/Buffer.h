@@ -181,6 +181,9 @@ namespace sl {
 			requires std::ranges::range< range_t > and std::convertible_to< std::ranges::range_value_t< range_t >, ConstBufferView >
 		static Buffer Concat( range_t&& ranges, std::optional< char > terminator = {}, std::optional< char > delimiter = {} )
 		{
+			if ( ranges.empty() )
+				return {};
+
 			auto terminator_size = terminator.has_value() ? 1 : 0;
 			auto delimiter_size = delimiter.has_value() ? 1 : 0;
 			

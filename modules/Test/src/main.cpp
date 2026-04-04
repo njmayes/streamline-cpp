@@ -10,10 +10,6 @@ sl::Application* NetServerTest( sl::CommandLineArgs const& args )
 	using namespace sl::net;
 
 	auto spec = sl::Ref< sl::ApplicationSpecification >::Create();
-	spec->working_dir = "C:/Users/natha/Desktop/Coding/Projects/WIP/C++/streamline-cpp/TestApp";
-
-	spec->working_dir = "C:/Users/NMayes/Desktop/Reference/streamline-cpp/";
-	// spec->working_dir = "/mnt/c/Users/NMayes/Desktop/Reference/streamline-cpp/";
 
 	auto opts = sl::Read< ServerContextOptions >(
 		args,
@@ -34,10 +30,6 @@ sl::Application* NetClientTest( sl::CommandLineArgs const& args )
 	using namespace sl::net;
 
 	auto spec = sl::Ref< sl::GuiApplicationSpecification >::Create();
-	spec->working_dir = "C:/Users/natha/Desktop/Coding/Projects/WIP/C++/streamline-cpp/TestApp";
-
-	spec->working_dir = "C:/Users/NMayes/Desktop/Reference/streamline-cpp/";
-	// spec->working_dir = "/mnt/c/Users/NMayes/Desktop/Reference/streamline-cpp/";
 
 	auto opts = sl::Read< ClientContextOptions >(
 		args,
@@ -65,19 +57,18 @@ sl::Application* CreateApplication( sl::CommandLineArgs args )
 	else if ( app_type == "client" )
 		return NetClientTest( args );
 
-	return nullptr;
+	throw std::runtime_error( "You must specify server or client application" );
 }
 
 int main( int argc, char** argv )
 {
-	auto test = sl::SmartError::Make< sl::Error::InvalidRandom >( 5 );
-
-	//test.Match(
-	//	sl::MatchCase< sl::Error::InvalidRandom >( []( char e ) {
-
-	//	} ),
-	//	sl::MatchDefault()
-	//);
+	auto test = sl::SmartErrorEnum::Make< sl::ErrorEnum::Unexpected >( "52" );
+	test.Match(
+		sl::MatchCase< sl::ErrorEnum::Unexpected >( []( std::string ) {
+			int here = 0;
+		} ),
+		sl::MatchDefault()
+	);
 
 	try
 	{

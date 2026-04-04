@@ -1,15 +1,12 @@
 #pragma once
 
-#include "Modals/ModalManager.h"
-#include "Panels/PanelManager.h"
-
-#include "SL/Core/Events/IEventListener.h"
+#include "SL/Core/Common/Application.h"
 
 struct GLFWwindow;
 
 namespace sl {
 
-	class ImGuiController : public IEventListener
+	class ImGuiController : public ApplicationEventListener
 	{
 	public:
 		ImGuiController( GLFWwindow* window );
@@ -32,12 +29,13 @@ namespace sl {
 
 	public:
 		void OnEvent( Event& e );
-		SL_LISTENING_EVENTS( EVENT_CATEGORY_MOUSE, EVENT_CATEGORY_KEY )
+
+		SL_LISTENING_EVENTS( MouseEvents, KeyEvents )
 
 	private:
+		bool OnMouseEvent( MouseEvent& e );
+		bool OnKeyEvent( KeyEvent& e );
+
 		void SetDarkThemeColours();
-
-	private:
-		bool mBlockEvents = false;
 	};
 } // namespace sl

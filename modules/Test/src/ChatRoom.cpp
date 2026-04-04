@@ -21,11 +21,14 @@ ServerLayer::ServerLayer( sl::net::ServerContextOptions const& opts )
 
 void ServerLayer::OnConnect( sl::net::ConnectionPtr participant )
 {
-	// Strip null terminator from each message
-	auto messages = mRecentMessages | std::views::transform( []( auto const& buffer ) { return buffer.View( 0, buffer.Size() - 1 ); } );
-	auto message = sl::Buffer::Concat( messages, '\0', '\n' );
+	if ( not mRecentMessages.empty() )
+	{
+		// Strip null terminator from each message
+		auto messages = mRecentMessages | std::views::transform( []( auto const& buffer ) { return buffer.View( 0, buffer.Size() - 1 ); } );
+		auto message = sl::Buffer::Concat( messages, '\0', '\n' );
+		participant->AddToQueue( message );
+	}
 
-	participant->AddToQueue( message );
 	BroadcastMessage( std::format( "New connection from {}", participant->GetRemoteAddress() ) );
 }
 

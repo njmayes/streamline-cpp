@@ -182,7 +182,7 @@ namespace sl {
 		template < typename... Cases >
 		decltype( auto ) Match( Cases&&... cases )
 		{
-			auto matcher = detail::Overload{ std::forward< Cases >( cases )... };
+			auto matcher = Overload{ std::forward< Cases >( cases )... };
 
 			if ( mResult )
 			{

@@ -9,19 +9,14 @@ namespace sl {
 		float line_spacing = Utils::FrameHeightWithSpacing();
 
 		Utils::SetWindowMoveFromTitleBar();
+
 		for ( ModalEntry& modal_data : mEditorModals )
 		{
-			if ( !modal_data.modal )
-			{
-				modal_data.open = false;
-				continue;
-			}
-
 			Utils::SetNextWindowSize( modal_data.init_data.size );
 			Utils::SetNextWindowPos( Utils::GetMainWindowCentre< Vec2f >(), Vec2f{ 0.5f, 0.5f } );
-			if ( Widgets::BeginWindow( modal_data.init_data.heading, ImGuiWindowFlags_NoDocking, &modal_data.open ) )
+			if ( Widgets::BeginWindow( modal_data.init_data.heading, ImGuiWindowFlags_NoDocking, nullptr ) )
 			{
-				Widgets::BeginChild( "ModalBody", Vec2f{ 0, -modal_data.init_data.button_size.y - 5.0f } );
+				Widgets::BeginChild( "ModalBody", Vec2f{ 0, -modal_data.init_data.button_size.y - 8.0f } );
 				sl::Utils::SetWindowFontScale( modal_data.init_data.font_scale );
 				modal_data.modal->OnOverlayRender();
 				Widgets::EndChild();
@@ -38,13 +33,21 @@ namespace sl {
 		// Call any completion callbacks before deleting modal entries. Filter for modals that are now closed.
 		auto has_closed = mEditorModals | std::views::filter( [ this ]( const ModalEntry& entry ) { return !entry.open; } );
 
-		for ( const ModalEntry& entry : has_closed )
+		for ( ModalEntry& entry : has_closed )
 		{
 			for ( auto const& func : entry.modal->mCompletionCallbacks )
 				func();
+
+			entry.modal->OnClose();
 		}
 
 		std::erase_if( mEditorModals, []( const ModalEntry& entry ) { return !entry.open; } );
+
+		if ( mBlockEsc and std::ranges::count_if( mEditorModals, []( const ModalEntry& entry ) { return entry.open and entry.init_data.block_exit; } ) == 0 )
+		{
+			mBlockEsc = false;
+			Application::BlockEsc( mBlockEsc );
+		}
 	}
 
 	void ModalManager::RenderButtons( ModalEntry& modal_data )
@@ -93,7 +96,7 @@ namespace sl {
 				break;
 			}
 			case ModalButtons::Custom:
-				modal_data.modal->OnCustomButtonRender( modal_data.open );
+				modal_data.modal->OnCustomButtonRender( modal_data.open, modal_data.init_data.button_size );
 				break;
 		}
 	}

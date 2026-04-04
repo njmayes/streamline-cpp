@@ -7,24 +7,47 @@
 
 namespace sl {
 
-	using CoreEventList = TypeList<
+	using WindowEvents = TypeList<
 		WindowCloseEvent,
 		WindowResizeEvent,
 		WindowFocusEvent,
 		WindowFocusLostEvent,
-		WindowMovedEvent,
+		WindowMovedEvent >;
+
+	using AppEvents = TypeList<
 		AppTickEvent,
 		AppUpdateEvent,
-		AppRenderEvent,
+		AppRenderEvent >;
+
+	using KeyEvents = TypeList<
 		KeyPressedEvent,
 		KeyReleasedEvent,
-		KeyTypedEvent,
+		KeyTypedEvent >;
+
+	using MouseEvents = TypeList<
 		MouseButtonPressedEvent,
 		MouseButtonReleasedEvent,
 		MouseMovedEvent,
-		MouseScrolledEvent,
+		MouseScrolledEvent >;
+
+	using NetworkEvents = TypeList<
 		NetworkInEvent,
 		NetworkOutEvent >;
 
+
+	using CoreEventList = TypeList<
+		WindowEvents,
+		AppEvents,
+		KeyEvents,
+		MouseEvents,
+		NetworkEvents >;
+
 	using Event = EventView< CoreEventList >;
+
+	using MouseEvent = EventView< MouseEvents >;
+	using KeyEvent = EventView< KeyEvents >;
+	using AppEvent = EventView< AppEvents >;
+	using WindowEvent = EventView< WindowEvents >;
+	using NetworkEvent = EventView< NetworkEvents >;
+
 } // namespace sl

@@ -43,8 +43,10 @@ namespace sl {
 
 	void GuiApplication::OnEvent( Event& e )
 	{
-		e.Dispatch< WindowCloseEvent >( this, &GuiApplication::OnWindowClose );
-		e.Dispatch< WindowResizeEvent >( this, &GuiApplication::OnWindowResize );
+		e.Dispatch(
+			BindDispatch( this, &GuiApplication::OnWindowClose ),
+			BindDispatch( this, &GuiApplication::OnWindowResize )
+		);
 	}
 
 	bool GuiApplication::OnWindowClose( WindowCloseEvent& e )

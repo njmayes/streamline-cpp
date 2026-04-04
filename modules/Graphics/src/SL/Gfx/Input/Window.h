@@ -7,8 +7,6 @@ struct GLFWwindow;
 
 namespace sl {
 
-	class Event;
-
 	struct Resolution
 	{
 		unsigned width, height;

@@ -80,8 +80,10 @@ namespace sl {
 		if ( !sInstance )
 			return;
 
-		if ( !sInstance->mState.block_exit )
-			sInstance->mState.running = false;
+		if ( sInstance->mState.block_exit )
+			return;
+
+		sInstance->mState.running = false;
 	}
 
 	void Application::BlockEsc( bool block )

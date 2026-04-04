@@ -1,7 +1,8 @@
 #pragma once
 
-#include "SL/Core/Common/Base.h"
+#include "SL/Core/Common/Application.h"
 #include "SL/Core/Logging/Log.h"
+#include "SL/Core/Types/Math.h"
 
 namespace sl {
 
@@ -14,16 +15,19 @@ namespace sl {
 		Custom
 	};
 
-	class IModal : public RefCounted
+	class IModal : public ApplicationEventListener
 	{
 	public:
-		IModal();
-		virtual ~IModal();
+		IModal() = default;
+		virtual ~IModal() = default;
 
 		virtual void OnOverlayRender() = 0;
 		virtual void OnComplete()
 		{}
-		virtual void OnCustomButtonRender( bool& open )
+		virtual void OnClose()
+		{}
+
+		virtual void OnCustomButtonRender( bool& open, Vec2f const& size )
 		{
 			throw std::logic_error( "You must provide an override for this function if using custom button behaviour!" );
 		}
@@ -44,11 +48,13 @@ namespace sl {
 	class InlineModal : public IModal
 	{
 	public:
-		InlineModal( Action<>&& on_overlay_render, Action<>&& on_complete )
-			: mOnOverlayRender( std::move( on_overlay_render ) ), mOnComplete( std::move( on_complete ) )
+		InlineModal( Action<> on_overlay_render, Action<> on_complete, Action<> on_close, Action<IModal*, bool&, Vec2f const& > on_button_render = {} )
+			: mOnOverlayRender( std::move( on_overlay_render ) )
+			, mOnComplete( std::move( on_complete ) )
+			, mOnClose( std::move( on_close ) )
+			, mOnButtonRender( std::move( on_button_render ) )
 		{}
 
-	private:
 		void OnOverlayRender() override
 		{
 			mOnOverlayRender();
@@ -57,8 +63,24 @@ namespace sl {
 		{
 			mOnComplete();
 		}
+		void OnClose() override
+		{
+			mOnClose();
+		}
+
+		void OnCustomButtonRender( bool& open, Vec2f const& size ) override
+		{
+			if ( !mOnButtonRender )
+				throw std::logic_error( "You must provide a button renderer if using custom button behaviour!" );
+
+			mOnButtonRender( this, open, size );
+		}
+
+		void OnEvent( Event& e ) override
+		{}
 
 	private:
-		Action<> mOnOverlayRender, mOnComplete;
+		Action<> mOnOverlayRender, mOnComplete, mOnClose;
+		Action< IModal*, bool&, Vec2f const& > mOnButtonRender;
 	};
 } // namespace sl

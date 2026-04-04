@@ -80,13 +80,21 @@ namespace sl {
 		if ( !Application::AreEventsBlocked() )
 			return;
 
-		ImGuiIO& io = ImGui::GetIO();
+		e.Dispatch(
+			BindDispatch( this, &ImGuiController::OnMouseEvent ),
+			BindDispatch( this, &ImGuiController::OnKeyEvent )
+		);
+	}
 
-		auto eventType = e.GetType();
-		bool handled = ( ( eventType & EventType::EVENT_CATEGORY_MOUSE ) && io.WantCaptureMouse ) or
-					   ( ( eventType & EventType::EVENT_CATEGORY_KEY ) && io.WantCaptureKeyboard );
+	bool ImGuiController::OnMouseEvent( MouseEvent& e )
+	{
+		return ImGui::GetIO().WantCaptureMouse;
+	}
 
-		e.SetHandled( handled );
+
+	bool ImGuiController::OnKeyEvent( KeyEvent& e )
+	{
+		return ImGui::GetIO().WantCaptureKeyboard;
 	}
 
 	void ImGuiController::SetDarkThemeColours()

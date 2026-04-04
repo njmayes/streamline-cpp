@@ -1,7 +1,10 @@
 #pragma once
 
 #include "SL/Gfx/Input/Window.h"
+
 #include "SL/Gfx/ImGui/Controller.h"
+#include "SL/Gfx/ImGui/Modals/ModalManager.h"
+#include "SL/Gfx/ImGui/Panels/PanelManager.h"
 
 #include "SL/Core/Common/Application.h"
 
@@ -24,7 +27,7 @@ namespace sl {
 		void OnUpdate( Timestep ts ) override;
 		void OnRender() override;
 
-		SL_LISTENING_EVENTS( WindowClose, WindowResize )
+		SL_LISTENING_EVENTS( WindowCloseEvent, WindowResizeEvent )
 
 	private:
 		bool OnWindowClose( WindowCloseEvent& e );
@@ -66,25 +69,32 @@ namespace sl {
 		}
 
 		template < IsModal T, typename... Args >
-		static void OpenModal( ModalConstructionData const& init_data, Args&&... args )
+		static Ref< T > OpenModal( ModalConstructionData const& init_data, Args&&... args )
 		{
 			auto instance = Get< GuiApplication >();
-
 			if ( !instance )
 				throw std::runtime_error( "No gui application instance" );
 
-			instance->mModalManager.Open< T >( init_data, std::forward< Args >( args )... );
+			return instance->mModalManager.Open< T >( init_data, std::forward< Args >( args )... );
+		}
+
+		static void CloseModal( std::string_view heading )
+		{
+			auto instance = Get< GuiApplication >();
+			if ( !instance )
+				throw std::runtime_error( "No gui application instance" );
+
+			return instance->mModalManager.Close( heading );
 		}
 
 		template < IsPanel T, typename... Args >
-		static void OpenPanel( PanelConstructionData const& init_data, Args&&... args )
+		static Ref< T > OpenPanel( PanelConstructionData const& init_data, Args&&... args )
 		{
 			auto instance = Get< GuiApplication >();
-
 			if ( !instance )
 				throw std::runtime_error( "No gui application instance" );
 
-			instance->mPanelManager.Open< T >( init_data, std::forward< Args >( args )... );
+			return instance->mPanelManager.Open< T >( init_data, std::forward< Args >( args )... );
 		}
 
 	private:
@@ -94,4 +104,4 @@ namespace sl {
 		ModalManager mModalManager{};
 		PanelManager mPanelManager{};
 	};
-}
+} // namespace sl

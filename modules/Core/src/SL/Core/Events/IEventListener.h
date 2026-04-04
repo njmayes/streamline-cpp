@@ -1,6 +1,6 @@
 #pragma once
 
-#include "EventList.h"
+#include "Event.h"
 
 namespace sl {
 
@@ -18,7 +18,7 @@ namespace sl {
 		using EventList = typename Runtime::EventList;
 		using Event = typename Runtime::EventType;
 
-		static_assert( IsEventList< EventList >, "Runtime::EventList must satisfy IsEventList" );
+		static_assert( IsTypeList< EventList >, "Runtime::EventList must satisfy IsTypeList" );
 
 		using ListeningEvents = TypeList<>;
 
@@ -28,29 +28,23 @@ namespace sl {
 				mRuntime->DeregisterListener( this );
 		}
 
-		virtual void OnEvent( Event& e ) = 0;
+		virtual void OnEvent( Event& e ) {};
 
-		virtual void SetEventCondition( Predicate<>&& condition )
+		virtual void SetEventCondition( Predicate<> condition )
 		{
 			mAcceptCondition = std::move( condition );
 		}
 
-		bool Accept( Event& event ) const
+		bool Accept( Event& e ) const
 		{
-			if ( event.IsHandled() )
-				return false;
+			return not e.IsHandled() and ShouldAcceptEvent( e ) and mAcceptCondition();
+		}
 
-			bool accepts = false;
-
-			std::visit(
-				[ & ]( auto& concrete_event ) {
-					using TEvent = std::remove_cvref_t< decltype( concrete_event ) >;
-					accepts = ListeningEvents::template Contains< TEvent >;
-				},
-				event.mRecord->data
-			);
-
-			return accepts and mAcceptCondition();
+	private:
+		// Accept all events if not overridden, otherwise the listener will only accept events of the types specified in SL_LISTENING_EVENTS.
+		virtual bool ShouldAcceptEvent( Event& ) const
+		{
+			return false;
 		}
 
 	private:
@@ -62,11 +56,19 @@ namespace sl {
 		Runtime* mRuntime = nullptr;
 	};
 
-#define SL_LISTENING_EVENTS( ... )                                 \
-private:                                                           \
-	using DeclaredListeningEvents = ::sl::TypeList< __VA_ARGS__ >; \
-                                                                   \
-public:                                                            \
-	using ListeningEvents = DeclaredListeningEvents;
+#define SL_LISTENING_EVENTS( ... )                         \
+	using ListeningEvents = ::sl::TypeList< __VA_ARGS__ >; \
+	bool ShouldAcceptEvent( Event& event ) const override  \
+	{                                                      \
+		return event.template IsType< ListeningEvents >(); \
+	}
+
+#define SL_LISTENING_EVENTS_DERIVED( BaseType, ... )       \
+	using ListeningEvents = ::sl::TypeList< __VA_ARGS__ >; \
+	bool ShouldAcceptEvent( Event& event ) const override  \
+	{                                                      \
+		return event.IsType< ListeningEvents >() ||        \
+			   BaseType::ShouldAcceptEvent( event );       \
+	}
 
 } // namespace sl

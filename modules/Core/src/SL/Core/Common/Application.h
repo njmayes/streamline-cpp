@@ -4,6 +4,8 @@
 
 #include "SL/Core/Events/IEventListener.h"
 #include "SL/Core/Events/EventRuntime.h"
+#include "SL/Core/Events/EventList.h"
+
 #include "SL/Core/Logging/Logger.h"
 #include "SL/Core/Types/Timestep.h"
 
@@ -24,11 +26,11 @@ namespace sl {
 	public:
 		virtual ~ApplicationLayer() = default;
 
-		virtual void OnAttach() = 0;
-		virtual void OnDetach() = 0;
-		virtual void OnUpdate( Timestep ts ) = 0;
-		virtual void OnRender() = 0;
-		virtual void OnOverlayRender() = 0;
+		virtual void OnAttach() {};
+		virtual void OnDetach() {};
+		virtual void OnUpdate( Timestep ts ) {};
+		virtual void OnRender() {};
+		virtual void OnOverlayRender() {};
 	};
 
 	namespace detail {
@@ -148,6 +150,7 @@ namespace sl {
 
 		static void BlockEsc( bool block = true );
 		static void BlockEvents( bool block );
+
 		static bool AreEventsBlocked();
 
 		template < typename T, typename... Args >

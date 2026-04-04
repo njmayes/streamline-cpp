@@ -25,7 +25,7 @@ namespace sl::net {
 
 	void ClientLayer::OnEvent( Event& e )
 	{
-		e.Dispatch< NetworkOutEvent >( this, &ClientLayer::SendMessage );
+		e.Dispatch( BindDispatch( this, &ClientLayer::SendMessage ) );
 	}
 
 	void ClientLayer::Connect( std::string const& host, std::uint16_t port )

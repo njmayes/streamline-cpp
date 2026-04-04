@@ -29,7 +29,7 @@ namespace sl::net {
 
 	void ServerLayer::OnEvent( Event& e )
 	{
-		e.Dispatch< NetworkOutEvent >( this, &ServerLayer::SendMessage );
+		e.Dispatch( BindDispatch( this, &ServerLayer::SendMessage ) );
 	}
 
 	void ServerLayer::AddPort( std::uint16_t port )
