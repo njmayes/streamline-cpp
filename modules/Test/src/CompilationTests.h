@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-namespace sl {
+namespace sl::test {
 
 	enum class Error
 	{
@@ -221,7 +221,7 @@ namespace sl {
 		obj.y = 3.14f;
 		obj.z = "Hello, Reflection!";
 
-		auto type = Type::Get( "sl::ReflectionTest" );
+		auto type = Type::Get( "sl::test::ReflectionTest" );
 		std::println( "Class Name: {}", type.GetName() );
 		std::println( "Properties:" );
 		for ( auto const& member : type.GetProperties() )

@@ -10,6 +10,9 @@ if(STREAMLINE_BUILD_GFX)
     add_subdirectory(Graphics)
 endif()
 
+if(STREAMLINE_BUILD_CHAT_DEMO)
+    add_subdirectory(ChatDemo)
+endif()
 
 if(STREAMLINE_BUILD_TEST_APP)
     add_subdirectory(Test)

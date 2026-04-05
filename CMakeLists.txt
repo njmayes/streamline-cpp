@@ -16,8 +16,11 @@ option(STREAMLINE_BUILD_NET "Build streamline-net (networking backends)" ON)
 # Turn OFF to build "headless" – no Vulkan/GLFW/Glad required
 option(STREAMLINE_BUILD_GFX "Build streamline-gfx (graphics/windowing backends)" ON)
 
-# Build the TestApp executable (example app)
+# Build the TestApp executable (testing and code examples)
 option(STREAMLINE_BUILD_TEST_APP "Build Streamline test app example" ON)
+
+# Build the ChatDemo executable (full app demo)
+option(STREAMLINE_BUILD_CHAT_DEMO "Build Streamline chat room demo" ON)
 
 # Build the benchmarking executable (testing)
 option(STREAMLINE_BUILD_BENCHMARK "Build Streamline benchmarking app" ON)
