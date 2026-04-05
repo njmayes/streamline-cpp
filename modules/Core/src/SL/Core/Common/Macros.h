@@ -128,7 +128,7 @@
 
 
 // Static assertions
-#define SL_COMPILE_CHECK( cond, func, err ) static_assert( cond, "\n\n\t[" SL_STRINGIFY( func ) "] error: " err "\n" )
+#define SL_COMPILE_CHECK( cond, func, err ) static_assert( cond, "\n\n\t[" SL_STRINGIFY( func ) "] Error: " err "\n" )
 #define SL_COMPILE_ERROR_IF( cond, func, err ) SL_COMPILE_CHECK( not( cond ), func, err )
 #define SL_COMPILE_ERROR( func, err ) SL_COMPILE_CHECK( false, func, err )
 

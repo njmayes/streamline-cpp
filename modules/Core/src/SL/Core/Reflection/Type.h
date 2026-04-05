@@ -11,19 +11,17 @@
 namespace sl {
 
 	/// <summary>
-	/// The main interface for runtime reflection. Retrieve the reflection data for a type T using Type::Get&lt;T&gt;() or Type::Get("T")
-	///
-	/// There are two components to using a class T for reflection.
-	///
-	/// The first is to inherit from Reflectable&lt;T&gt;, which provides the minimum data in order to register a type in the reflection database,
-	/// such as base classes, type traits, as well as default, copy, and move constructors and the destructor where applicable.
-	///
-	/// In order to reflect further object data, such as class members (data and functions) and additional constructors, use the SL_REFLECT_CLASS
-	/// macro in the class scope, listing constructors using the SL_CTR macro, and members using their unqualified name.
+	/// <para>
+	/// The main interface for runtime reflection. Retrieve the reflection data for a type T using Type::Get&lt;T&gt;() or Type::Get("T").
+	/// </para>
+	/// <para>
+	/// In order to reflect a type, use the SL_REFLECT_CLASS macro in the class scope, listing constructors using the SL_CTR macro, and members using their unqualified name.
+	/// default, copy, and move constructors as well as the destructor are reflected by default if they satisfy the respective type traits, e.g. std::is_default_constructible.
+	/// </para>
 	/// </summary>
 	///
 	/// <example>
-	/// struct Foo : Reflectable&lt;Foo&gt;
+	/// struct Foo
 	/// {
 	///		Foo(double, int) {}
 	///

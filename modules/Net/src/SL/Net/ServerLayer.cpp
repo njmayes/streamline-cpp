@@ -27,9 +27,9 @@ namespace sl::net {
 		mContext.Stop();
 	}
 
-	void ServerLayer::OnEvent( Event& e )
+	bool ServerLayer::OnEvent( Event& e )
 	{
-		e.Dispatch( BindDispatch( this, &ServerLayer::SendMessage ) );
+		return e.Dispatch( BindDispatch( this, &ServerLayer::SendMessage ) );
 	}
 
 	void ServerLayer::AddPort( std::uint16_t port )

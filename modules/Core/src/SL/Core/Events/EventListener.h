@@ -26,7 +26,10 @@ namespace sl {
 				mRuntime->DeregisterListener( this );
 		}
 
-		virtual void OnEvent( Event& ) {};
+		virtual bool OnEvent( Event& )
+		{
+			return false;
+		};
 
 		virtual void SetEventCondition( Predicate<> condition )
 		{
@@ -35,11 +38,12 @@ namespace sl {
 
 		bool Accept( Event& e ) const
 		{
-			return not e.IsHandled() and ShouldAcceptEvent( e ) and mAcceptCondition();
+			return ShouldAcceptEvent( e ) and mAcceptCondition();
 		}
 
 	private:
-		// Accept all events if not overridden, otherwise the listener will only accept events of the types specified in SL_LISTENING_EVENTS.
+		// Events are ignored by default - listeners must explicitly specify which events they want to receive
+		// by overriding this function or using the SL_LISTENING_EVENTS macros
 		virtual bool ShouldAcceptEvent( Event& ) const
 		{
 			return false;
@@ -54,18 +58,18 @@ namespace sl {
 		Runtime* mRuntime = nullptr;
 	};
 
-#define SL_LISTENING_EVENTS( ... )                         \
-	using ListeningEvents = ::sl::TypeList< __VA_ARGS__ >; \
-	bool ShouldAcceptEvent( Event& event ) const override  \
-	{                                                      \
-		return event.template IsType< ListeningEvents >(); \
+#define SL_LISTENING_EVENTS( ... )                          \
+	using ListeningEvents = ::sl::TypeList< __VA_ARGS__ >;  \
+	bool ShouldAcceptEvent( Event& event ) const override   \
+	{                                                       \
+		return event.template IsAnyOf< ListeningEvents >(); \
 	}
 
 #define SL_LISTENING_EVENTS_DERIVED( BaseType, ... )       \
 	using ListeningEvents = ::sl::TypeList< __VA_ARGS__ >; \
 	bool ShouldAcceptEvent( Event& event ) const override  \
 	{                                                      \
-		return event.IsType< ListeningEvents >() ||        \
+		return event.IsAnyOf< ListeningEvents >() ||       \
 			   BaseType::ShouldAcceptEvent( event );       \
 	}
 

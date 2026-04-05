@@ -23,7 +23,7 @@ namespace sl {
 		GuiApplication( Ref< GuiApplicationSpecification > spec );
 		virtual ~GuiApplication() = default;
 
-		void OnEvent( Event& e ) override;
+		bool OnEvent( Event& e ) override;
 		void OnUpdate( Timestep ts ) override;
 		void OnRender() override;
 

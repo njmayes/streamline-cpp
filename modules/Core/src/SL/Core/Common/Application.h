@@ -2,7 +2,6 @@
 
 #include "CommandLine.h"
 
-#include "SL/Core/Events/IEventListener.h"
 #include "SL/Core/Events/EventRuntime.h"
 #include "SL/Core/Events/EventList.h"
 
@@ -80,9 +79,6 @@ namespace sl {
 		virtual void OnUpdate( Timestep ts )
 		{}
 		virtual void OnRender()
-		{}
-
-		void OnEvent( Event& e ) override
 		{}
 
 		template < detail::IsLayer T, typename... Args >

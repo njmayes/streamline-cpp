@@ -1,7 +1,5 @@
 #pragma once
 
-#include "magic_enum/magic_enum.hpp"
-
 #include <functional>
 #include <variant>
 #include <string_view>
@@ -61,33 +59,47 @@ namespace sl {
 			return Trim( Trim( Extract( SL_FUNC_SIG_STRING, prefix1, suffix ), prefix2, {} ), prefix3, {} );
 #endif
 		}
+
+		template < typename T >
+		inline constexpr std::monostate TypeTagData;
+
+		template< typename T >
+		inline constexpr void const* TypeTagDataPtr = &TypeTagData< T >;
 	} // namespace detail
 
 	/*
 		Type Traits for inspecting a given type
 	*/
+	
+	using TypeTag = void const*;
 
 	template < typename T >
 	struct TypeTraits
 	{
-		static constexpr auto Name = detail::GetName< T >();
-		static constexpr auto BaseName = detail::GetName< std::remove_cvref_t< T > >();
+		using Type = T;
+		using BaseType = std::remove_cvref_t< T >;
 
-		static constexpr bool IsObject = std::is_class_v< T >;
-		static constexpr bool IsReference = std::is_reference_v< T >;
-		static constexpr bool IsLValueReference = std::is_lvalue_reference_v< T >;
-		static constexpr bool IsRValueReference = std::is_rvalue_reference_v< T >;
-		static constexpr bool IsPointer = std::is_pointer_v< T >;
-		static constexpr bool IsEnum = std::is_enum_v< T >;
-		static constexpr bool IsArray = std::is_array_v< T >;
-		static constexpr bool IsConst = std::is_const_v< std::remove_reference_t< T > >;
-		static constexpr bool IsStandard = std::is_standard_layout_v< T >;
+		static constexpr TypeTag Tag = detail::TypeTagDataPtr< Type >;
+		static constexpr TypeTag BaseTag = detail::TypeTagDataPtr< BaseType >;
+
+		static constexpr auto Name = detail::GetName< Type >();
+		static constexpr auto BaseName = detail::GetName< std::remove_cvref_t< Type > >();
+
+		static constexpr bool IsObject = std::is_class_v< Type >;
+		static constexpr bool IsReference = std::is_reference_v< Type >;
+		static constexpr bool IsLValueReference = std::is_lvalue_reference_v< Type >;
+		static constexpr bool IsRValueReference = std::is_rvalue_reference_v< Type >;
+		static constexpr bool IsPointer = std::is_pointer_v< Type >;
+		static constexpr bool IsEnum = std::is_enum_v< Type >;
+		static constexpr bool IsArray = std::is_array_v< Type >;
+		static constexpr bool IsConst = std::is_const_v< std::remove_reference_t< Type > >;
+		static constexpr bool IsStandard = std::is_standard_layout_v< Type >;
 
 		template < typename R >
-		static constexpr bool IsBaseOf = std::is_base_of_v< T, R >;
+		static constexpr bool IsBaseOf = std::is_base_of_v< Type, R >;
 
 		template < typename R >
-		static constexpr bool IsSameAs = std::is_same_v< T, R >;
+		static constexpr bool IsSameAs = std::is_same_v< Type, R >;
 	};
 
 	namespace detail {
@@ -171,14 +183,14 @@ namespace sl {
 				requires( requires( Pred&& pred ) { { std::forward< Pred >( pred ).template operator()< Ts >() } -> std::convertible_to< bool >; } && ... )
 			static constexpr bool Any( Pred&& pred )
 			{
-				return ( static_cast< bool >( std::forward< Pred >( pred ).template operator()< Ts >() ) || ... );
+				return ( ... || static_cast< bool >( std::forward< Pred >( pred ).template operator()< Ts >() ) );
 			}
 
 			template < typename Pred >
 				requires( requires( Pred&& pred ) { { std::forward< Pred >( pred ).template operator()< Ts >() } -> std::convertible_to< bool >; } && ... )
 			static constexpr bool All( Pred&& pred )
 			{
-				return ( static_cast< bool >( std::forward< Pred >( pred ).template operator()< Ts >() ) && ... );
+				return ( ... && static_cast< bool >( std::forward< Pred >( pred ).template operator()< Ts >() ) );
 			}
 		};
 

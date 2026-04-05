@@ -76,9 +76,6 @@ namespace sl {
 			mOnButtonRender( this, open, size );
 		}
 
-		void OnEvent( Event& e ) override
-		{}
-
 	private:
 		Action<> mOnOverlayRender, mOnComplete, mOnClose;
 		Action< IModal*, bool&, Vec2f const& > mOnButtonRender;

@@ -119,9 +119,10 @@ namespace sl {
 		template < typename T, typename... Args >
 		struct Ctr : CtrBase
 		{
-			// This is icky, but needed to allow macro to do &Class::member and produce the correct result and not an error.
-			// This type should only be used to deduce Constructor type parameters anyway
-			Ctr< T, Args... > operator&()
+			// Gross, but needed to be able to do `using Foo = declspec( &Bar::baz )` during reflection registration 
+			// where baz will either be a class member or this type.
+			// Marked consteval to prevent any other usage of this operator, which would be meaningless.
+			consteval Ctr< T, Args... > operator&()
 			{
 				return Ctr< T, Args... >{};
 			}

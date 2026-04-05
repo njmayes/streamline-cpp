@@ -1,6 +1,6 @@
 #pragma once
 
-#include "IEventListener.h"
+#include "EventListener.h"
 
 #include <algorithm>
 #include <atomic>
@@ -139,11 +139,8 @@ namespace sl {
 
 			for ( Listener* listener : mListeners.listeners )
 			{
-				if ( event.IsHandled() )
-					break;
-
-				if ( listener->Accept( event ) )
-					listener->OnEvent( event );
+				if ( listener->Accept( event ) and listener->OnEvent( event ) )
+					return;
 			}
 		}
 

@@ -23,9 +23,9 @@ namespace sl::net {
 		mContext.Stop();
 	}
 
-	void ClientLayer::OnEvent( Event& e )
+	bool ClientLayer::OnEvent( Event& e )
 	{
-		e.Dispatch( BindDispatch( this, &ClientLayer::SendMessage ) );
+		return e.Dispatch( BindDispatch( this, &ClientLayer::SendMessage ) );
 	}
 
 	void ClientLayer::Connect( std::string const& host, std::uint16_t port )

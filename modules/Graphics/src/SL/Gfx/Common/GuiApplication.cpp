@@ -41,9 +41,9 @@ namespace sl {
 			layer->OnRender();
 	}
 
-	void GuiApplication::OnEvent( Event& e )
+	bool GuiApplication::OnEvent( Event& e )
 	{
-		e.Dispatch(
+		return e.Dispatch(
 			BindDispatch( this, &GuiApplication::OnWindowClose ),
 			BindDispatch( this, &GuiApplication::OnWindowResize )
 		);

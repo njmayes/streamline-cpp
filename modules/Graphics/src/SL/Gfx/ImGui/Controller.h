@@ -28,7 +28,7 @@ namespace sl {
 		}
 
 	public:
-		void OnEvent( Event& e );
+		bool OnEvent( Event& e ) override;
 
 		SL_LISTENING_EVENTS( MouseEvents, KeyEvents )
 

@@ -1,25 +1,27 @@
 #pragma once
 
 #include "SL/Core/Common/Reflection.h"
+#include "SL/Core/Common/Macros.h"
+
+#include "magic_enum/magic_enum.hpp"
+#include "magic_enum/magic_enum_format.hpp"
 
 #include <bit>
 #include <stdexcept>
 
 namespace sl::Enum {
 
+	SL_COMPILE_CHECK( magic_enum::is_magic_enum_supported, Enum.h, "Compiler does not support magic_enum. Unfortunately this is required for streamline-cpp." );
+
 	template < IsEnum T >
 	inline static constexpr std::string_view ToString( T enumVal )
 	{
-		static_assert( MAGIC_ENUM_SUPPORTED, "Compiler does not support magic enums! Define your own conversions!" );
-
 		return magic_enum::enum_name( enumVal );
 	}
 
 	template < IsEnum T >
 	inline static constexpr std::optional< T > FromString( std::string_view enumStr )
 	{
-		static_assert( MAGIC_ENUM_SUPPORTED, "Compiler does not support magic enums! Define your own conversions!" );
-
 		auto enumVal = magic_enum::enum_cast< T >( enumStr );
 		if ( enumVal.has_value() )
 			return enumVal.value();
@@ -130,7 +132,7 @@ namespace sl::Enum {
 			mMask = static_cast< T >( std::to_underlying( mMask ) | std::to_underlying( flag ) );
 		}
 
-		constexpr void Reset(T flag)
+		constexpr void Reset( T flag )
 		{
 			mMask = static_cast< T >( std::to_underlying( mMask ) & ~std::to_underlying( flag ) );
 		}
@@ -147,4 +149,4 @@ namespace sl::Enum {
 	private:
 		Underlying mMask;
 	};
-} // namespace slc::Enum
+} // namespace sl::Enum

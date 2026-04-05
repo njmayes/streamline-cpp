@@ -12,7 +12,7 @@ namespace sl::net {
 		void OnAttach() override;
 		void OnDetach() override;
 
-		void OnEvent( Event& e ) override;
+		bool OnEvent( Event& e ) override;
 
 	private:
 		virtual bool ShouldSend( ConnectionPtr connection, Payload const& payload )

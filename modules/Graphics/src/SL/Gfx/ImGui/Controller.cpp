@@ -75,12 +75,12 @@ namespace sl {
 		}
 	}
 
-	void ImGuiController::OnEvent( Event& e )
+	bool ImGuiController::OnEvent( Event& e )
 	{
 		if ( !Application::AreEventsBlocked() )
-			return;
+			return false;
 
-		e.Dispatch(
+		return e.Dispatch(
 			BindDispatch( this, &ImGuiController::OnMouseEvent ),
 			BindDispatch( this, &ImGuiController::OnKeyEvent )
 		);

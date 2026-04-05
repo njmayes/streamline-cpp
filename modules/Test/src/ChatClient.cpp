@@ -40,9 +40,9 @@ public:
 		}
 	}
 
-	void OnEvent( sl::Event& e )
+	bool OnEvent( sl::Event& e )
 	{
-		e.Dispatch( BindDispatch( this, &ChatDisplayPanel::OnMessageReceived ) );
+		return e.Dispatch( BindDispatch( this, &ChatDisplayPanel::OnMessageReceived ) );
 	}
 
 	bool OnMessageReceived( sl::NetworkInEvent& e )

@@ -305,7 +305,7 @@ namespace sl::reflect {
 #define SL_REFLECT_MEMBER_IMPL( member )                                                               \
 	{                                                                                                  \
 		auto invoker = []< typename _refl > {                                                          \
-			if constexpr ( std::derived_from< _refl, ::sl::detail::CtrBase > )                         \
+			if constexpr ( ::sl::DerivedFromOnly< _refl, ::sl::detail::CtrBase > )                     \
 				::sl::reflect::Reflection::RegisterConstructor< ClassType >( _refl{} );                \
 			else                                                                                       \
 				::sl::reflect::Reflection::RegisterMember< ClassType >( #member, &ClassType::member ); \

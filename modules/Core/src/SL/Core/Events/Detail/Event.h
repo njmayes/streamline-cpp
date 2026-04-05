@@ -17,7 +17,7 @@ namespace sl {
 		// Dispatch Return Check
 		template < typename R >
 		concept ValidDispatchReturn =
-			std::same_as< std::remove_cvref_t< R >, void > ||
+			std::same_as< std::remove_cvref_t< R >, void > or
 			std::convertible_to< R, bool >;
 
 
@@ -27,16 +27,15 @@ namespace sl {
 		struct IsTypeListSubset : std::false_type
 		{};
 
-		template < typename... SubsetTs, typename TSuperset >
-			requires IsTypeList< TSuperset >
-		struct IsTypeListSubset< RawTypeList< SubsetTs... >, TSuperset >
-			: std::bool_constant< ( TSuperset::template Contains< std::remove_cvref_t< SubsetTs > > && ... ) >
-		{};
-
-		template < typename... SubsetTs, typename TSuperset >
-			requires IsTypeList< TSuperset >
-		struct IsTypeListSubset< TypeList< SubsetTs... >, TSuperset >
-			: std::bool_constant< ( TSuperset::template Contains< std::remove_cvref_t< SubsetTs > > && ... ) >
+		template < typename TSubset, typename TSuperset >
+			requires IsTypeList< TSubset > && IsTypeList< TSuperset >
+		struct IsTypeListSubset< TSubset, TSuperset >
+			: std::bool_constant<
+				  TSubset::All(
+					  []< typename T >() constexpr {
+						  return TSuperset::template Contains< std::remove_cvref_t< T > >;
+					  }
+				  ) >
 		{};
 
 		template < typename TSubset, typename TSuperset >
@@ -93,18 +92,33 @@ namespace sl {
 
 		template < typename Func, typename TEventList >
 		concept TypeListEventDispatchFunctor =
-			IsEventViewV< DispatchEventType< Func > > &&				   // The argument must satisfy IsEventView
-			IsTypeList< TypeListDispatchList< Func > > &&				   // The EventView must wrap a type list
+			IsEventViewV< DispatchEventType< Func > > and				   // The argument must satisfy IsEventView
+			IsTypeList< TypeListDispatchList< Func > > and				   // The EventView must wrap a type list
 			IsTypeListSubsetV< TypeListDispatchList< Func >, TEventList >; // The wrapped type list must be a subset of the event list
 
 
 		template < typename TEventList, typename Func >
 		concept IsDispatchFunctor =
-			IsTypeList< TEventList > &&																				// TEventList must satisfy IsTypeList
-			DispatchFunctionTraits< Func >::Valid &&																// Must be a valid function type
-			ValidDispatchReturn< DispatchReturnType< Func > > &&													// Return type must be void or convertible to bool
-			( DispatchArguments< Func >::Size == 1 ) &&																// Must take exactly one argument
-			( SingleEventDispatchFunctor< Func, TEventList > || TypeListEventDispatchFunctor< Func, TEventList > ); // Must satisfy either dispatch functor concept (see above)
+			IsTypeList< TEventList > and																			// TEventList must satisfy IsTypeList
+			DispatchFunctionTraits< Func >::Valid and																// Must be a valid function type
+			ValidDispatchReturn< DispatchReturnType< Func > > and													// Return type must be void or convertible to bool
+			( DispatchArguments< Func >::Size == 1 ) and															// Must take exactly one argument
+			( SingleEventDispatchFunctor< Func, TEventList > or TypeListEventDispatchFunctor< Func, TEventList > ); // Must satisfy either dispatch functor concept (see above)
+
+
+		template < typename Func, typename TEvent, typename TEventList >
+		concept DispatchFunctorMatchesEvent =
+			IsDispatchFunctor< TEventList, Func > and // Func must satisfy IsDispatchFunctor for the event list
+			(
+				// If it's a single event dispatch functor, the event type must match exactly
+				( SingleEventDispatchFunctor< Func, TEventList > and std::same_as< DispatchEventType< Func >, std::remove_cvref_t< TEvent > > ) or
+				// If it's a type list dispatch functor, the event type must be contained in the dispatch list
+				( TypeListEventDispatchFunctor< Func, TEventList > and TypeListDispatchList< Func >::template Contains< std::remove_cvref_t< TEvent > > )
+			);
+
+		template < typename TEvent, typename TEventList, typename... Funcs >
+		concept AnyDispatchFunctorMatchesEvent =
+			( DispatchFunctorMatchesEvent< Funcs, TEvent, TEventList > || ... );
 
 
 		struct OrderedEventTag
@@ -114,5 +128,54 @@ namespace sl {
 
 		inline constexpr OrderedEventTag ordered_event{};
 
+
+		struct EventRecordBase
+		{
+			bool handled = false;
+			std::uint64_t sequence = 0;
+		};
+
+		template < typename TEventList >
+		struct EventRecord : EventRecordBase
+		{
+			static_assert( IsTypeList< TEventList >, "TEventList must satisfy IsTypeList" );
+
+			using EventList = TEventList;
+			using Variant = typename EventList::VariantType;
+
+			Variant data;
+
+			EventRecord() = default;
+
+			template < typename TEvent, typename... Args >
+				requires IsRuntimeEvent< TEventList, TEvent > && std::constructible_from< TEvent, Args... >
+			explicit EventRecord( std::in_place_type_t< TEvent >, Args&&... args )
+				: data( std::in_place_type< TEvent >, std::forward< Args >( args )... )
+			{
+			}
+
+			template < typename TEvent, typename... Args >
+				requires IsRuntimeEvent< TEventList, TEvent > && std::constructible_from< TEvent, Args... >
+			explicit EventRecord( std::in_place_type_t< TEvent >, detail::OrderedEventTag, std::uint64_t seq, Args&&... args )
+				: data( std::in_place_type< TEvent >, std::forward< Args >( args )... )
+			{
+				this->sequence = seq;
+			}
+		};
+
+		template < typename TEventList >
+		struct RootState
+		{
+			EventRecord< TEventList >* root_record = nullptr;
+		};
+
+		struct BoundState
+		{
+			void* event{};
+			TypeTag type_tag{};
+		};
+
+		template < typename TEventList >
+		using ViewState = std::variant< std::monostate, RootState< TEventList >, BoundState >;
 	} // namespace detail
 } // namespace sl

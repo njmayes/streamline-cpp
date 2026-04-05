@@ -2,6 +2,11 @@
 
 #include "Detail/Event.h"
 
+#include <cstdint>
+#include <type_traits>
+#include <utility>
+#include <variant>
+
 namespace sl {
 
 	enum class EventRuntimeMode
@@ -18,59 +23,17 @@ namespace sl {
 
 	template < typename TEventList, typename TEvent >
 	concept IsRuntimeEvent =
-		IsTypeList< TEventList > &&
+		IsTypeList< TEventList > and
 		TEventList::template Contains< TEvent >;
 
-	namespace detail {
-
-		template < typename T >
-		inline constexpr int EventTypeTagValue = 0;
-
-		template < typename T >
-		constexpr void const* EventTypeTag() noexcept
-		{
-			return &EventTypeTagValue< std::remove_cvref_t< T > >;
-		}
-
-		struct EventRecordBase
-		{
-			bool handled = false;
-			std::uint64_t sequence = 0;
-		};
-
-		template < typename TEventList >
-		struct EventRecord : EventRecordBase
-		{
-			static_assert( IsTypeList< TEventList >, "TEventList must satisfy IsTypeList" );
-
-			using EventList = TEventList;
-			using Variant = typename EventList::VariantType;
-
-			Variant data;
-
-			EventRecord() = default;
-
-			template < typename TEvent, typename... Args >
-				requires IsRuntimeEvent< TEventList, TEvent > && std::constructible_from< TEvent, Args... >
-			explicit EventRecord( std::in_place_type_t< TEvent >, Args&&... args )
-				: data( std::in_place_type< TEvent >, std::forward< Args >( args )... )
-			{
-			}
-
-			template < typename TEvent, typename... Args >
-				requires IsRuntimeEvent< TEventList, TEvent > && std::constructible_from< TEvent, Args... >
-			explicit EventRecord( std::in_place_type_t< TEvent >, detail::OrderedEventTag, std::uint64_t seq, Args&&... args )
-				: data( std::in_place_type< TEvent >, std::forward< Args >( args )... )
-			{
-				this->sequence = seq;
-			}
-		};
-
-	} // namespace detail
-
+	/// <summary>
+	/// Helper function for binding member functions as event handlers.
+	/// </summary>
+	/// <example>
+	/// </example>
 	template < typename MemFn >
-		requires FunctionTraits< MemFn >::Valid &&
-				 FunctionTraits< MemFn >::IsMemberFunction &&
+		requires FunctionTraits< MemFn >::Valid and
+				 FunctionTraits< MemFn >::IsMemberFunction and
 				 ( FunctionTraits< MemFn >::Arguments::Size == 1 )
 	auto BindDispatch( typename FunctionTraits< MemFn >::ObjectType* instance, MemFn&& fn )
 	{
@@ -81,218 +44,196 @@ namespace sl {
 		};
 	}
 
+	/// <summary>
+	/// Wrapper type that provides a view into an event record. This is the type that is passed to event handlers when dispatching.
+	/// </summary>
 	template < typename TEventList >
 	class EventView
 	{
-		static_assert( IsTypeList< TEventList >, "TEventList must satisfy IsTypeList" );
+		SL_COMPILE_CHECK( IsTypeList< TEventList >, EventView<TEventList>, "TEventList must satisfy IsTypeList" );
 
-	public:
+		template < typename TEvent >
+		static constexpr bool ValidEvent = TEventList::template Contains< std::remove_cvref_t< TEvent > >;
+		
 		using EventList = TEventList;
 		using Record = detail::EventRecord< EventList >;
+		using RootState = detail::RootState<TEventList>;
+		using BoundState = detail::BoundState;
+		using State = detail::ViewState< EventList >;
 
-		EventView() = default;
-		EventView( EventView const& ) = default;
-		EventView& operator=( EventView const& ) = default;
-
-		explicit EventView( Record& record )
-			: mRecord( &record )
-			, mRootRecord( &record )
+	public:
+		/// <summary>
+		/// Dispatch the event to a handler or set of handlers. Each handler should be an invocable object (e.g. a lambda, function pointer, or std::function)
+		/// that takes either a single event argument or an EventView of a subset of the event list.
+		///
+		/// The dispatching will match the event against the provided handlers, and invoke those that match. If any handler returns true (or a type convertible to bool that evaluates to true), the event will be marked as handled and no further handlers will be invoked.
+		/// Handlers are invoked in the order they are provided to Dispatch.
+		///
+		/// If the handler argument is an EventView TDispatchList > where TDispatchList is a TypeList that is a subset of EventList,
+		/// the handler will be invoked if the event matches any type in TDispatchList, and the handler will receive a subview of the event with that dispatch list.
+		/// </summary>
+		template < typename... Funcs >
+			requires( ... and detail::IsDispatchFunctor< EventList, Funcs > )
+		bool Dispatch( Funcs&&... funcs )
 		{
-		}
-
-		template < typename TEventCheck >
-		bool IsType() const
-		{
-			if ( !mRecord )
+			if constexpr ( sizeof...( Funcs ) == 0 )
 				return false;
 
-			if constexpr ( IsTypeList< TEventCheck > )
+			if ( mRecord.handled )
+				return false;
+
+			State old_state = mState;
+
+			if ( auto* root = std::get_if< RootState >( &mState ) )
 			{
-				if ( mEvent )
-				{
-					return TEventCheck::Any(
-						[ this ]< typename T >() {
-							return this->template Is< T >();
-						}
-					);
-				}
-				else
-				{
-					if ( !mRootRecord )
-						return false;
-
-					return TEventCheck::Any(
-						[ this ]< typename T >() {
-							return std::holds_alternative< T >( RootRecord().data );
-						}
-					);
-				}
-			}
-			else
-			{
-				if ( mEvent )
-				{
-					return this->template Is< TEventCheck >();
-				}
-				else
-				{
-					if ( !mRootRecord )
-						return false;
-
-					return std::holds_alternative< TEventCheck >( RootRecord().data );
-				}
-			}
-		}
-
-		template < typename TEvent >
-			requires EventList::template
-		Contains< std::remove_cvref_t< TEvent > > bool Is() const
-		{
-			return mTypeTag == detail::EventTypeTag< std::remove_cvref_t< TEvent > >();
-		}
-
-		template < typename TEvent >
-			requires EventList::template
-		Contains< std::remove_cvref_t< TEvent > >
-			std::remove_cvref_t< TEvent >& Get() &
-		{
-			SL_VERIFY( mEvent );
-			SL_VERIFY( this->template Is< TEvent >() );
-			return *static_cast< std::remove_cvref_t< TEvent >* >( mEvent );
-		}
-
-		template < typename TEvent >
-			requires EventList::template
-		Contains< std::remove_cvref_t< TEvent > >
-			std::remove_cvref_t< TEvent > const& Get() const&
-		{
-			SL_VERIFY( mEvent );
-			SL_VERIFY( this->template Is< TEvent >() );
-			return *static_cast< std::remove_cvref_t< TEvent > const* >( mEvent );
-		}
-
-		template < typename... Funcs >
-			requires( sizeof...( Funcs ) > 0 ) && ( ... && detail::IsDispatchFunctor< EventList, Funcs > )
-		void Dispatch( Funcs&&... funcs )
-		{
-			if ( !mRecord || mRecord->handled )
-				return;
-
-			void* old_event = mEvent;
-			void const* old_type_tag = mTypeTag;
-
-			if ( mEvent )
-			{
-				bool matched = false;
-
-				EventList::ForEach(
-					[ & ]< typename TEvent >() {
-						if ( !matched && mTypeTag == detail::EventTypeTag< TEvent >() )
-						{
-							matched = true;
-							auto& event = *static_cast< TEvent* >( mEvent );
-							( DispatchOne( std::forward< Funcs >( funcs ), event ), ... );
-						}
-					}
-				);
-			}
-			else
-			{
-				SL_VERIFY( mRootRecord );
-
 				std::visit(
 					[ & ]< typename TEvent >( TEvent& event ) {
-						mEvent = &event;
-						mTypeTag = detail::EventTypeTag< TEvent >();
-						( DispatchOne( std::forward< Funcs >( funcs ), event ), ... );
+						mState = BoundState{
+							.event = &event,
+							.type_tag = TypeTraits< TEvent >::BaseTag
+						};
+						mRecord.handled = ( ... or DispatchOne( std::forward< Funcs >( funcs ), event ) );
 					},
-					RootRecord().data
+					root->root_record->data
 				);
 			}
+			else if ( std::holds_alternative< BoundState >( mState ) )
+			{
+				DispatchBoundEvent( std::forward< Funcs >( funcs )... );
+			}
 
-			mEvent = old_event;
-			mTypeTag = old_type_tag;
+			mState = std::move( old_state );
+			return mRecord.handled;
 		}
 
-		bool IsHandled() const
+		template < typename TEvent >
+			requires ValidEvent< TEvent >
+		bool Is() const
 		{
-			return mRecord && mRecord->handled;
+			using Event = std::remove_cvref_t< TEvent >;
+
+			if ( auto const* root = std::get_if< RootState >( &mState ) )
+				return std::holds_alternative< Event >( root->root_record->data );
+
+			if ( auto const* bound = std::get_if< BoundState >( &mState ) )
+				return bound->type_tag == TypeTraits< Event >::BaseTag;
+
+			return false;
 		}
 
-		std::uint64_t Sequence() const
+		template < IsTypeList TList >
+			requires detail::IsTypeListSubsetV< TList, EventList >
+		bool IsAnyOf() const
 		{
-			return mRecord ? mRecord->sequence : 0;
+			return TList::Any(
+				[ this ]< typename T >() { return this->template Is< T >(); }
+			);
 		}
 
-		explicit operator bool() const
+		template < typename... TEvent >
+			requires( ... and ValidEvent< TEvent > )
+		bool IsAnyOf() const
 		{
-			return mRecord != nullptr;
+			return ( Is< TEvent >() || ... );
 		}
 
 	private:
+		explicit EventView( Record& record )
+			: mRecord( record )
+			, mState( RootState{ &record } )
+		{
+		}
+
 		template < typename OuterEventList >
 			requires detail::IsTypeListSubsetV< EventList, OuterEventList >
 		explicit EventView( EventView< OuterEventList > const& subview )
 			: mRecord( subview.mRecord )
-			, mRootRecord( nullptr )
-			, mEvent( subview.mEvent )
-			, mTypeTag( subview.mTypeTag )
 		{
+			if ( auto const* bound = std::get_if< typename EventView< OuterEventList >::BoundState >( &subview.mState ) )
+			{
+				mState = BoundState{
+					.event = bound->event,
+					.type_tag = bound->type_tag
+				};
+			}
+			else
+			{
+				mState = std::monostate{};
+			}
 		}
 
-		Record& RootRecord() const
+		template < typename... Funcs >
+		void DispatchBoundEvent( Funcs&&... funcs )
 		{
-			return *mRootRecord;
+			auto* bound = std::get_if< BoundState >( &mState );
+			SL_VERIFY( bound );
+			SL_VERIFY( bound->event );
+			SL_VERIFY( bound->type_tag );
+
+			EventList::Any(
+				[ & ]< typename TEvent >() {
+					if ( bound->type_tag != TypeTraits< TEvent >::BaseTag )
+						return false;
+
+					if constexpr ( detail::AnyDispatchFunctorMatchesEvent< TEvent, EventList, Funcs... > )
+					{
+						auto& event = *static_cast< TEvent* >( bound->event );
+						mRecord.handled = ( ... or DispatchOne( std::forward< Funcs >( funcs ), event ) );
+					}
+
+					return true;
+				}
+			);
 		}
 
 		template < typename Func, typename Arg >
-		void InvokeDispatchHandler( Func&& func, Arg&& arg )
+		bool InvokeDispatchHandler( Func&& func, Arg&& arg )
 		{
 			using Result = typename FunctionTraits< std::remove_cvref_t< Func > >::ReturnType;
 
 			if constexpr ( std::convertible_to< Result, bool > )
 			{
-				mRecord->handled = static_cast< bool >( std::invoke( std::forward< Func >( func ), std::forward< Arg >( arg ) ) );
+				return static_cast< bool >( std::invoke( std::forward< Func >( func ), std::forward< Arg >( arg ) ) );
 			}
 			else
 			{
 				std::invoke( std::forward< Func >( func ), std::forward< Arg >( arg ) );
+				return false;
 			}
 		}
 
 		template < typename Func, typename TEvent >
-		void DispatchOne( Func&& func, TEvent& event )
+		bool DispatchOne( Func&& func, TEvent& event )
 		{
-			if ( !mRecord || mRecord->handled )
-				return;
-
 			using TFunc = std::remove_cvref_t< Func >;
 			using Event = std::remove_cvref_t< TEvent >;
 
 			if constexpr ( detail::SingleEventDispatchFunctor< TFunc, EventList > )
 			{
-				DispatchSingle( std::forward< Func >( func ), event );
+				return DispatchSingle( std::forward< Func >( func ), event );
 			}
 			else if constexpr ( detail::TypeListEventDispatchFunctor< TFunc, EventList > )
 			{
-				DispatchTypeList( std::forward< Func >( func ), event );
+				return DispatchTypeList( std::forward< Func >( func ), event );
 			}
 		}
 
 		template < typename Func, typename Event >
-		void DispatchSingle( Func&& func, Event& event )
+		bool DispatchSingle( Func&& func, Event& event )
 		{
 			using TFunc = std::remove_cvref_t< Func >;
 			using TEvent = std::remove_cvref_t< Event >;
 
 			if constexpr ( std::same_as< detail::DispatchEventType< TFunc >, TEvent > )
 			{
-				InvokeDispatchHandler( std::forward< Func >( func ), event );
+				return InvokeDispatchHandler( std::forward< Func >( func ), event );
 			}
+
+			return false;
 		}
 
 		template < typename Func, typename Event >
-		void DispatchTypeList( Func&& func, Event& )
+		bool DispatchTypeList( Func&& func, Event& )
 		{
 			using TFunc = std::remove_cvref_t< Func >;
 			using TEvent = std::remove_cvref_t< Event >;
@@ -301,18 +242,24 @@ namespace sl {
 			if constexpr ( TDispatchList::template Contains< TEvent > )
 			{
 				EventView< TDispatchList > subview( *this );
-				InvokeDispatchHandler( std::forward< Func >( func ), subview );
+				return InvokeDispatchHandler( std::forward< Func >( func ), subview );
 			}
+
+			return false;
 		}
 
 	private:
-		detail::EventRecordBase* mRecord = nullptr;
-		Record* mRootRecord = nullptr;
-		void* mEvent = nullptr;
-		void const* mTypeTag = nullptr;
+		detail::EventRecordBase& mRecord = nullptr;
+		State mState{};
 
 		template < typename TOtherList >
 		friend class EventView;
+
+		template <
+			typename TList,
+			EventRuntimeMode Mode,
+			EventOrdering Ordering >
+		friend class BasicEventRuntime;
 	};
 
 } // namespace sl
