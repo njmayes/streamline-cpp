@@ -12,7 +12,7 @@ namespace sl {
 
 	enum class EventOrdering
 	{
-		Unordered,
+		ThreadOrdered,
 		GlobalOrdered
 	};
 
@@ -156,8 +156,8 @@ namespace sl {
 		Contains< std::remove_cvref_t< TEvent > >
 			std::remove_cvref_t< TEvent >& Get() &
 		{
-			SL_ASSERT( mEvent );
-			SL_ASSERT( this->template Is< TEvent >() );
+			SL_VERIFY( mEvent );
+			SL_VERIFY( this->template Is< TEvent >() );
 			return *static_cast< std::remove_cvref_t< TEvent >* >( mEvent );
 		}
 
@@ -166,8 +166,8 @@ namespace sl {
 		Contains< std::remove_cvref_t< TEvent > >
 			std::remove_cvref_t< TEvent > const& Get() const&
 		{
-			SL_ASSERT( mEvent );
-			SL_ASSERT( this->template Is< TEvent >() );
+			SL_VERIFY( mEvent );
+			SL_VERIFY( this->template Is< TEvent >() );
 			return *static_cast< std::remove_cvref_t< TEvent > const* >( mEvent );
 		}
 
@@ -178,19 +178,37 @@ namespace sl {
 			if ( !mRecord || mRecord->handled )
 				return;
 
-			SL_ASSERT( mRootRecord );
-
 			void* old_event = mEvent;
 			void const* old_type_tag = mTypeTag;
 
-			std::visit(
-				[ & ]< typename TEvent >( TEvent& event ) {
-					mEvent = &event;
-					mTypeTag = detail::EventTypeTag< TEvent >();
-					( DispatchOne( std::forward< Funcs >( funcs ), event ), ... );
-				},
-				RootRecord().data
-			);
+			if ( mEvent )
+			{
+				bool matched = false;
+
+				EventList::ForEach(
+					[ & ]< typename TEvent >() {
+						if ( !matched && mTypeTag == detail::EventTypeTag< TEvent >() )
+						{
+							matched = true;
+							auto& event = *static_cast< TEvent* >( mEvent );
+							( DispatchOne( std::forward< Funcs >( funcs ), event ), ... );
+						}
+					}
+				);
+			}
+			else
+			{
+				SL_VERIFY( mRootRecord );
+
+				std::visit(
+					[ & ]< typename TEvent >( TEvent& event ) {
+						mEvent = &event;
+						mTypeTag = detail::EventTypeTag< TEvent >();
+						( DispatchOne( std::forward< Funcs >( funcs ), event ), ... );
+					},
+					RootRecord().data
+				);
+			}
 
 			mEvent = old_event;
 			mTypeTag = old_type_tag;

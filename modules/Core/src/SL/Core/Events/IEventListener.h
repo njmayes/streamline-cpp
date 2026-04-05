@@ -20,15 +20,13 @@ namespace sl {
 
 		static_assert( IsTypeList< EventList >, "Runtime::EventList must satisfy IsTypeList" );
 
-		using ListeningEvents = TypeList<>;
-
 		virtual ~BasicEventListener()
 		{
 			if ( mRuntime )
 				mRuntime->DeregisterListener( this );
 		}
 
-		virtual void OnEvent( Event& e ) {};
+		virtual void OnEvent( Event& ) {};
 
 		virtual void SetEventCondition( Predicate<> condition )
 		{

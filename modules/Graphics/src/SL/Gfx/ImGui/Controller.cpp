@@ -91,7 +91,6 @@ namespace sl {
 		return ImGui::GetIO().WantCaptureMouse;
 	}
 
-
 	bool ImGuiController::OnKeyEvent( KeyEvent& e )
 	{
 		return ImGui::GetIO().WantCaptureKeyboard;

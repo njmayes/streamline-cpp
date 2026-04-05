@@ -27,7 +27,7 @@ namespace sl {
 	template <
 		typename TEventList,
 		EventRuntimeMode Mode = EventRuntimeMode::MultiThreaded,
-		EventOrdering Ordering = EventOrdering::Unordered >
+		EventOrdering Ordering = EventOrdering::GlobalOrdered >
 	class BasicEventRuntime
 	{
 		static_assert( IsTypeList< TEventList >, "TEventList must satisfy IsTypeList" );
@@ -180,7 +180,7 @@ namespace sl {
 	// ============================================================
 
 	template < typename TEventList >
-	struct EventRuntimeQueueTraits< TEventList, EventRuntimeMode::SingleThreaded, EventOrdering::Unordered >
+	struct EventRuntimeQueueTraits< TEventList, EventRuntimeMode::SingleThreaded, EventOrdering::ThreadOrdered >
 	{
 		using EventRecord = detail::EventRecord< TEventList >;
 
@@ -265,7 +265,7 @@ namespace sl {
 	// ============================================================
 
 	template < typename TEventList >
-	struct EventRuntimeQueueTraits< TEventList, EventRuntimeMode::MultiThreaded, EventOrdering::Unordered >
+	struct EventRuntimeQueueTraits< TEventList, EventRuntimeMode::MultiThreaded, EventOrdering::ThreadOrdered >
 	{
 		using EventRecord = detail::EventRecord< TEventList >;
 
@@ -706,19 +706,13 @@ namespace sl {
 	using EventRuntimeST = BasicEventRuntime<
 		TEventList,
 		EventRuntimeMode::SingleThreaded,
-		EventOrdering::Unordered >;
-
-	template < typename TEventList >
-	using EventRuntimeSTOrdered = BasicEventRuntime<
-		TEventList,
-		EventRuntimeMode::SingleThreaded,
-		EventOrdering::GlobalOrdered >;
+		EventOrdering::ThreadOrdered >;
 
 	template < typename TEventList >
 	using EventRuntimeMT = BasicEventRuntime<
 		TEventList,
 		EventRuntimeMode::MultiThreaded,
-		EventOrdering::Unordered >;
+		EventOrdering::ThreadOrdered >;
 
 	template < typename TEventList >
 	using EventRuntimeMTOrdered = BasicEventRuntime<

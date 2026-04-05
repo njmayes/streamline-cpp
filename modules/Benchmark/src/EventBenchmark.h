@@ -16,10 +16,10 @@ namespace sl {
 	using EventTypeFlag = std::size_t;
 
 	namespace EventType {
-		inline constexpr EventTypeFlag BenchEventA = MakeBit( 24 );
-		inline constexpr EventTypeFlag BenchEventB = MakeBit( 25 );
-		inline constexpr EventTypeFlag BenchEventC = MakeBit( 26 );
-		inline constexpr EventTypeFlag BenchEventD = MakeBit( 27 );
+		inline constexpr EventTypeFlag BenchEventA = MakeBit( 0 );
+		inline constexpr EventTypeFlag BenchEventB = MakeBit( 1 );
+		inline constexpr EventTypeFlag BenchEventC = MakeBit( 2 );
+		inline constexpr EventTypeFlag BenchEventD = MakeBit( 3 );
 	} // namespace EventType
 
 } // namespace sl
@@ -79,8 +79,14 @@ namespace sl::bench {
 		BenchEventC,
 		BenchEventD >;
 
-	using BenchRuntimeSTUnordered = EventRuntimeST< BenchEventList >;
-	using BenchRuntimeSTOrdered = EventRuntimeSTOrdered< BenchEventList >;
+	using BenchSubEventList = TypeList<
+		BenchEventA,
+		BenchEventC >;
+
+	using BenchEvent = EventView< BenchEventList >;
+	using BenchSubEvent = EventView< BenchSubEventList >;
+
+	using BenchRuntimeST = EventRuntimeST< BenchEventList >;
 	using BenchRuntimeMTUnordered = EventRuntimeMT< BenchEventList >;
 	using BenchRuntimeMTOrdered = EventRuntimeMTOrdered< BenchEventList >;
 
@@ -178,6 +184,16 @@ namespace sl::bench {
 			return false;
 		}
 
+		bool OnSubEvent( BenchSubEvent& event ) noexcept
+		{
+			event.Dispatch(
+				BindDispatch( this, &DispatchSink::OnEventA ),
+				BindDispatch( this, &DispatchSink::OnEventC )
+			);
+
+			return false;
+		}
+
 		void Reset() noexcept
 		{
 			mAccum = 0;
@@ -193,7 +209,7 @@ namespace sl::bench {
 	};
 
 	// ------------------------------------------------------------
-	// Runtime listener
+	// Runtime listeners
 	// ------------------------------------------------------------
 
 	template < typename TRuntime >
@@ -217,6 +233,31 @@ namespace sl::bench {
 				BindDispatch( mSink, &DispatchSink::OnEventB ),
 				BindDispatch( mSink, &DispatchSink::OnEventC ),
 				BindDispatch( mSink, &DispatchSink::OnEventD )
+			);
+		}
+
+	private:
+		DispatchSink* mSink = nullptr;
+	};
+
+	template < typename TRuntime >
+	class BenchRuntimeSubListener : public BasicEventListener< TRuntime >
+	{
+	public:
+		using Base = BasicEventListener< TRuntime >;
+		using Event = typename Base::Event;
+
+		explicit BenchRuntimeSubListener( DispatchSink* sink )
+			: mSink( sink )
+		{
+		}
+
+		SL_LISTENING_EVENTS( BenchEventA, BenchEventB, BenchEventC, BenchEventD )
+
+		void OnEvent( Event& event ) override
+		{
+			event.Dispatch(
+				BindDispatch( mSink, &DispatchSink::OnSubEvent )
 			);
 		}
 
@@ -285,7 +326,36 @@ namespace sl::bench {
 		state.SetItemsProcessed( static_cast< int64_t >( state.iterations() ) * static_cast< int64_t >( count ) );
 	}
 
-	template < typename TRuntime >
+	template < typename TRuntime, typename TListener >
+	static void RuntimeDispatchOnly_ST_Impl( benchmark::State& state )
+	{
+		const auto count = static_cast< std::size_t >( state.range( 0 ) );
+		const auto mix = static_cast< MixKind >( state.range( 1 ) );
+
+		TRuntime runtime;
+		DispatchSink sink;
+		auto listener = runtime.template CreateListener< TListener >( &sink );
+
+		for ( auto _ : state )
+		{
+			state.PauseTiming();
+			runtime.Dispatch();
+			sink.Reset();
+			RuntimePostRange( runtime, 0, count, mix );
+			state.ResumeTiming();
+
+			runtime.Dispatch();
+		}
+
+		state.PauseTiming();
+		runtime.Dispatch();
+		sink.Reset();
+		state.ResumeTiming();
+
+		state.SetItemsProcessed( static_cast< int64_t >( state.iterations() ) * static_cast< int64_t >( count ) );
+	}
+
+	template < typename TRuntime, typename TListener >
 	static void RuntimeEndToEnd_ST_Impl( benchmark::State& state )
 	{
 		const auto count = static_cast< std::size_t >( state.range( 0 ) );
@@ -293,7 +363,7 @@ namespace sl::bench {
 
 		TRuntime runtime;
 		DispatchSink sink;
-		auto listener = runtime.template CreateListener< BenchRuntimeListener< TRuntime > >( &sink );
+		auto listener = runtime.template CreateListener< TListener >( &sink );
 
 		for ( auto _ : state )
 		{
@@ -315,33 +385,33 @@ namespace sl::bench {
 	// Multi-thread benchmark helpers
 	// ------------------------------------------------------------
 
-	template < typename TRuntime >
+	template < typename TRuntime, typename TListener >
 	struct RuntimeMtContext
 	{
 		explicit RuntimeMtContext( int thread_count )
 			: phase_barrier( thread_count )
 		{
-			listener = runtime.template CreateListener< BenchRuntimeListener< TRuntime > >( &sink );
+			listener = runtime.template CreateListener< TListener >( &sink );
 		}
 
 		TRuntime runtime;
 		DispatchSink sink;
-		Ref< BenchRuntimeListener< TRuntime > > listener;
+		Ref< TListener > listener;
 		std::barrier<> phase_barrier;
 	};
 
-	template < typename TRuntime >
-	static std::shared_ptr< RuntimeMtContext< TRuntime > > GetRuntimeMtContext( int thread_count )
+	template < typename TRuntime, typename TListener >
+	static std::shared_ptr< RuntimeMtContext< TRuntime, TListener > > GetRuntimeMtContext( int thread_count )
 	{
 		static std::mutex mutex;
-		static std::unordered_map< int, std::weak_ptr< RuntimeMtContext< TRuntime > > > contexts;
+		static std::unordered_map< int, std::weak_ptr< RuntimeMtContext< TRuntime, TListener > > > contexts;
 
 		std::scoped_lock lock( mutex );
 
 		auto shared = contexts[ thread_count ].lock();
 		if ( !shared )
 		{
-			shared = std::make_shared< RuntimeMtContext< TRuntime > >( thread_count );
+			shared = std::make_shared< RuntimeMtContext< TRuntime, TListener > >( thread_count );
 			contexts[ thread_count ] = shared;
 		}
 
@@ -354,7 +424,7 @@ namespace sl::bench {
 		const auto per_thread_count = static_cast< std::size_t >( state.range( 0 ) );
 		const auto mix = static_cast< MixKind >( state.range( 1 ) );
 
-		auto context = GetRuntimeMtContext< TRuntime >( state.threads() );
+		auto context = GetRuntimeMtContext< TRuntime, BenchRuntimeListener< TRuntime > >( state.threads() );
 
 		for ( auto _ : state )
 		{
@@ -382,13 +452,58 @@ namespace sl::bench {
 		state.SetItemsProcessed( static_cast< int64_t >( state.iterations() ) * total_per_iteration );
 	}
 
-	template < typename TRuntime >
+	template < typename TRuntime, typename TListener >
+	static void RuntimeDispatchOnly_MT_Impl( benchmark::State& state )
+	{
+		const auto per_thread_count = static_cast< std::size_t >( state.range( 0 ) );
+		const auto mix = static_cast< MixKind >( state.range( 1 ) );
+
+		auto context = GetRuntimeMtContext< TRuntime, TListener >( state.threads() );
+
+		for ( auto _ : state )
+		{
+			state.PauseTiming();
+			if ( state.thread_index() == 0 )
+			{
+				context->runtime.Dispatch();
+				context->sink.Reset();
+			}
+			context->phase_barrier.arrive_and_wait();
+
+			const auto start_index = per_thread_count * static_cast< std::size_t >( state.thread_index() );
+			RuntimePostRange( context->runtime, start_index, per_thread_count, mix );
+			context->phase_barrier.arrive_and_wait();
+			state.ResumeTiming();
+
+			if ( state.thread_index() == 0 )
+				context->runtime.Dispatch();
+
+			context->phase_barrier.arrive_and_wait();
+		}
+
+		state.PauseTiming();
+		if ( state.thread_index() == 0 )
+		{
+			context->runtime.Dispatch();
+			context->sink.Reset();
+		}
+		context->phase_barrier.arrive_and_wait();
+		state.ResumeTiming();
+
+		const auto total_per_iteration =
+			static_cast< int64_t >( per_thread_count ) *
+			static_cast< int64_t >( state.threads() );
+
+		state.SetItemsProcessed( static_cast< int64_t >( state.iterations() ) * total_per_iteration );
+	}
+
+	template < typename TRuntime, typename TListener >
 	static void RuntimeEndToEnd_MT_Impl( benchmark::State& state )
 	{
 		const auto per_thread_count = static_cast< std::size_t >( state.range( 0 ) );
 		const auto mix = static_cast< MixKind >( state.range( 1 ) );
 
-		auto context = GetRuntimeMtContext< TRuntime >( state.threads() );
+		auto context = GetRuntimeMtContext< TRuntime, TListener >( state.threads() );
 
 		for ( auto _ : state )
 		{
@@ -425,24 +540,29 @@ namespace sl::bench {
 	// Concrete benchmark entry points
 	// ------------------------------------------------------------
 
-	static void BM_RuntimeST_Unordered_PostOnly( benchmark::State& state )
+	static void BM_RuntimeST_PostOnly( benchmark::State& state )
 	{
-		RuntimePostOnly_ST_Impl< BenchRuntimeSTUnordered >( state );
+		RuntimePostOnly_ST_Impl< BenchRuntimeST >( state );
 	}
 
-	static void BM_RuntimeST_Ordered_PostOnly( benchmark::State& state )
+	static void BM_RuntimeST_DispatchOnly( benchmark::State& state )
 	{
-		RuntimePostOnly_ST_Impl< BenchRuntimeSTOrdered >( state );
+		RuntimeDispatchOnly_ST_Impl< BenchRuntimeST, BenchRuntimeListener< BenchRuntimeST > >( state );
 	}
 
-	static void BM_RuntimeST_Unordered_EndToEnd( benchmark::State& state )
+	static void BM_RuntimeST_SubDispatchOnly( benchmark::State& state )
 	{
-		RuntimeEndToEnd_ST_Impl< BenchRuntimeSTUnordered >( state );
+		RuntimeDispatchOnly_ST_Impl< BenchRuntimeST, BenchRuntimeSubListener< BenchRuntimeST > >( state );
 	}
 
-	static void BM_RuntimeST_Ordered_EndToEnd( benchmark::State& state )
+	static void BM_RuntimeST_EndToEnd( benchmark::State& state )
 	{
-		RuntimeEndToEnd_ST_Impl< BenchRuntimeSTOrdered >( state );
+		RuntimeEndToEnd_ST_Impl< BenchRuntimeST, BenchRuntimeListener< BenchRuntimeST > >( state );
+	}
+
+	static void BM_RuntimeST_EndToEnd_SubDispatch( benchmark::State& state )
+	{
+		RuntimeEndToEnd_ST_Impl< BenchRuntimeST, BenchRuntimeSubListener< BenchRuntimeST > >( state );
 	}
 
 	static void BM_RuntimeMT_Unordered_PostOnly( benchmark::State& state )
@@ -455,50 +575,147 @@ namespace sl::bench {
 		RuntimePostOnly_MT_Impl< BenchRuntimeMTOrdered >( state );
 	}
 
+	static void BM_RuntimeMT_Unordered_DispatchOnly( benchmark::State& state )
+	{
+		RuntimeDispatchOnly_MT_Impl<
+			BenchRuntimeMTUnordered,
+			BenchRuntimeListener< BenchRuntimeMTUnordered > >( state );
+	}
+
+	static void BM_RuntimeMT_Unordered_SubDispatchOnly( benchmark::State& state )
+	{
+		RuntimeDispatchOnly_MT_Impl<
+			BenchRuntimeMTUnordered,
+			BenchRuntimeSubListener< BenchRuntimeMTUnordered > >( state );
+	}
+
+	static void BM_RuntimeMT_Ordered_DispatchOnly( benchmark::State& state )
+	{
+		RuntimeDispatchOnly_MT_Impl<
+			BenchRuntimeMTOrdered,
+			BenchRuntimeListener< BenchRuntimeMTOrdered > >( state );
+	}
+
+	static void BM_RuntimeMT_Ordered_SubDispatchOnly( benchmark::State& state )
+	{
+		RuntimeDispatchOnly_MT_Impl<
+			BenchRuntimeMTOrdered,
+			BenchRuntimeSubListener< BenchRuntimeMTOrdered > >( state );
+	}
+
 	static void BM_RuntimeMT_Unordered_EndToEnd( benchmark::State& state )
 	{
-		RuntimeEndToEnd_MT_Impl< BenchRuntimeMTUnordered >( state );
+		RuntimeEndToEnd_MT_Impl<
+			BenchRuntimeMTUnordered,
+			BenchRuntimeListener< BenchRuntimeMTUnordered > >( state );
+	}
+
+	static void BM_RuntimeMT_Unordered_EndToEnd_SubDispatch( benchmark::State& state )
+	{
+		RuntimeEndToEnd_MT_Impl<
+			BenchRuntimeMTUnordered,
+			BenchRuntimeSubListener< BenchRuntimeMTUnordered > >( state );
 	}
 
 	static void BM_RuntimeMT_Ordered_EndToEnd( benchmark::State& state )
 	{
-		RuntimeEndToEnd_MT_Impl< BenchRuntimeMTOrdered >( state );
+		RuntimeEndToEnd_MT_Impl<
+			BenchRuntimeMTOrdered,
+			BenchRuntimeListener< BenchRuntimeMTOrdered > >( state );
+	}
+
+	static void BM_RuntimeMT_Ordered_EndToEnd_SubDispatch( benchmark::State& state )
+	{
+		RuntimeEndToEnd_MT_Impl<
+			BenchRuntimeMTOrdered,
+			BenchRuntimeSubListener< BenchRuntimeMTOrdered > >( state );
 	}
 
 	// ------------------------------------------------------------
 	// Registration
 	// ------------------------------------------------------------
 
-#define SL_BENCH_MIX_ARGS { static_cast< int >( MixKind::Uniform ), static_cast< int >( MixKind::Skewed ) }
+	struct EventBenchmarkRegistrar
+	{
+		EventBenchmarkRegistrar()
+		{
+			constexpr int mixes[] = {
+				static_cast< int >( MixKind::Uniform ),
+				static_cast< int >( MixKind::Skewed )
+			};
 
-	BENCHMARK( BM_RuntimeST_Unordered_PostOnly )
-		->ArgsProduct( { benchmark::CreateRange( 256, 1 << 16, 2 ), SL_BENCH_MIX_ARGS } );
+			// ---------------- ST ----------------
 
-	BENCHMARK( BM_RuntimeST_Ordered_PostOnly )
-		->ArgsProduct( { benchmark::CreateRange( 256, 1 << 16, 2 ), SL_BENCH_MIX_ARGS } );
+			for ( int mix : mixes )
+			{
+				for ( int size = 256; size <= ( 1 << 16 ); size *= 2 )
+				{
+					benchmark::RegisterBenchmark(
+						"Event/RuntimeST/PostOnly",
+						&BM_RuntimeST_PostOnly
+					)
+						->Args( { size, mix } );
 
-	BENCHMARK( BM_RuntimeST_Unordered_EndToEnd )
-		->ArgsProduct( { benchmark::CreateRange( 256, 1 << 16, 2 ), SL_BENCH_MIX_ARGS } );
+					benchmark::RegisterBenchmark(
+						"Event/RuntimeST/DispatchOnly",
+						&BM_RuntimeST_DispatchOnly
+					)
+						->Args( { size, mix } );
 
-	BENCHMARK( BM_RuntimeST_Ordered_EndToEnd )
-		->ArgsProduct( { benchmark::CreateRange( 256, 1 << 16, 2 ), SL_BENCH_MIX_ARGS } );
+					benchmark::RegisterBenchmark(
+						"Event/RuntimeST/SubDispatchOnly",
+						&BM_RuntimeST_SubDispatchOnly
+					)
+						->Args( { size, mix } );
 
-	BENCHMARK( BM_RuntimeMT_Unordered_PostOnly )
-		->ArgsProduct( { benchmark::CreateRange( 256, 1 << 14, 2 ), SL_BENCH_MIX_ARGS } )
-		->ThreadRange( 1, 8 );
+					benchmark::RegisterBenchmark(
+						"Event/RuntimeST/EndToEnd",
+						&BM_RuntimeST_EndToEnd
+					)
+						->Args( { size, mix } );
 
-	BENCHMARK( BM_RuntimeMT_Ordered_PostOnly )
-		->ArgsProduct( { benchmark::CreateRange( 256, 1 << 14, 2 ), SL_BENCH_MIX_ARGS } )
-		->ThreadRange( 1, 8 );
+					benchmark::RegisterBenchmark(
+						"Event/RuntimeST/EndToEnd_SubDispatch",
+						&BM_RuntimeST_EndToEnd_SubDispatch
+					)
+						->Args( { size, mix } );
+				}
+			}
 
-	BENCHMARK( BM_RuntimeMT_Unordered_EndToEnd )
-		->ArgsProduct( { benchmark::CreateRange( 256, 1 << 14, 2 ), SL_BENCH_MIX_ARGS } )
-		->ThreadRange( 1, 8 );
+			// ---------------- MT ----------------
 
-	BENCHMARK( BM_RuntimeMT_Ordered_EndToEnd )
-		->ArgsProduct( { benchmark::CreateRange( 256, 1 << 14, 2 ), SL_BENCH_MIX_ARGS } )
-		->ThreadRange( 1, 8 );
+			for ( int mix : mixes )
+			{
+				for ( int size = 256; size <= ( 1 << 14 ); size *= 2 )
+				{
+					for ( int threads = 1; threads <= 8; threads *= 2 )
+					{
+						benchmark::RegisterBenchmark(
+							"Event/RuntimeMT_Unordered/PostOnly",
+							&BM_RuntimeMT_Unordered_PostOnly
+						)
+							->Args( { size, mix } )
+							->Threads( threads );
 
-#undef SL_BENCH_MIX_ARGS
+						benchmark::RegisterBenchmark(
+							"Event/RuntimeMT_Unordered/SubDispatchOnly",
+							&BM_RuntimeMT_Unordered_SubDispatchOnly
+						)
+							->Args( { size, mix } )
+							->Threads( threads );
+
+						benchmark::RegisterBenchmark(
+							"Event/RuntimeMT_Ordered/EndToEnd_SubDispatch",
+							&BM_RuntimeMT_Ordered_EndToEnd_SubDispatch
+						)
+							->Args( { size, mix } )
+							->Threads( threads );
+					}
+				}
+			}
+		}
+	};
+
+	[[maybe_unused]] static EventBenchmarkRegistrar sRegistrar{};
 
 } // namespace sl::bench

@@ -529,35 +529,35 @@ namespace sl::bench {
 			state.counters[ "kept_bytes" ] = static_cast< double >( payloads.kept_bytes );
 		}
 
-		struct BenchmarkRegistrar
+		struct LogBenchmarkRegistrar
 		{
-			BenchmarkRegistrar()
+			LogBenchmarkRegistrar()
 			{
-				RegisterPopulateBenchmarks< CurrentPopulateTarget >( "LogTarget/PopulateBuffer/CurrentProduction" );
-				RegisterPopulateBenchmarks< FilterToVectorPopulateTarget >( "LogTarget/PopulateBuffer/FilterToVector" );
-				RegisterPopulateBenchmarks< FilterToPointerVectorPopulateTarget >( "LogTarget/PopulateBuffer/FilterToPointerVector" );
-				RegisterPopulateBenchmarks< TwoPassCountThenWritePopulateTarget >( "LogTarget/PopulateBuffer/TwoPassCountThenWrite" );
+				RegisterPopulateBenchmarks< CurrentPopulateTarget >( "Log/LogTarget/PopulateBuffer/CurrentProduction" );
+				RegisterPopulateBenchmarks< FilterToVectorPopulateTarget >( "Log/LogTarget/PopulateBuffer/FilterToVector" );
+				RegisterPopulateBenchmarks< FilterToPointerVectorPopulateTarget >( "Log/LogTarget/PopulateBuffer/FilterToPointerVector" );
+				RegisterPopulateBenchmarks< TwoPassCountThenWritePopulateTarget >( "Log/LogTarget/PopulateBuffer/TwoPassCountThenWrite" );
 
-				benchmark::RegisterBenchmark( "LogMemoryArena/RequestBuffer", &BM_LogMemoryArena_RequestBuffer )
+				benchmark::RegisterBenchmark( "Log/LogMemoryArena/RequestBuffer", &BM_LogMemoryArena_RequestBuffer )
 					->Args( { 64, 64 } )
 					->Args( { 64, 1024 } )
 					->Args( { 128, 1024 } )
 					->Args( { 512, 1024 } )
 					->Args( { 512, 4096 } );
 
-				benchmark::RegisterBenchmark( "LogMemoryArena/RequestBufferAndRelease", &BM_LogMemoryArena_RequestBufferAndRelease )
+				benchmark::RegisterBenchmark( "Log/LogMemoryArena/RequestBufferAndRelease", &BM_LogMemoryArena_RequestBufferAndRelease )
 					->Args( { 64, 64 } )
 					->Args( { 64, 1024 } )
 					->Args( { 128, 1024 } )
 					->Args( { 512, 1024 } )
 					->Args( { 512, 4096 } );
 
-				benchmark::RegisterBenchmark( "LogMemoryArena/RequestBufferOverflow", &BM_LogMemoryArena_RequestBufferOverflow )
+				benchmark::RegisterBenchmark( "Log/LogMemoryArena/RequestBufferOverflow", &BM_LogMemoryArena_RequestBufferOverflow )
 					->Args( { 64, 64 } )
 					->Args( { 128, 1024 } )
 					->Args( { 512, 4096 } );
 
-				benchmark::RegisterBenchmark( "Logger/Flush/NullTarget", &BM_Logger_Flush_NullTarget )
+				benchmark::RegisterBenchmark( "Log/Logger/Flush/NullTarget", &BM_Logger_Flush_NullTarget )
 					->Args( { 64, 32, 10, 1 } )
 					->Args( { 64, 32, 100, 1 } )
 					->Args( { 256, 64, 50, 1 } )
@@ -566,7 +566,7 @@ namespace sl::bench {
 					->Args( { 4096, 128, 50, 1 } )
 					->Args( { 4096, 128, 100, 4 } );
 
-				benchmark::RegisterBenchmark( "Logger/Log/StringView/NullTarget", &BM_Logger_Log_StringView_NullTarget )
+				benchmark::RegisterBenchmark( "Log/Logger/Log/StringView/NullTarget", &BM_Logger_Log_StringView_NullTarget )
 					->Args( { 64, 32, 0, 1 } )
 					->Args( { 64, 32, 100, 1 } )
 					->Args( { 256, 64, 10, 1 } )
@@ -574,7 +574,7 @@ namespace sl::bench {
 					->Args( { 1024, 64, 50, 1 } )
 					->Args( { 1024, 64, 100, 4 } );
 
-				benchmark::RegisterBenchmark( "Logger/Log/Format1/NullTarget", &BM_Logger_Log_Format1_NullTarget )
+				benchmark::RegisterBenchmark( "Log/Logger/Log/Format1/NullTarget", &BM_Logger_Log_Format1_NullTarget )
 					->Args( { 64, 32, 0, 1 } )
 					->Args( { 64, 32, 100, 1 } )
 					->Args( { 256, 64, 10, 1 } )
@@ -584,10 +584,8 @@ namespace sl::bench {
 			}
 		};
 
-		[[maybe_unused]] static BenchmarkRegistrar sRegistrar{};
+		[[maybe_unused]] static LogBenchmarkRegistrar sRegistrar{};
 
 	} // namespace
 
 } // namespace sl::bench
-
-BENCHMARK_MAIN();
