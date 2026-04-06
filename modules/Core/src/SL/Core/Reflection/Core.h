@@ -15,29 +15,23 @@ namespace sl {
 
 	struct RuntimeTypeTraits
 	{
+		std::size_t size;
 		bool is_void;
 		bool is_null_pointer;
 		bool is_integral;
 		bool is_floating_point;
-		bool is_array;
-		bool is_pointer;
-		bool is_lvalue_reference;
-		bool is_rvalue_reference;
 		bool is_member_object_pointer;
 		bool is_member_function_pointer;
 		bool is_enum;
 		bool is_union;
 		bool is_class;
 		bool is_function;
-		bool is_reference;
 		bool is_arithmetic;
 		bool is_fundamental;
 		bool is_object;
 		bool is_scalar;
 		bool is_compound;
 		bool is_member_pointer;
-		bool is_const;
-		bool is_volatile;
 		bool is_trivial;
 		bool is_trivially_copyable;
 		bool is_standard_layout;
@@ -48,8 +42,6 @@ namespace sl {
 		bool is_aggregate;
 		bool is_signed;
 		bool is_unsigned;
-		bool is_bounded_array;
-		bool is_unbounded_array;
 		bool is_scoped_enum;
 
 		bool is_default_constructible;
@@ -57,48 +49,55 @@ namespace sl {
 		bool is_move_constructible;
 
 		template < typename T >
-		void Init()
+		static RuntimeTypeTraits const* Get()
 		{
-			is_void = std::is_void_v< T >;
-			is_null_pointer = std::is_null_pointer_v< T >;
-			is_integral = std::is_integral_v< T >;
-			is_floating_point = std::is_floating_point_v< T >;
-			is_array = std::is_array_v< T >;
-			is_pointer = std::is_pointer_v< T >;
-			is_lvalue_reference = std::is_lvalue_reference_v< T >;
-			is_rvalue_reference = std::is_rvalue_reference_v< T >;
-			is_member_object_pointer = std::is_member_object_pointer_v< T >;
-			is_member_function_pointer = std::is_member_function_pointer_v< T >;
-			is_enum = std::is_enum_v< T >;
-			is_union = std::is_union_v< T >;
-			is_class = std::is_class_v< T >;
-			is_function = std::is_function_v< T >;
-			is_reference = std::is_reference_v< T >;
-			is_arithmetic = std::is_arithmetic_v< T >;
-			is_fundamental = std::is_fundamental_v< T >;
-			is_object = std::is_object_v< T >;
-			is_scalar = std::is_scalar_v< T >;
-			is_compound = std::is_compound_v< T >;
-			is_member_pointer = std::is_member_pointer_v< T >;
-			is_const = std::is_const_v< std::remove_reference_t< T > >;
-			is_volatile = std::is_volatile_v< T >;
-			is_trivial = std::is_trivial_v< T >;
-			is_trivially_copyable = std::is_trivially_copyable_v< T >;
-			is_standard_layout = std::is_standard_layout_v< T >;
-			is_empty = std::is_empty_v< T >;
-			is_polymorphic = std::is_polymorphic_v< T >;
-			is_abstract = std::is_abstract_v< T >;
-			is_final = std::is_final_v< T >;
-			is_aggregate = std::is_aggregate_v< T >;
-			is_signed = std::is_signed_v< T >;
-			is_unsigned = std::is_unsigned_v< T >;
-			is_bounded_array = std::is_bounded_array_v< T >;
-			is_unbounded_array = std::is_unbounded_array_v< T >;
-			is_scoped_enum = std::is_scoped_enum_v< T >;
+			using Base = std::remove_cv_t< std::remove_reference_t< T > >;
+			static RuntimeTypeTraits traits = Init< Base >();
+			return &traits;
+		}
 
-			is_default_constructible = std::is_default_constructible_v< T >;
-			is_copy_constructible = std::is_copy_constructible_v< T >;
-			is_move_constructible = std::is_move_constructible_v< T >;
+	private:
+		template < typename T >
+		static RuntimeTypeTraits Init()
+		{
+			static_assert( std::same_as< T, std::remove_cv_t< std::remove_reference_t< T > > > );
+
+			RuntimeTypeTraits traits{};
+
+			traits.size = sizeof( T );
+			traits.is_void = std::is_void_v< T >;
+			traits.is_null_pointer = std::is_null_pointer_v< T >;
+			traits.is_integral = std::is_integral_v< T >;
+			traits.is_floating_point = std::is_floating_point_v< T >;
+			traits.is_member_object_pointer = std::is_member_object_pointer_v< T >;
+			traits.is_member_function_pointer = std::is_member_function_pointer_v< T >;
+			traits.is_enum = std::is_enum_v< T >;
+			traits.is_union = std::is_union_v< T >;
+			traits.is_class = std::is_class_v< T >;
+			traits.is_function = std::is_function_v< T >;
+			traits.is_arithmetic = std::is_arithmetic_v< T >;
+			traits.is_fundamental = std::is_fundamental_v< T >;
+			traits.is_object = std::is_object_v< T >;
+			traits.is_scalar = std::is_scalar_v< T >;
+			traits.is_compound = std::is_compound_v< T >;
+			traits.is_member_pointer = std::is_member_pointer_v< T >;
+			traits.is_trivial = std::is_trivial_v< T >;
+			traits.is_trivially_copyable = std::is_trivially_copyable_v< T >;
+			traits.is_standard_layout = std::is_standard_layout_v< T >;
+			traits.is_empty = std::is_empty_v< T >;
+			traits.is_polymorphic = std::is_polymorphic_v< T >;
+			traits.is_abstract = std::is_abstract_v< T >;
+			traits.is_final = std::is_final_v< T >;
+			traits.is_aggregate = std::is_aggregate_v< T >;
+			traits.is_signed = std::is_signed_v< T >;
+			traits.is_unsigned = std::is_unsigned_v< T >;
+			traits.is_scoped_enum = std::is_scoped_enum_v< T >;
+
+			traits.is_default_constructible = std::is_default_constructible_v< T >;
+			traits.is_copy_constructible = std::is_copy_constructible_v< T >;
+			traits.is_move_constructible = std::is_move_constructible_v< T >;
+
+			return traits;
 		}
 	};
 
@@ -119,7 +118,7 @@ namespace sl {
 		template < typename T, typename... Args >
 		struct Ctr : CtrBase
 		{
-			// Gross, but needed to be able to do `using Foo = declspec( &Bar::baz )` during reflection registration 
+			// Gross, but needed to be able to do `using Foo = declspec( &Bar::baz )` during reflection registration
 			// where baz will either be a class member or this type.
 			// Marked consteval to prevent any other usage of this operator, which would be meaningless.
 			consteval Ctr< T, Args... > operator&()
@@ -134,7 +133,7 @@ namespace sl {
 		template < typename T >
 		concept IsReflectableType = requires {
 			{ T::_reflection_data::Build() } -> std::same_as< void >;
-			{ T::_reflection_data::Info } -> std::same_as< const TypeInfo*& >;
+			{ T::_reflection_data::Info } -> std::same_as< TypeInfo const*& >;
 		};
 
 		template < typename T >
@@ -157,7 +156,7 @@ namespace sl {
 
 	struct TypeRef
 	{
-		const TypeInfo* base = nullptr;
+		TypeInfo const* base = nullptr;
 
 		bool is_const = false;
 		bool is_volatile = false;
@@ -166,27 +165,37 @@ namespace sl {
 		RefKind ref = RefKind::None;
 
 		bool is_array = false;
-		std::size_t array_extent = 0; // 0 => unbounded/unknown
+		std::optional< std::size_t > array_extent{};
+
+		operator bool() const
+		{
+			return base != nullptr;
+		}
 
 		auto operator<=>( const TypeRef& other ) const = default;
+
+		bool IsBase() const
+		{
+			return base != nullptr and not is_pointer and ref == RefKind::None and not is_array;
+		}
 	};
 
 	struct Instance
 	{
-		const TypeInfo* type = nullptr;
+		TypeRef type;
 		Any data;
 
 		Instance() = default;
 
 		template < typename T >
-		Instance( const TypeInfo* t, T&& d )
-			: type( t )
+		Instance( TypeRef t, T&& d )
+			: type( std::move( t ) )
 			, data( std::forward< T >( d ) )
 		{}
 
 		bool Valid() const
 		{
-			return type and data.HasValue();
+			return data.HasValue();
 		}
 		bool IsVoid() const
 		{
@@ -202,12 +211,12 @@ namespace sl {
 	using FunctionInvoker = std::function< Instance( std::vector< Instance > ) >;
 	using MethodInvoker = std::function< Instance( Instance, std::vector< Instance > ) >;
 
-	using StreamInsertInvoker = std::function< void( std::ostream&, Instance const& ) >;
+	using StreamInsertInvoker = std::function< void( std::ostream&, void const* ) >;
 
 	struct PropertyInfo
 	{
 		std::string_view name;
-		const TypeInfo* parent_type;
+		TypeInfo const* parent_type;
 		TypeRef prop_type;
 		GetFunction accessor;
 		SetFunction setter;
@@ -216,7 +225,7 @@ namespace sl {
 	struct MethodInfo
 	{
 		std::string_view name;
-		const TypeInfo* parent_type;
+		TypeInfo const* parent_type;
 		std::optional< TypeRef > return_type; // empty => void
 		std::vector< TypeRef > arguments;
 		MethodInvoker invoker;
@@ -224,14 +233,14 @@ namespace sl {
 
 	struct ConstructorInfo
 	{
-		const TypeInfo* parent_type;
+		TypeInfo const* parent_type;
 		std::vector< TypeRef > arguments;
 		ConstructorInvoker invoker;
 	};
 
 	struct DestructorInfo
 	{
-		const TypeInfo* parent_type;
+		TypeInfo const* parent_type;
 		DestructorInvoker invoker;
 	};
 
@@ -239,7 +248,7 @@ namespace sl {
 	{
 		std::string_view name;
 
-		RuntimeTypeTraits rttt;
+		RuntimeTypeTraits const* rttt;
 
 		std::vector< ConstructorInfo > constructors;
 		std::optional< DestructorInfo > destructor;
@@ -257,6 +266,15 @@ namespace sl {
 		FunctionInvoker invoker;
 	};
 
+	namespace detail {
+
+		template < typename T >
+		using RemoveObjectPointerType =
+			std::conditional_t<
+				std::is_pointer_v< T > && !std::is_function_v< std::remove_pointer_t< T > >,
+				std::remove_pointer_t< T >,
+				T >;
+	}
 } // namespace sl
 
 namespace std {
@@ -275,15 +293,21 @@ namespace std {
 		template < typename FormatContext >
 		auto format( sl::Instance const& inst, FormatContext& ctx ) const
 		{
-			if ( inst.IsVoid() || inst.type == nullptr )
+			if ( inst.IsVoid() || not inst.type )
 				return format_to( ctx.out(), "<void>" );
 
-			auto const* ti = inst.type;
+			if ( inst.type.is_array )
+				return format_array( inst, ctx );
+
+			if ( inst.type.is_pointer )
+				return format_pointer( inst, ctx );
+
+			auto const* ti = inst.type.base;
 
 			if ( ti->stream_insert.has_value() )
 			{
 				ostringstream oss;
-				( *ti->stream_insert )( oss, inst );
+				( *ti->stream_insert )( oss, inst.data.Get< void const* >() );
 				return format_to( ctx.out(), "{}", oss.str() );
 			}
 
@@ -291,6 +315,43 @@ namespace std {
 			msg += "No formatter registered for reflected type: ";
 			msg += ti->name;
 			throw std::format_error( msg );
+		}
+
+		template < typename FormatContext >
+		auto format_array( sl::Instance const& inst, FormatContext& ctx ) const
+		{
+			auto const* ti = inst.type.base;
+
+			if ( not inst.type.array_extent.has_value() )
+				return format_to( ctx.out(), "<array of {}>", ti->name );
+
+			if ( not ti->stream_insert.has_value() )
+				return format_to( ctx.out(), "<array of {}>", ti->name );
+
+			auto raw = reinterpret_cast< std::byte const* >( inst.data.Get< void const* >() );
+
+			std::ostringstream oss;
+			oss << "[";
+
+			for ( std::size_t i = 0; i < inst.type.array_extent; ++i )
+			{
+				if ( i != 0 )
+					oss << ", ";
+
+				void const* elem = raw + ( i * ti->rttt->size );
+				( *ti->stream_insert )( oss, elem );
+			}
+
+			oss << "]";
+
+			return format_to( ctx.out(), "{}", oss.str() );
+		}
+
+		template < typename FormatContext >
+		auto format_pointer( sl::Instance const& inst, FormatContext& ctx ) const
+		{
+			auto addr = reinterpret_cast< uintptr_t >( inst.data.Get< void const* >() );
+			return format_to( ctx.out(), "{:#0{}x}", addr, 2 + sizeof( std::uintptr_t ) * 2 );
 		}
 	};
 } // namespace std

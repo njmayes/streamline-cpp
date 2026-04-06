@@ -11,6 +11,10 @@
 #include <utility>
 #include <vector>
 
+namespace sl {
+	class Type;
+}
+
 namespace sl::reflect {
 
 	class Reflection
@@ -20,23 +24,35 @@ namespace sl::reflect {
 		static const TypeInfo* GetInfo()
 		{
 			using NoRef = std::remove_reference_t< T >;
-			using NoPtr = std::remove_pointer_t< NoRef >;
-			using Base = std::remove_cv_t< NoPtr >;
+			using NoPtr = detail::RemoveObjectPointerType< NoRef >;
+			using NoArr = std::remove_extent_t< NoPtr >;
+			using Base = std::remove_cv_t< NoArr >;
 
 			using Traits = TypeTraits< Base >;
 
-			if ( not sReflectionData.contains( Traits::Name ) )
+			if ( not sReflectedTypes.contains( Traits::Name ) )
 				Register< Base >();
 
-			return &sReflectionData[ Traits::Name ];
+			return &sReflectedTypes[ Traits::Name ];
 		}
 
 		static const TypeInfo* GetInfo( std::string_view name )
 		{
-			if ( not sReflectionData.contains( name ) )
+			if ( not sReflectedTypes.contains( name ) )
 				throw std::runtime_error( "Attempting to get reflection type by name that didn't exist." );
 
-			return &sReflectionData[ name ];
+			return &sReflectedTypes[ name ];
+		}
+
+		template < typename T >
+		static TypeRef GetTypeRef()
+		{
+			return MakeTypeRef< T >();
+		}
+
+		static TypeRef GetTypeRef( std::string_view name )
+		{
+			return TypeRefFromString( name );
 		}
 
 		template < typename T, typename... Args >
@@ -68,7 +84,7 @@ namespace sl::reflect {
 				};
 
 				return Instance(
-					GetInfo< T >(),
+					GetTypeRef< T >(),
 					std::apply( ctr_func, std::move( tuple_params ) )
 				);
 			};
@@ -84,7 +100,7 @@ namespace sl::reflect {
 			DestructorInfo dtr;
 			dtr.parent_type = type_info;
 			dtr.invoker = []( Instance object ) {
-				if ( object.type->name != TypeTraits< std::remove_cvref_t< T > >::Name )
+				if ( object.type.base->name != TypeTraits< std::remove_cvref_t< T > >::Name )
 					return;
 				object.data.Get< T& >().~T();
 			};
@@ -106,8 +122,9 @@ namespace sl::reflect {
 		static TypeRef MakeTypeRef()
 		{
 			using NoRef = std::remove_reference_t< T >;
-			using NoPtr = std::remove_pointer_t< NoRef >;
-			using Base = std::remove_cv_t< NoPtr >;
+			using NoPtr = detail::RemoveObjectPointerType< NoRef >;
+			using NoArr = std::remove_extent_t< NoPtr >;
+			using Base = std::remove_cv_t< NoArr >;
 
 			TypeRef out{};
 			out.base = GetInfo< Base >();
@@ -139,10 +156,10 @@ namespace sl::reflect {
 		{
 			using Traits = TypeTraits< std::remove_cvref_t< T > >;
 
-			if ( not sReflectionData.contains( Traits::Name ) )
+			if ( not sReflectedTypes.contains( Traits::Name ) )
 				Register< std::remove_cvref_t< T > >();
 
-			return &sReflectionData[ Traits::Name ];
+			return &sReflectedTypes[ Traits::Name ];
 		}
 
 		template < typename T >
@@ -152,28 +169,29 @@ namespace sl::reflect {
 
 			TypeInfo new_type;
 			new_type.name = Traits::Name;
-			new_type.rttt.Init< T >();
+			new_type.rttt = RuntimeTypeTraits::Get< T >();
 
-			sReflectionData.emplace( Traits::Name, std::move( new_type ) );
+			sReflectedTypes.emplace( Traits::Name, std::move( new_type ) );
+
+			if constexpr ( std::is_default_constructible_v< T > )
+				RegisterConstructor( detail::Ctr< T >{} );
+			if constexpr ( std::is_copy_constructible_v< T > )
+				RegisterConstructor( detail::Ctr< T, const T& >{} );
+			if constexpr ( std::is_move_constructible_v< T > )
+				RegisterConstructor( detail::Ctr< T, T&& >{} );
+
+			if constexpr ( std::is_destructible_v< T > )
+				RegisterDestructor< T >();
+
+			if constexpr ( requires( std::ostream& os, T const& v ) { os << v; } )
+				RegisterStreamInsert< T >();
 
 			if constexpr ( detail::IsReflectableType< T > )
 			{
-				if constexpr ( std::is_default_constructible_v< T > )
-					RegisterConstructor( detail::Ctr< T >{} );
-				if constexpr ( std::is_copy_constructible_v< T > )
-					RegisterConstructor( detail::Ctr< T, const T& >{} );
-				if constexpr ( std::is_move_constructible_v< T > )
-					RegisterConstructor( detail::Ctr< T, T&& >{} );
-
-				if constexpr ( std::is_destructible_v< T > )
-					RegisterDestructor< T >();
-
-				T::_reflection_data::Build();
-			}
-
-			if constexpr ( requires( std::ostream& os, T const& v ) { os << v; } )
-			{
-				RegisterStreamInsert< T >();
+				if constexpr ( detail::IsReflectableType< T > )
+				{
+					T::_reflection_data::Build();
+				}
 			}
 		}
 
@@ -192,14 +210,17 @@ namespace sl::reflect {
 
 			prop.accessor = [ accessor ]( Instance ctx ) {
 				return Instance(
-					GetInfo< PropType >(),
+					GetTypeRef< PropType >(),
 					ctx.data.Get< const T& >().*accessor
 				);
 			};
 
-			prop.setter = [ accessor ]( Instance ctx, Instance value ) {
-				ctx.data.Get< T& >().*accessor = value.data.Get< PropType >();
-			};
+			if constexpr ( std::is_assignable_v< PropType&, PropType > )
+			{
+				prop.setter = [ accessor ]( Instance ctx, Instance value ) {
+					ctx.data.Get< T& >().*accessor = value.data.Get< PropType >();
+				};
+			}
 
 			type_info->properties.push_back( std::move( prop ) );
 		}
@@ -274,28 +295,149 @@ namespace sl::reflect {
 
 			auto* type_info = GetInfoForAddition< T >();
 
-			type_info->stream_insert = []( std::ostream& os, Instance const& value ) {
-				if constexpr ( std::is_copy_constructible_v< T > )
-				{
-					os << value.data.template Get< T >();
-				}
-				else
-				{
-					os << value.data.template Get< T const& >();
-				}
+			type_info->stream_insert = []( std::ostream& os, void const* ptr ) {
+				os << *static_cast< T const* >( ptr );
 			};
+		}
+
+		static std::string TypeRefToString( TypeRef const& tr )
+		{
+			return std::format(
+				"{}{}{}{}{}{}",
+				tr.is_const ? "const " : "",
+				tr.is_volatile ? "volatile " : "",
+				tr.base ? tr.base->name : "<invalid type>",
+				tr.is_pointer ? "*" : "",
+				tr.ref == RefKind::LValue ? "&" : ( tr.ref == RefKind::RValue ? "&&" : "" ),
+				tr.is_array ? "[" + ( tr.array_extent.has_value() ? std::to_string( tr.array_extent.value() ) : "" ) + "]" : ""
+			);
+		}
+
+
+		static TypeRef TypeRefFromString( std::string_view text )
+		{
+			auto trim = []( std::string_view sv ) -> std::string_view {
+				while ( !sv.empty() && std::isspace( static_cast< unsigned char >( sv.front() ) ) )
+					sv.remove_prefix( 1 );
+				while ( !sv.empty() && std::isspace( static_cast< unsigned char >( sv.back() ) ) )
+					sv.remove_suffix( 1 );
+				return sv;
+			};
+
+			auto starts_with_word = [ & ]( std::string_view sv, std::string_view word ) -> bool {
+				if ( sv.size() < word.size() )
+					return false;
+				if ( sv.substr( 0, word.size() ) != word )
+					return false;
+				if ( sv.size() == word.size() )
+					return true;
+
+				char next = sv[ word.size() ];
+				return std::isspace( static_cast< unsigned char >( next ) ) != 0;
+			};
+
+			auto consume_prefix_word = [ & ]( std::string_view& sv, std::string_view word ) -> bool {
+				sv = trim( sv );
+				if ( !starts_with_word( sv, word ) )
+					return false;
+
+				sv.remove_prefix( word.size() );
+				sv = trim( sv );
+				return true;
+			};
+
+			auto consume_suffix = [ & ]( std::string_view& sv, std::string_view suffix ) -> bool {
+				sv = trim( sv );
+				if ( sv.size() < suffix.size() )
+					return false;
+				if ( sv.substr( sv.size() - suffix.size() ) != suffix )
+					return false;
+
+				sv.remove_suffix( suffix.size() );
+				sv = trim( sv );
+				return true;
+			};
+
+			auto parse_array_suffix = [ & ]( std::string_view& sv, bool& is_array, std::optional< std::size_t >& extent ) -> bool {
+				sv = trim( sv );
+
+				if ( sv.empty() || sv.back() != ']' )
+					return false;
+
+				auto open = sv.find_last_of( '[' );
+				if ( open == std::string_view::npos || open > sv.size() - 1 )
+					throw std::runtime_error( "Invalid array suffix in type name." );
+
+				std::string_view inside = sv.substr( open + 1, sv.size() - open - 2 );
+				inside = trim( inside );
+
+				is_array = true;
+				if ( not inside.empty() )
+				{
+					std::size_t value = 0;
+					for ( char ch : inside )
+					{
+						if ( ch < '0' || ch > '9' )
+							throw std::runtime_error( "Invalid array extent in type name." );
+						value = ( value * 10 ) + static_cast< std::size_t >( ch - '0' );
+					}
+					extent = value;
+				}
+
+				sv = sv.substr( 0, open );
+				sv = trim( sv );
+				return true;
+			};
+
+			text = trim( text );
+			if ( text.empty() )
+				throw std::runtime_error( "Cannot parse empty type name." );
+
+			TypeRef out{};
+
+			// Parse suffixes in reverse order of ToString():
+			//   const volatile Base*[N]&&
+			//                         ^ ref
+			//                      ^^^^^^^ array
+			//                    ^ pointer
+
+			if ( consume_suffix( text, "&&" ) )
+				out.ref = RefKind::RValue;
+			else if ( consume_suffix( text, "&" ) )
+				out.ref = RefKind::LValue;
+
+			parse_array_suffix( text, out.is_array, out.array_extent );
+
+			if ( consume_suffix( text, "*" ) )
+				out.is_pointer = true;
+
+			// Parse prefixes in the same order ToString() emits them.
+			if ( consume_prefix_word( text, "const" ) )
+				out.is_const = true;
+
+			if ( consume_prefix_word( text, "volatile" ) )
+				out.is_volatile = true;
+
+			text = trim( text );
+			if ( text.empty() )
+				throw std::runtime_error( "Missing base type name in type string." );
+
+			out.base = Reflection::GetInfo( text );
+			return out;
 		}
 
 	private:
 		using ReflectionData = std::unordered_map< std::string_view, TypeInfo >;
-		inline static ReflectionData sReflectionData;
+		inline static ReflectionData sReflectedTypes;
+
+		friend Type;
 	};
 
 	template < typename T >
 	Instance MakeInstance( T&& value )
 	{
 		return Instance(
-			reflect::Reflection::GetInfo< T >(),
+			Reflection::GetTypeRef< T >(),
 			std::forward< T >( value )
 		);
 	}
@@ -334,7 +476,12 @@ namespace sl::reflect {
 			SL_FOR_EACH( SL_REFLECT_MEMBER_IMPL, __VA_ARGS__ )                                    \
 		}                                                                                         \
 		inline static const ::sl::TypeInfo* Info = ::sl::reflect::Reflection::GetInfo< CLASS >(); \
-	};
+	};                                                                                            \
+                                                                                                  \
+	std::string ToString() const                                                                  \
+	{                                                                                             \
+		return ::sl::Type::Get< CLASS >().ToString( *this );                                      \
+	}
 
 #define SL_REMOVE_PAREN( ... ) _arg_type< void( __VA_ARGS__ ) >::type
 

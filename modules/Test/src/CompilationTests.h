@@ -186,17 +186,18 @@ namespace sl::test {
 		auto dVal = f.UnwrapOrElse( []() { return 0; } );
 	}
 
+	void FunctionTest()
+	{}
+
 	struct ReflectionTest
 	{
-		int x;
-		float y;
-		std::string z;
+		int x{};
+		float y{};
 
 		ReflectionTest() = default;
-		ReflectionTest( int a, float b, std::string c )
+		ReflectionTest( int a, float b )
 			: x( a )
 			, y( b )
-			, z( c )
 		{}
 
 		void Update( int x2 )
@@ -206,10 +207,9 @@ namespace sl::test {
 
 		SL_REFLECT_CLASS(
 			ReflectionTest,
-			SL_CTR( int, float, std::string ),
+			SL_CTR( int, float ),
 			x,
 			y,
-			z,
 			Update
 		);
 	};
@@ -219,34 +219,26 @@ namespace sl::test {
 		ReflectionTest obj;
 		obj.x = 42;
 		obj.y = 3.14f;
-		obj.z = "Hello, Reflection!";
 
 		auto type = Type::Get( "sl::test::ReflectionTest" );
-		std::println( "Class Name: {}", type.GetName() );
-		std::println( "Properties:" );
-		for ( auto const& member : type.GetProperties() )
-		{
-			std::println( "\t- {}: {} ({})", member.GetName(), member.GetValue( obj ), member.GetType().GetName() );
-		}
-		std::println( "Methods:" );
-		for ( auto const& member : type.GetMethods() )
-		{
-			std::println( "\t- {}", member.GetName() );
-		}
+		std::println( "obj - {}\n", type.ToString( obj ) );
 
-		std::println();
-
-		auto obj2 = type.Instantiate< ReflectionTest >( 7, 2.71f, std::string{ "Instantiated via Reflection" } );
+		auto obj2 = type.Instantiate< ReflectionTest >( 7, 2.71f );
+		std::println( "obj2 - {}\n", type.ToString( obj2 ) );
 
 		auto obj3 = type.Instantiate< ReflectionTest >( obj );
+		std::println( "obj3 - {}\n", obj3.ToString() );
 
 		type.GetMethod( "Update" ).Invoke< void >( obj3, 100 );
+		std::println( "obj3 - {}\n", type.ToString( obj3 ) );
 
 		auto prop = type.GetProperty( "x" );
 		auto const& test = prop.GetValue< int >( obj3 );
 		prop.SetValue( obj3, 200 );
+		std::println( "obj3 - {}\n", type.ToString( obj3 ) );
 
 		obj3.x = 300;
+		std::println( "obj3 - {}\n", type.ToString( obj3 ) );
 	}
 
 } // namespace sl

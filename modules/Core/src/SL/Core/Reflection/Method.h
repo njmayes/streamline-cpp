@@ -9,11 +9,6 @@ namespace sl {
 	class Method
 	{
 	public:
-		Method() = default;
-		Method( const MethodInfo& info )
-			: mMethod( &info )
-		{}
-
 		std::string_view GetName() const
 		{
 			return mMethod->name;
@@ -68,6 +63,13 @@ namespace sl {
 		}
 
 	private:
+		Method( const MethodInfo& info )
+			: mMethod( &info )
+		{}
+
+	private:
 		const MethodInfo* mMethod = nullptr;
+
+		friend class Type;
 	};
 } // namespace sl

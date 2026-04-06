@@ -10,12 +10,5 @@ int main( int argc, char** argv )
 
 	sl::test::EnumTest();
 
-	try
-	{
-		sl::test::ReflectionTestFunc();
-	}
-	catch ( const std::exception& e )
-	{
-		std::cerr << "Reflection test failed: " << e.what() << std::endl;
-	}
+	sl::test::ReflectionTestFunc();
 }

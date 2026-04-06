@@ -37,25 +37,28 @@ namespace sl {
 	class Type
 	{
 	public:
-		Type( const TypeInfo* type )
+		Type( const TypeRef& type )
 			: mInfo( type )
-		{}
-
-		std::string_view GetName() const
 		{
-			return mInfo->name;
 		}
+
+		Type( const TypeInfo* type )
+		{
+			mInfo.base = type;
+		}
+
+		std::string GetName() const;
 
 		template < CanReflect T, typename... Args >
 			requires std::constructible_from< T, Args... >
 		T Instantiate( Args&&... args ) const
 		{
-			if ( mInfo->name != TypeTraits< std::remove_cvref_t< T > >::Name )
-				throw BadReflectionCastException( TypeTraits< std::remove_cvref_t< T > >::Name, mInfo->name );
+			if ( mInfo.base->name != TypeTraits< T >::BaseName )
+				throw BadReflectionCastException( TypeTraits< std::remove_cvref_t< T > >::Name, mInfo.base->name );
 
 			auto ctr = FindConstructor< Args&&... >();
 			if ( not ctr )
-				throw UnreflectedTargetException< Args... >( mInfo->name );
+				throw UnreflectedTargetException< Args... >( mInfo.base->name );
 
 			std::vector< Instance > instanced_args;
 			instanced_args.reserve( sizeof...( Args ) );
@@ -69,17 +72,16 @@ namespace sl {
 			return instance.data.template Get< T >();
 		}
 
-		template < typename T, CanReflect Obj, typename... Args >
-		T InvokeMember( std::string_view name, Obj&& obj, Args&&... args ) const
-		{
-			return GetMethod( name ).Invoke< T >( std::forward< Obj >( obj ), std::forward< Args >( args )... );
-		}
-
 		Property GetProperty( std::string_view name ) const;
 		std::vector< Property > GetProperties() const;
 
 		Method GetMethod( std::string_view name ) const;
 		std::vector< Method > GetMethods() const;
+
+		RuntimeTypeTraits const& GetTraits() const
+		{
+			return *mInfo.base->rttt;
+		}
 
 		auto operator<=>( const Type& ) const = default;
 		operator bool() const
@@ -87,9 +89,15 @@ namespace sl {
 			return mInfo;
 		}
 
-		RuntimeTypeTraits const& GetTraits() const
+		std::string ToString() const;
+		std::string ToString( Instance obj ) const;
+
+		template < CanReflect T >
+		std::string ToString( T const& obj ) const
 		{
-			return mInfo->rttt;
+			if ( mInfo.base->name != TypeTraits< T >::BaseName )
+				throw BadReflectionCastException( TypeTraits< std::remove_cvref_t< T > >::Name, mInfo.base->name );
+			return ToString( reflect::MakeInstance( std::forward < decltype( obj ) >( obj ) ) );
 		}
 
 	public:
@@ -102,13 +110,13 @@ namespace sl {
 			}
 			else
 			{
-				return Type( reflect::Reflection::GetInfo< T >() );
+				return Type( reflect::Reflection::GetTypeRef< T >() );
 			}
 		}
 
 		static Type Get( std::string_view name )
 		{
-			return Type( reflect::Reflection::GetInfo( name ) );
+			return Type( reflect::Reflection::GetTypeRef( name ) );
 		}
 
 	private:
@@ -133,20 +141,17 @@ namespace sl {
 				return match_param( ctr, std::make_index_sequence< ArgTypes::Size >() );
 			};
 
-			auto it = std::ranges::find_if( mInfo->constructors, match_parameters );
-			return it != mInfo->constructors.end() ? &( *it ) : nullptr;
+			auto it = std::ranges::find_if( mInfo.base->constructors, match_parameters );
+			return it != mInfo.base->constructors.end() ? &( *it ) : nullptr;
 		}
 
-	private:
-		TypeInfo const* mInfo = nullptr;
-
 		template < typename Arg >
-		static bool IsConvertibleTo( const TypeRef& target )
+		static bool IsConvertibleTo( TypeRef const& target )
 		{
 			using Traits = TypeTraits< Arg >;
 			using BaseTraits = TypeTraits< std::remove_cvref_t< Arg > >;
 
-			SL_TODO( "Support conversions between types, not just between value categories of same type" );
+			// SL_TODO( "Support conversions between types, not just between value categories of same type" );
 			if ( BaseTraits::Name != target.base->name )
 				return false;
 
@@ -160,7 +165,7 @@ namespace sl {
 					// - accepts const& argument to const& parameter
 					// - accepts lvalue argument to by-value parameter (copy)
 					return ( target.is_const and target.ref == RefKind::LValue ) or
-						   ( not target_is_ref and target.base->rttt.is_copy_constructible );
+						   ( not target_is_ref and target.base->rttt->is_copy_constructible );
 				}
 				else
 				{
@@ -168,7 +173,7 @@ namespace sl {
 					// - accepts & argument to & or const& parameter
 					// - accepts lvalue argument to by-value parameter (copy)
 					return ( target.ref == RefKind::LValue ) or
-						   ( not target_is_ref and target.base->rttt.is_copy_constructible );
+						   ( not target_is_ref and target.base->rttt->is_copy_constructible );
 				}
 			}
 			else if constexpr ( Traits::IsRValueReference )
@@ -177,7 +182,7 @@ namespace sl {
 				// - accepts && argument to && parameter
 				// - accepts rvalue argument to by-value parameter (move)
 				return ( target.ref == RefKind::RValue ) or
-					   ( not target_is_ref and target.base->rttt.is_move_constructible );
+					   ( not target_is_ref and target.base->rttt->is_move_constructible );
 			}
 			else
 			{
@@ -197,12 +202,36 @@ namespace sl {
 				if ( target.ref == RefKind::LValue )
 				{
 					if ( target.is_const )
-						return target.base->rttt.is_copy_constructible;
+						return target.base->rttt->is_copy_constructible;
 					return false;
 				}
 
 				return false;
 			}
 		}
+
+	private:
+		TypeRef mInfo{};
 	};
 } // namespace sl
+
+namespace std {
+
+	template <>
+	struct formatter< sl::Type, char >
+	{
+		constexpr auto parse( format_parse_context& ctx )
+		{
+			auto it = ctx.begin();
+			if ( it != ctx.end() && *it != '}' )
+				throw format_error( "Invalid format for sl::Type" );
+			return it;
+		}
+
+		template < typename FormatContext >
+		auto format( sl::Type const& type, FormatContext& ctx ) const
+		{
+			return format_to( ctx.out(), "{}", type.ToString() );
+		};
+	};
+} // namespace std

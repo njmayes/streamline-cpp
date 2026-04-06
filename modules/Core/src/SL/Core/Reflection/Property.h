@@ -9,11 +9,6 @@ namespace sl {
 	class Property
 	{
 	public:
-		Property() = default;
-		Property( const PropertyInfo& info )
-			: mProperty( &info )
-		{}
-
 		Type GetType() const;
 
 		std::string_view GetName() const
@@ -83,6 +78,13 @@ namespace sl {
 		}
 
 	private:
+		Property( const PropertyInfo& info )
+			: mProperty( &info )
+		{}
+
+	private:
 		const PropertyInfo* mProperty = nullptr;
+
+		friend class Type;
 	};
 } // namespace sl
