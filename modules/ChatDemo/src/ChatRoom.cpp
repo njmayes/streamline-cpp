@@ -43,7 +43,7 @@ void ServerLayer::OnMessage( sl::net::Payload const& msg )
 	while ( mRecentMessages.size() > max_recent_msgs )
 		mRecentMessages.pop_front();
 
-	sl::Application::PostEvent< sl::NetworkOutEvent >( new_msg );
+	Emit< sl::NetworkOutEvent >( new_msg );
 }
 
 void ServerLayer::BroadcastMessage( std::string_view msg )

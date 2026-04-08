@@ -41,7 +41,7 @@ namespace sl {
 				return nullptr;
 			}
 
-			Ref< T > new_panel = sl::Application::CreateEventListener< T >( std::forward< Args >( args )... );
+			Ref< T > new_panel = sl::Application::CreateEventDevice< T >( std::forward< Args >( args )... );
 			mEditorPanels.emplace_back( init_data, new_panel );
 
 			return new_panel;

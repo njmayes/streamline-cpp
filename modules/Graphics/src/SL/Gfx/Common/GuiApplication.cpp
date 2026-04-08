@@ -9,20 +9,28 @@ namespace sl {
 	GuiApplication::GuiApplication( Ref< GuiApplicationSpecification > spec )
 		: Application( spec )
 	{
-		mWindow = MakeBox< Window >( spec->window_props );
-
-		mImGuiController = Application::CreateEventListener< ImGuiController >( mWindow->GetNativeWindow() );
+		mWindow = Application::CreateEventDevice< Window >( spec->window_props );
+		mImGuiController = Application::CreateEventDevice< ImGuiController >( mWindow->GetNativeWindow() );
 
 		RegisterSystem< Renderer >();
 	}
 
 	void GuiApplication::OnUpdate( Timestep ts )
 	{
+		if ( mState.minimised )
+			return;
+
+		auto const& layers = GetLayerStack();
+
+		// Regular layer rendering
+		for ( auto layer : layers )
+			layer->OnRender();
+
 		// Begin ImGui rendering
 		mImGuiController->StartFrame();
 
 		// Render each ImGui controls in each layer
-		for ( auto layer : GetLayerStack() )
+		for ( auto layer : layers )
 			layer->OnOverlayRender();
 
 		mPanelManager.Render();
@@ -31,14 +39,8 @@ namespace sl {
 		// End ImGui rendering
 		mImGuiController->EndFrame();
 
-		// Poll GLFW events to populate queue and swap buffers
+		// Swap buffers
 		mWindow->OnUpdate();
-	}
-
-	void GuiApplication::OnRender()
-	{
-		for ( auto layer : GetLayerStack() )
-			layer->OnRender();
 	}
 
 	bool GuiApplication::OnEvent( Event& e )

@@ -73,6 +73,11 @@ namespace sl {
 			glfwSetWindowPos( window, x, y );
 		}
 
+		template < typename TEvent, typename... TArgs >
+		void GlfwEmit( GLFWwindow* window, TArgs&&... args )
+		{
+			static_cast< Window* >( glfwGetWindowUserPointer( window ) )->Emit< TEvent >( std::forward< TArgs >( args )... );
+		}
 	} // namespace
 
 	Window::Window( const WindowProperties& props )
@@ -91,29 +96,34 @@ namespace sl {
 		glfwSwapBuffers( mWindow );
 	}
 
+	void Window::PollEvents()
+	{
+		glfwPollEvents();
+	}
+
 	void Window::SetTitle( std::string_view title )
 	{
-		mData.title = title;
-		glfwSetWindowTitle( mWindow, mData.title.c_str() );
+		mTitle = title;
+		glfwSetWindowTitle( mWindow, mTitle.data() );
 	}
 
 	void Window::SetVSync( bool enabled )
 	{
 		glfwSwapInterval( enabled ? 1 : 0 );
-		mData.vSync = enabled;
+		mVSync = enabled;
 	}
 
 	bool Window::IsVSync() const
 	{
-		return mData.vSync;
+		return mVSync;
 	}
 
 	void Window::Init( const WindowProperties& props )
 	{
-		mData.title = props.title.empty() ? "Streamline" : props.title;
-		mData.width = props.resolution.width;
-		mData.height = props.resolution.height;
-		mData.vSync = props.vsync;
+		mTitle = props.title.empty() ? "Streamline" : props.title;
+		mWidth = props.resolution.width;
+		mHeight = props.resolution.height;
+		mVSync = props.vsync;
 
 		if ( sGLFWWindowCount == 0 )
 		{
@@ -147,8 +157,8 @@ namespace sl {
 
 			case WindowMode::BorderlessFullscreen:
 			{
-				mData.width = static_cast< unsigned >( target_mode->width );
-				mData.height = static_cast< unsigned >( target_mode->height );
+				mWidth = static_cast< unsigned >( target_mode->width );
+				mHeight = static_cast< unsigned >( target_mode->height );
 
 				glfwWindowHint( GLFW_DECORATED, GLFW_FALSE );
 				glfwWindowHint( GLFW_RESIZABLE, GLFW_FALSE );
@@ -163,8 +173,8 @@ namespace sl {
 			{
 				if ( props.resolution.width == 0 || props.resolution.height == 0 )
 				{
-					mData.width = static_cast< unsigned >( target_mode->width );
-					mData.height = static_cast< unsigned >( target_mode->height );
+					mWidth = static_cast< unsigned >( target_mode->width );
+					mHeight = static_cast< unsigned >( target_mode->height );
 				}
 
 				glfwWindowHint( GLFW_RED_BITS, target_mode->redBits );
@@ -179,17 +189,17 @@ namespace sl {
 
 		log::Trace(
 			"Creating window {} ({}, {}) on monitor {} in mode {}",
-			mData.title,
-			mData.width,
-			mData.height,
+			mTitle,
+			mWidth,
+			mHeight,
 			monitor_selection.index,
 			static_cast< int >( props.mode )
 		);
 
 		mWindow = glfwCreateWindow(
-			static_cast< int >( mData.width ),
-			static_cast< int >( mData.height ),
-			mData.title.c_str(),
+			static_cast< int >( mWidth ),
+			static_cast< int >( mHeight ),
+			mTitle.data(),
 			create_monitor,
 			nullptr
 		);
@@ -209,8 +219,8 @@ namespace sl {
 			CenterWindowOnMonitor(
 				mWindow,
 				target_monitor,
-				static_cast< int >( mData.width ),
-				static_cast< int >( mData.height )
+				static_cast< int >( mWidth ),
+				static_cast< int >( mHeight )
 			);
 		}
 
@@ -224,23 +234,23 @@ namespace sl {
 		log::Info( "\tRenderer: {0}", reinterpret_cast< const char* >( glGetString( GL_RENDERER ) ) );
 		log::Info( "\tVersion: {0}", reinterpret_cast< const char* >( glGetString( GL_VERSION ) ) );
 
-		glfwSetWindowUserPointer( mWindow, &mData );
+		glfwSetWindowUserPointer( mWindow, this );
 		SetVSync( props.vsync );
 
 		glfwSetWindowSizeCallback( mWindow, []( GLFWwindow* window, int width, int height ) {
-			WindowData& data = *( WindowData* )glfwGetWindowUserPointer( window );
-			data.width = static_cast< unsigned >( width );
-			data.height = static_cast< unsigned >( height );
+			Window* self = static_cast< Window* >( glfwGetWindowUserPointer( window ) );
+			self->mWidth = static_cast< unsigned >( width );
+			self->mHeight = static_cast< unsigned >( height );
 
-			Application::PostEvent< WindowResizeEvent >( width, height );
+			self->Emit< WindowResizeEvent >( width, height );
 		} );
 
 		glfwSetWindowCloseCallback( mWindow, []( GLFWwindow* window ) {
-			Application::PostEvent< WindowCloseEvent >();
+			GlfwEmit< WindowCloseEvent >(window);
 		} );
 
 		glfwSetWindowPosCallback( mWindow, []( GLFWwindow* window, int xpos, int ypos ) {
-			Application::PostEvent< WindowMovedEvent >( xpos, ypos );
+			GlfwEmit< WindowMovedEvent >( window, xpos, ypos );
 		} );
 
 		glfwSetKeyCallback( mWindow, []( GLFWwindow* window, int key, int scancode, int action, int mods ) {
@@ -248,24 +258,24 @@ namespace sl {
 			{
 				case GLFW_PRESS:
 				{
-					Application::PostEvent< KeyPressedEvent >( ( KeyCode )key, false );
+					GlfwEmit< KeyPressedEvent >( window, ( KeyCode )key, false );
 					break;
 				}
 				case GLFW_RELEASE:
 				{
-					Application::PostEvent< KeyReleasedEvent >( ( KeyCode )key );
+					GlfwEmit< KeyReleasedEvent >( window, ( KeyCode )key );
 					break;
 				}
 				case GLFW_REPEAT:
 				{
-					Application::PostEvent< KeyPressedEvent >( ( KeyCode )key, true );
+					GlfwEmit< KeyPressedEvent >( window, ( KeyCode )key, true );
 					break;
 				}
 			}
 		} );
 
 		glfwSetCharCallback( mWindow, []( GLFWwindow* window, unsigned int keycode ) {
-			Application::PostEvent< KeyTypedEvent >( keycode );
+			GlfwEmit< KeyTypedEvent >( window, keycode );
 		} );
 
 		glfwSetMouseButtonCallback( mWindow, []( GLFWwindow* window, int button, int action, int mods ) {
@@ -273,30 +283,30 @@ namespace sl {
 			{
 				case GLFW_PRESS:
 				{
-					Application::PostEvent< MouseButtonPressedEvent >( button );
+					GlfwEmit< MouseButtonPressedEvent >( window, button );
 					break;
 				}
 				case GLFW_RELEASE:
 				{
-					Application::PostEvent< MouseButtonReleasedEvent >( button );
+					GlfwEmit< MouseButtonReleasedEvent >( window, button );
 					break;
 				}
 			}
 		} );
 
 		glfwSetScrollCallback( mWindow, []( GLFWwindow* window, double xOffset, double yOffset ) {
-			Application::PostEvent< MouseScrolledEvent >( ( float )xOffset, ( float )yOffset );
+			GlfwEmit< MouseScrolledEvent >( window, ( float )xOffset, ( float )yOffset );
 		} );
 
 		glfwSetCursorPosCallback( mWindow, []( GLFWwindow* window, double xPos, double yPos ) {
-			Application::PostEvent< MouseMovedEvent >( ( float )xPos, ( float )yPos );
+			GlfwEmit< MouseMovedEvent >( window,  ( float )xPos, ( float )yPos );
 		} );
 
 		glfwSetWindowFocusCallback( mWindow, []( GLFWwindow* window, int focused ) {
 			if ( focused == GLFW_TRUE )
-				Application::PostEvent< WindowFocusEvent >();
+				GlfwEmit< WindowFocusEvent >( window );
 			else
-				Application::PostEvent< WindowFocusLostEvent >();
+				GlfwEmit< WindowFocusLostEvent >( window );
 		} );
 	}
 

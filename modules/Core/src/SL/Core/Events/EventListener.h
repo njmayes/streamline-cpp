@@ -1,29 +1,18 @@
 #pragma once
 
-#include "Event.h"
+#include "EventDevice.h"
 
 namespace sl {
 
-	template <
-		typename TEventList,
-		EventRuntimeMode Mode,
-		EventOrdering Ordering >
-	class BasicEventRuntime;
-
 	template < typename TRuntime >
-	class BasicEventListener : public RefCounted
+	class BasicEventListener : public virtual BasicEventDevice< TRuntime >
 	{
 	public:
-		using Runtime = TRuntime;
-		using EventList = typename Runtime::EventList;
-		using Event = typename Runtime::EventType;
+		using Event = typename BasicEventDevice< TRuntime >::Event;
 
-		static_assert( IsTypeList< EventList >, "Runtime::EventList must satisfy IsTypeList" );
-
-		virtual ~BasicEventListener()
+		void SetEventCondition( Predicate< Event& > condition )
 		{
-			if ( mRuntime )
-				mRuntime->DeregisterListener( this );
+			mAcceptCondition = std::move( condition );
 		}
 
 		virtual bool OnEvent( Event& )
@@ -31,14 +20,9 @@ namespace sl {
 			return false;
 		};
 
-		virtual void SetEventCondition( Predicate<> condition )
+		bool Accept( Event& e ) const override
 		{
-			mAcceptCondition = std::move( condition );
-		}
-
-		bool Accept( Event& e ) const
-		{
-			return ShouldAcceptEvent( e ) and mAcceptCondition();
+			return ShouldAcceptEvent( e ) and mAcceptCondition( e );
 		}
 
 	private:
@@ -50,12 +34,7 @@ namespace sl {
 		}
 
 	private:
-		Predicate<> mAcceptCondition = []() { return true; };
-
-		template < typename, EventRuntimeMode, EventOrdering >
-		friend class BasicEventRuntime;
-
-		Runtime* mRuntime = nullptr;
+		Predicate< Event& > mAcceptCondition = []( auto&& ) { return true; };
 	};
 
 #define SL_LISTENING_EVENTS( ... )                          \

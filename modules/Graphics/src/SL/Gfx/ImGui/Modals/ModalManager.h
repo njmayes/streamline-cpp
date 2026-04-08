@@ -49,7 +49,7 @@ namespace sl {
 				return nullptr;
 			}
 
-			Ref< T > new_modal = sl::Application::CreateEventListener< T >( std::forward< Args >( args )... );
+			Ref< T > new_modal = sl::Application::CreateEventDevice< T >( std::forward< Args >( args )... );
 			ModalEntry& entry = mEditorModals.emplace_back( init_data, new_modal );
 
 			if ( not mBlockEsc and init_data.block_exit )

@@ -15,12 +15,14 @@ namespace sl {
 
 	class Application;
 
-	using ApplicationFactory = std::function< Application*( CommandLineArgs ) >;
+	using ApplicationFactory = std::function< Box< Application >( CommandLineArgs ) >;
 
 	using ApplicationEventRuntime = EventRuntimeMTOrdered< CoreEventList >;
+
+	using ApplicationEventEmitter = typename ApplicationEventRuntime::Emitter;
 	using ApplicationEventListener = typename ApplicationEventRuntime::Listener;
 
-	class ApplicationLayer : public ApplicationEventListener
+	class ApplicationLayer : public ApplicationEventListener, public ApplicationEventEmitter
 	{
 	public:
 		virtual ~ApplicationLayer() = default;
@@ -78,13 +80,11 @@ namespace sl {
 
 		virtual void OnUpdate( Timestep ts )
 		{}
-		virtual void OnRender()
-		{}
 
 		template < detail::IsLayer T, typename... Args >
 		Ref< T > PushLayer( Args&&... args )
 		{
-			auto layer = mEventRuntime->CreateListener< T >( std::forward< Args >( args )... );
+			auto layer = mEventRuntime->CreateEventDevice< T >( std::forward< Args >( args )... );
 			mLayerStack.emplace_back( layer );
 			layer->OnAttach();
 
@@ -122,10 +122,12 @@ namespace sl {
 		}
 
 		static void Close();
+
 		static Application* Get()
 		{
 			return sInstance;
 		}
+
 		template < typename T >
 			requires std::derived_from< T, Application >
 		static T* Get()
@@ -150,22 +152,12 @@ namespace sl {
 		static bool AreEventsBlocked();
 
 		template < typename T, typename... Args >
-		static Ref< T > CreateEventListener( Args&&... args )
+		static Ref< T > CreateEventDevice( Args&&... args )
 		{
 			if ( not sInstance )
 				throw std::runtime_error( "No application instance" );
 
-			return sInstance->mEventRuntime->CreateListener< T >( std::forward< Args >( args )... );
-		}
-
-		template < typename TEvent, typename... TArgs >
-			requires IsRuntimeEvent< ApplicationEventRuntime::EventList, TEvent >
-		static void PostEvent( TArgs&&... args )
-		{
-			if ( not sInstance )
-				throw std::runtime_error( "No application instance" );
-
-			sInstance->mEventRuntime->Post< TEvent >( std::forward< TArgs >( args )... );
+			return sInstance->mEventRuntime->CreateEventDevice< T >( std::forward< Args >( args )... );
 		}
 
 	private:

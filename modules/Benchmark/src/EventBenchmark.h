@@ -275,12 +275,12 @@ namespace sl::bench {
 
 		TRuntime runtime;
 		DispatchSink sink;
-		auto listener = runtime.template CreateListener< BenchRuntimeListener< TRuntime > >( &sink );
+		auto listener = runtime.template CreateEventDevice< BenchRuntimeListener< TRuntime > >( &sink );
 
 		for ( auto _ : state )
 		{
 			state.PauseTiming();
-			runtime.Dispatch();
+			runtime.OnUpdate();
 			sink.Reset();
 			state.ResumeTiming();
 
@@ -288,7 +288,7 @@ namespace sl::bench {
 		}
 
 		state.PauseTiming();
-		runtime.Dispatch();
+		runtime.OnUpdate();
 		sink.Reset();
 		state.ResumeTiming();
 
@@ -303,21 +303,21 @@ namespace sl::bench {
 
 		TRuntime runtime;
 		DispatchSink sink;
-		auto listener = runtime.template CreateListener< TListener >( &sink );
+		auto listener = runtime.template CreateEventDevice< TListener >( &sink );
 
 		for ( auto _ : state )
 		{
 			state.PauseTiming();
-			runtime.Dispatch();
+			runtime.OnUpdate();
 			sink.Reset();
 			RuntimePostRange( runtime, 0, count, mix );
 			state.ResumeTiming();
 
-			runtime.Dispatch();
+			runtime.OnUpdate();
 		}
 
 		state.PauseTiming();
-		runtime.Dispatch();
+		runtime.OnUpdate();
 		sink.Reset();
 		state.ResumeTiming();
 
@@ -332,7 +332,7 @@ namespace sl::bench {
 
 		TRuntime runtime;
 		DispatchSink sink;
-		auto listener = runtime.template CreateListener< TListener >( &sink );
+		auto listener = runtime.template CreateEventDevice< TListener >( &sink );
 
 		for ( auto _ : state )
 		{
@@ -341,7 +341,7 @@ namespace sl::bench {
 			state.ResumeTiming();
 
 			RuntimePostRange( runtime, 0, count, mix );
-			runtime.Dispatch();
+			runtime.OnUpdate();
 		}
 
 		benchmark::DoNotOptimize( sink.Value() );
@@ -360,7 +360,7 @@ namespace sl::bench {
 		explicit RuntimeMtContext( int thread_count )
 			: phase_barrier( thread_count )
 		{
-			listener = runtime.template CreateListener< TListener >( &sink );
+			listener = runtime.template CreateEventDevice< TListener >( &sink );
 		}
 
 		TRuntime runtime;
@@ -407,7 +407,7 @@ namespace sl::bench {
 			state.PauseTiming();
 			if ( state.thread_index() == 0 )
 			{
-				context->runtime.Dispatch();
+				context->runtime.OnUpdate();
 				context->sink.Reset();
 			}
 			context->phase_barrier.arrive_and_wait();
@@ -434,7 +434,7 @@ namespace sl::bench {
 			state.PauseTiming();
 			if ( state.thread_index() == 0 )
 			{
-				context->runtime.Dispatch();
+				context->runtime.OnUpdate();
 				context->sink.Reset();
 			}
 			context->phase_barrier.arrive_and_wait();
@@ -445,7 +445,7 @@ namespace sl::bench {
 			state.ResumeTiming();
 
 			if ( state.thread_index() == 0 )
-				context->runtime.Dispatch();
+				context->runtime.OnUpdate();
 
 			context->phase_barrier.arrive_and_wait();
 		}
@@ -453,7 +453,7 @@ namespace sl::bench {
 		state.PauseTiming();
 		if ( state.thread_index() == 0 )
 		{
-			context->runtime.Dispatch();
+			context->runtime.OnUpdate();
 			context->sink.Reset();
 		}
 		context->phase_barrier.arrive_and_wait();
@@ -484,7 +484,7 @@ namespace sl::bench {
 			context->phase_barrier.arrive_and_wait();
 
 			if ( state.thread_index() == 0 )
-				context->runtime.Dispatch();
+				context->runtime.OnUpdate();
 
 			context->phase_barrier.arrive_and_wait();
 
@@ -641,7 +641,7 @@ namespace sl::bench {
 
 			for ( MixKind mix : mixes )
 			{
-				// DEFINE_ST_BENCHMARK( std::format( "Event/{}/RuntimeST/PostOnly", mix ), BM_RuntimeST_PostOnly );
+				DEFINE_ST_BENCHMARK( std::format( "Event/{}/RuntimeST/PostOnly", mix ), BM_RuntimeST_PostOnly );
 				DEFINE_ST_BENCHMARK( std::format( "Event/{}/RuntimeST/DispatchOnly", mix ), BM_RuntimeST_DispatchOnly );
 				DEFINE_ST_BENCHMARK( std::format( "Event/{}/RuntimeST/SubDispatchOnly", mix ), BM_RuntimeST_SubDispatchOnly );
 				DEFINE_ST_BENCHMARK( std::format( "Event/{}/RuntimeST/EndToEnd", mix ), BM_RuntimeST_EndToEnd );
@@ -652,7 +652,7 @@ namespace sl::bench {
 
 			for ( MixKind mix : mixes )
 			{
-				// DEFINE_MT_BENCHMARK( std::format( "Event/{}/RuntimeMT_Unordered/PostOnly", mix ), BM_RuntimeMT_Unordered_PostOnly );
+				DEFINE_MT_BENCHMARK( std::format( "Event/{}/RuntimeMT_Unordered/PostOnly", mix ), BM_RuntimeMT_Unordered_PostOnly );
 				DEFINE_MT_BENCHMARK( std::format( "Event/{}/RuntimeMT_Unordered/DispatchOnly", mix ), BM_RuntimeMT_Unordered_DispatchOnly );
 				DEFINE_MT_BENCHMARK( std::format( "Event/{}/RuntimeMT_Unordered/SubDispatchOnly", mix ), BM_RuntimeMT_Unordered_SubDispatchOnly );
 				DEFINE_MT_BENCHMARK( std::format( "Event/{}/RuntimeMT_Unordered/EndToEnd", mix ), BM_RuntimeMT_Unordered_EndToEnd );

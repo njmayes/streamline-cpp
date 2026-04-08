@@ -3,12 +3,11 @@
 #include "ChatRoom.h"
 #include "ChatClient.h"
 
-sl::Application* NetServerTest( sl::CommandLineArgs const& args )
+sl::Box< sl::Application > NetServerTest( sl::CommandLineArgs const& args )
 {
 	using namespace sl::net;
 
 	auto spec = sl::Ref< sl::ApplicationSpecification >::Create();
-	spec->working_dir = "C:/Users/natha/Desktop/Coding/Projects/WIP/C++/streamline-cpp/modules/ChatDemo";
 
 	auto opts = sl::Read< ServerContextOptions >(
 		args,
@@ -21,15 +20,15 @@ sl::Application* NetServerTest( sl::CommandLineArgs const& args )
 	if ( not opts.has_value() )
 		throw std::runtime_error( "Failed to parse server options from command line" );
 
-	return new ChatServer( spec, *opts );
+	return sl::MakeBox< ChatServer >( spec, *opts );
 }
 
-sl::Application* NetClientTest( sl::CommandLineArgs const& args )
+sl::Box< sl::Application > NetClientTest( sl::CommandLineArgs const& args )
 {
 	using namespace sl::net;
 
 	auto spec = sl::Ref< sl::GuiApplicationSpecification >::Create();
-	spec->working_dir = "C:/Users/natha/Desktop/Coding/Projects/WIP/C++/streamline-cpp/modules/ChatDemo";
+	spec->window_props.maximised = true;
 
 	auto opts = sl::Read< ClientContextOptions >(
 		args,
@@ -42,10 +41,10 @@ sl::Application* NetClientTest( sl::CommandLineArgs const& args )
 	if ( not opts.has_value() )
 		throw std::runtime_error( "Failed to parse client options from command line" );
 
-	return new ChatClient( spec, *opts );
+	return sl::MakeBox< ChatClient >( spec, *opts );
 }
 
-sl::Application* CreateApplication( sl::CommandLineArgs args )
+sl::Box< sl::Application > CreateApplication( sl::CommandLineArgs args )
 {
 	if ( args.Empty() )
 		throw std::runtime_error( "You must specify server or client application" );

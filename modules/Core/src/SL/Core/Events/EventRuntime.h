@@ -1,6 +1,7 @@
 #pragma once
 
 #include "EventListener.h"
+#include "EventEmitter.h"
 
 #include <algorithm>
 #include <atomic>
@@ -36,7 +37,11 @@ namespace sl {
 		using EventList = TEventList;
 		using EventType = EventView< EventList >;
 		using EventRecord = EventType::Record;
-		using Listener = BasicEventListener< BasicEventRuntime< EventList, Mode, Ordering > >;
+
+		using Device = BasicEventDevice< BasicEventRuntime >;
+		using Listener = BasicEventListener< BasicEventRuntime >;
+		using Emitter = BasicEventEmitter< BasicEventRuntime >;
+
 		using QueueTraits = EventRuntimeQueueTraits< EventList, Mode, Ordering >;
 		using QueueState = typename QueueTraits::State;
 
@@ -67,14 +72,16 @@ namespace sl {
 		BasicEventRuntime& operator=( BasicEventRuntime&& ) = delete;
 
 		template < typename T, typename... Args >
-			requires DerivedFromOnly< T, Listener > && std::constructible_from< T, Args... >
-		Ref< T > CreateListener( Args&&... args )
+			requires( DerivedFromOnly< T, Listener > or DerivedFromOnly< T, Emitter > ) and
+					std::constructible_from< T, Args... >
+		Ref< T > CreateEventDevice( Args&&... args )
 		{
 			auto listener = Ref< T >::Create( std::forward< Args >( args )... );
 			listener->mRuntime = this;
-			RegisterListener( listener.Data() );
+			RegisterDevice( listener.Data() );
 			return listener;
 		}
+
 
 		template < typename TEvent, typename... TArgs >
 			requires IsRuntimeEvent< EventList, TEvent > && std::constructible_from< TEvent, TArgs... >
@@ -83,10 +90,23 @@ namespace sl {
 			QueueTraits::template Post< BasicEventRuntime, TEvent >( *this, std::forward< TArgs >( args )... );
 		}
 
-		void Dispatch()
+		void OnUpdate()
 		{
-			ApplyPendingListeners();
+			ApplyPendingDevices();
+			PollDevices();
 			QueueTraits::Dispatch( *this );
+		}
+
+		void RegisterDevice( Device* device )
+		{
+			std::scoped_lock listener_lock( mDevices.lock );
+			mDevices.new_devices.push_back( device );
+		}
+
+		void DeregisterDevice( Device* device )
+		{
+			std::scoped_lock listener_lock( mDevices.lock );
+			mDevices.old_devices.push_back( device );
 		}
 
 		const EventRuntimeConfig& GetConfig() const
@@ -95,51 +115,45 @@ namespace sl {
 		}
 
 	private:
-		void ApplyPendingListeners()
+		void ApplyPendingDevices()
 		{
-			std::scoped_lock listener_lock( mListeners.lock );
+			std::scoped_lock listener_lock( mDevices.lock );
 
-			if ( !mListeners.new_listeners.empty() )
+			if ( !mDevices.new_devices.empty() )
 			{
-				mListeners.listeners.insert(
-					mListeners.listeners.end(),
-					mListeners.new_listeners.begin(),
-					mListeners.new_listeners.end()
+				mDevices.devices.insert(
+					mDevices.devices.end(),
+					mDevices.new_devices.begin(),
+					mDevices.new_devices.end()
 				);
-				mListeners.new_listeners.clear();
+				mDevices.new_devices.clear();
 			}
 
-			if ( !mListeners.old_listeners.empty() )
+			if ( !mDevices.old_devices.empty() )
 			{
 				std::erase_if(
-					mListeners.listeners,
-					[ & ]( const Listener* listener ) {
-						return std::ranges::contains( mListeners.old_listeners, listener );
+					mDevices.devices,
+					[ & ]( Device const* device ) {
+						return std::ranges::contains( mDevices.old_devices, device );
 					}
 				);
-				mListeners.old_listeners.clear();
+				mDevices.old_devices.clear();
 			}
 		}
 
-		void RegisterListener( Listener* listener )
+		void PollDevices()
 		{
-			std::scoped_lock listener_lock( mListeners.lock );
-			mListeners.new_listeners.push_back( listener );
-		}
-
-		void DeregisterListener( Listener* listener )
-		{
-			std::scoped_lock listener_lock( mListeners.lock );
-			mListeners.old_listeners.push_back( listener );
+			for ( auto* device : mDevices.devices )
+				device->PollEvents();
 		}
 
 		void DispatchOne( EventRecord& record )
 		{
 			EventType event( record );
 
-			for ( Listener* listener : mListeners.listeners )
+			for ( Device* device : mDevices.devices )
 			{
-				if ( listener->Accept( event ) and listener->OnEvent( event ) )
+				if ( device->Accept( event ) and device->OnEvent( event ) )
 					return;
 			}
 		}
@@ -151,23 +165,19 @@ namespace sl {
 		}
 
 	private:
-		struct ListenerState
+		struct DeviceState
 		{
 			std::mutex lock;
-			std::vector< Listener* > listeners;
-			std::vector< Listener* > new_listeners;
-			std::vector< Listener* > old_listeners;
+			std::vector< Device* > devices;
+			std::vector< Device* > new_devices;
+			std::vector< Device* > old_devices;
 		};
 
 		template < typename, EventRuntimeMode, EventOrdering >
 		friend struct EventRuntimeQueueTraits;
 
-		template < typename >
-		friend class BasicEventListener;
-		friend class Application;
-
 	private:
-		ListenerState mListeners{};
+		DeviceState mDevices{};
 		QueueState mQueues{};
 		EventRuntimeConfig mConfig{};
 	};
@@ -218,7 +228,7 @@ namespace sl {
 	// ============================================================
 
 	template < typename TEventList >
-	struct EventRuntimeQueueTraits< TEventList, EventRuntimeMode::SingleThreaded, EventOrdering::GlobalOrdered > 
+	struct EventRuntimeQueueTraits< TEventList, EventRuntimeMode::SingleThreaded, EventOrdering::GlobalOrdered >
 	{
 		using EventRecord = detail::EventRecord< TEventList >;
 

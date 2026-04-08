@@ -5,7 +5,7 @@
 
 namespace sl {
 
-	class IPanel : public ApplicationEventListener
+	class IPanel : public ApplicationEventListener, public ApplicationEventEmitter
 	{
 	public:
 		virtual ~IPanel() = default;

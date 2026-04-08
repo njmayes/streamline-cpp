@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SL/Core/Common/Base.h"
+#include "SL/Core/Common/Application.h"
 #include "SL/Core/Types/Math.h"
 
 struct GLFWwindow;
@@ -39,26 +39,27 @@ namespace sl {
 		std::optional< std::uint32_t > monitor_index;
 	};
 
-	class Window
+	class Window : public ApplicationEventEmitter
 	{
 	public:
 		Window( const WindowProperties& props = {} );
 		virtual ~Window();
 
 		void OnUpdate();
+		void PollEvents() override;
 
 		unsigned GetWidth() const
 		{
-			return mData.width;
+			return mWidth;
 		}
 		unsigned GetHeight() const
 		{
-			return mData.height;
+			return mHeight;
 		}
 
 		Vec2f GetSize() const
 		{
-			return { mData.width, mData.height };
+			return { mWidth, mHeight };
 		}
 
 		void SetTitle( std::string_view title );
@@ -79,14 +80,9 @@ namespace sl {
 	private:
 		GLFWwindow* mWindow;
 
-		struct WindowData
-		{
-			std::string title;
-			unsigned width, height;
-			bool vSync;
-		};
-
-		WindowData mData;
+		unsigned mWidth, mHeight;
+		std::string mTitle;
+		bool mVSync;
 	};
 
 } // namespace sl

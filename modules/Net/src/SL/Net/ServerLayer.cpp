@@ -50,7 +50,7 @@ namespace sl::net {
 
 			connection->OnRead( [ this ]( sl::net::Payload const& msg ) {
 				OnMessage( msg );
-				Application::PostEvent< NetworkInEvent >( msg );
+				Emit< NetworkInEvent >( msg );
 			} );
 
 			connection->Start();

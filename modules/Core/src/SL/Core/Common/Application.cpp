@@ -5,15 +5,12 @@ namespace sl {
 	Application::Application( Ref< ApplicationSpecification > spec )
 		: mSpecification( spec )
 	{
-		if ( sInstance )
-			throw std::runtime_error( "Application instance already exists!" );
-
 		sInstance = this;
 
 		mEventRuntime = MakeBox< ApplicationEventRuntime >();
 
-		// Manually call RegisterListener for Application it is not created via EventRuntime::CreateListener
-		mEventRuntime->RegisterListener( this );
+		// Manually call RegisterDevice for Application it is not created via EventRuntime::CreateEventDevice and thus does not automatically register itself as a device
+		mEventRuntime->RegisterDevice( this );
 
 		if ( !mSpecification->working_dir.empty() )
 			std::filesystem::current_path( mSpecification->working_dir );
@@ -31,6 +28,8 @@ namespace sl {
 
 		for ( const auto& shutdownTask : mAppSystems | std::views::reverse )
 			shutdownTask();
+
+		sInstance = nullptr;
 	}
 
 	void Application::ExecuteQueuedJobs()
@@ -45,8 +44,10 @@ namespace sl {
 
 	void Application::Run( ApplicationFactory make_app, CommandLineArgs args )
 	{
-		Application* app = make_app( std::move( args ) );
-		SL_VERIFY( app, "No application instance was created!" );
+		SL_VERIFY( !sInstance, "Application instance already exists!" );
+
+		Box< Application > app = make_app( std::move( args ) );
+		SL_VERIFY( sInstance, "No application instance was created!" );
 
 		while ( sInstance->mState.running )
 		{
@@ -57,28 +58,22 @@ namespace sl {
 			// Process any queued tasks that could not be performed within main loop.
 			sInstance->ExecuteQueuedJobs();
 
-			// Process any events in the event queue
-			sInstance->mEventRuntime->Dispatch();
+			// Poll for and process any events in the event queue
+			sInstance->mEventRuntime->OnUpdate();
 
-			// Run update and render method for each frame
-			if ( !sInstance->mState.minimised )
-			{
-				for ( auto& layer : sInstance->mLayerStack )
-					layer->OnUpdate( timestep );
+			// Run update for each frame
+			for ( auto& layer : sInstance->mLayerStack )
+				layer->OnUpdate( timestep );
 
-				sInstance->OnRender();
-			}
-
+			// Run derived application update logic
 			sInstance->OnUpdate( timestep );
 		}
-
-		delete sInstance;
 	}
 
 	void Application::Close()
 	{
-		if ( !sInstance )
-			return;
+		if ( not sInstance )
+			throw std::runtime_error( "No application instance" );
 
 		if ( sInstance->mState.block_exit )
 			return;
@@ -88,24 +83,24 @@ namespace sl {
 
 	void Application::BlockEsc( bool block )
 	{
-		if ( !sInstance )
-			return;
+		if ( not sInstance )
+			throw std::runtime_error( "No application instance" );
 
 		sInstance->mState.block_exit = block;
 	}
 
 	void Application::BlockEvents( bool block )
 	{
-		if ( !sInstance )
-			return;
+		if ( not sInstance )
+			throw std::runtime_error( "No application instance" );
 
 		sInstance->mState.block_events = block;
 	}
 
 	bool Application::AreEventsBlocked()
 	{
-		if ( !sInstance )
-			return false;
+		if ( not sInstance )
+			throw std::runtime_error( "No application instance" );
 
 		return sInstance->mState.block_events;
 	}

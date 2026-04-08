@@ -25,7 +25,6 @@ namespace sl {
 
 		bool OnEvent( Event& e ) override;
 		void OnUpdate( Timestep ts ) override;
-		void OnRender() override;
 
 		SL_LISTENING_EVENTS( WindowCloseEvent, WindowResizeEvent )
 
@@ -98,7 +97,7 @@ namespace sl {
 		}
 
 	private:
-		Box< Window > mWindow;
+		Ref< Window > mWindow;
 		Ref< ImGuiController > mImGuiController;
 
 		ModalManager mModalManager{};

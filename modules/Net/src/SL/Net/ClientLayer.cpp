@@ -42,7 +42,7 @@ namespace sl::net {
 
 			mServerConnection->OnRead( [ this ]( sl::net::Payload const& msg ) {
 				OnMessage( msg );
-				Application::PostEvent< NetworkInEvent >( msg );
+				Emit< NetworkInEvent >( msg );
 			} );
 
 			mServerConnection->Start();

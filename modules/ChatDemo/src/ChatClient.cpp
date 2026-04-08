@@ -102,7 +102,7 @@ public:
 		msg.Append( text );
 		msg.Push( '\0' );
 
-		sl::Application::PostEvent< sl::NetworkOutEvent >( msg );
+		Emit< sl::NetworkOutEvent >( msg );
 
 		mCurrentText.clear();
 		sl::Utils::ReloadCurrentBuffer();
