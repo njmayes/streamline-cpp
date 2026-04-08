@@ -37,7 +37,7 @@ namespace sl {
 				 ( FunctionTraits< MemFn >::Arguments::Size == 1 )
 	auto BindDispatch( typename FunctionTraits< MemFn >::ObjectType* instance, MemFn&& fn )
 	{
-		using TArg = typename FunctionTraits< MemFn >::Arguments::template Type< 0 >;
+		using TArg = typename FunctionTraits< MemFn >::Arguments::template TypeAt< 0 >;
 
 		return [ instance, fn = std::forward< MemFn >( fn ) ]( TArg arg ) -> decltype( auto ) {
 			return std::invoke( fn, instance, arg );
@@ -50,14 +50,14 @@ namespace sl {
 	template < typename TEventList >
 	class EventView
 	{
-		SL_COMPILE_CHECK( IsTypeList< TEventList >, EventView<TEventList>, "TEventList must satisfy IsTypeList" );
+		SL_COMPILE_CHECK( IsTypeList< TEventList >, EventView< TEventList >, "TEventList must satisfy IsTypeList" );
 
 		template < typename TEvent >
 		static constexpr bool ValidEvent = TEventList::template Contains< std::remove_cvref_t< TEvent > >;
-		
+
 		using EventList = TEventList;
 		using Record = detail::EventRecord< EventList >;
-		using RootState = detail::RootState<TEventList>;
+		using RootState = detail::RootState< TEventList >;
 		using BoundState = detail::BoundState;
 		using State = detail::ViewState< EventList >;
 
@@ -122,7 +122,7 @@ namespace sl {
 		}
 
 		template < IsTypeList TList >
-			requires detail::IsTypeListSubsetV< TList, EventList >
+			requires( EventList::template CompareBy< SetComparison::Subset, TList > )
 		bool IsAnyOf() const
 		{
 			return TList::Any(
@@ -145,7 +145,7 @@ namespace sl {
 		}
 
 		template < typename OuterEventList >
-			requires detail::IsTypeListSubsetV< EventList, OuterEventList >
+			requires( EventList::template CompareBy< SetComparison::Subset, OuterEventList > )
 		explicit EventView( EventView< OuterEventList > const& subview )
 			: mRecord( subview.mRecord )
 		{

@@ -209,13 +209,13 @@ namespace sl::detail {
 
 	private:
 		template < std::size_t I >
-		using CaseTypeAt = typename CaseTypes::template Type< I >;
+		using CaseTypeAt = typename CaseTypes::template TypeAt< I >;
 
 		template < Enum Element >
 		static constexpr std::size_t CaseIndex = EnumTag< Element >::Index;
 
 		template < Enum Element >
-		using ValueTypeAt = typename ValueTypes::template Type< CaseIndex< Element > >;
+		using ValueTypeAt = typename ValueTypes::template TypeAt< CaseIndex< Element > >;
 
 		template < Enum Element >
 		static constexpr bool HasType = !( std::same_as< ValueTypeAt< Element >, std::monostate > );

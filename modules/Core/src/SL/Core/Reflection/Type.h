@@ -126,7 +126,7 @@ namespace sl {
 			using ArgTypes = TypeList< Args... >;
 
 			auto is_convertible = [ & ]< std::size_t I >( const TypeRef& ctr_arg ) {
-				using ArgType = typename ArgTypes::template Type< I >;
+				using ArgType = typename ArgTypes::template TypeAt< I >;
 				return IsConvertibleTo< ArgType >( ctr_arg );
 			};
 

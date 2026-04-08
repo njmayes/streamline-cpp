@@ -69,7 +69,7 @@ namespace sl::reflect {
 
 			ctr.invoker = []( std::vector< Instance > instanced_args = {} ) -> Instance {
 				auto generate_tuple_val = []< std::size_t I >( Instance& object ) -> decltype( auto ) {
-					using ArgType = typename Params::template Type< I >;
+					using ArgType = typename Params::template TypeAt< I >;
 					return object.data.template Get< ArgType >();
 				};
 
@@ -237,7 +237,7 @@ namespace sl::reflect {
 			static constexpr bool IsReturnVoid = std::same_as< ReturnType, void >;
 
 			auto get_arg_types = []< std::size_t... Is >( std::index_sequence< Is... > ) -> std::vector< TypeRef > {
-				return { MakeTypeRef< typename ArgTypes::template Type< Is > >()... };
+				return { MakeTypeRef< typename ArgTypes::template TypeAt< Is > >()... };
 			};
 
 			MethodInfo method;
@@ -249,7 +249,7 @@ namespace sl::reflect {
 
 			method.invoker = [ accessor ]( Instance ctx, std::vector< Instance > args = {} ) -> Instance {
 				auto generate_tuple_val = []< std::size_t I >( Instance& object ) {
-					using ArgType = typename ArgTypes::template Type< I >;
+					using ArgType = typename ArgTypes::template TypeAt< I >;
 					return object.data.Get< ArgType >();
 				};
 

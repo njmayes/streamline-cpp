@@ -63,14 +63,14 @@ namespace sl {
 		template < typename T >
 		inline constexpr std::monostate TypeTagData;
 
-		template< typename T >
+		template < typename T >
 		inline constexpr void const* TypeTagDataPtr = &TypeTagData< T >;
 	} // namespace detail
 
 	/*
 		Type Traits for inspecting a given type
 	*/
-	
+
 	using TypeTag = void const*;
 
 	template < typename T >
@@ -134,6 +134,14 @@ namespace sl {
 	template < typename... Ts >
 	struct RawTypeList;
 
+
+	enum class SetComparison
+	{
+		Subset,
+		Superset,
+		Equal
+	};
+
 	namespace detail {
 
 		template < typename T >
@@ -151,6 +159,40 @@ namespace sl {
 		template < typename T >
 		inline constexpr bool IsTypeListV = IsTypeListImpl< std::remove_cvref_t< T > >::value;
 
+
+		template < SetComparison TOp, typename TBase, typename TOther >
+		static consteval bool CompareByImpl()
+		{
+			using Base = std::remove_cvref_t< TBase >;
+			using Other = std::remove_cvref_t< TOther >;
+
+			if constexpr ( TOp == SetComparison::Subset )
+			{
+				return Base::template All(
+					[]< typename T >() constexpr {
+						return Base::template Contains< std::remove_cvref_t< T > >;
+					}
+				);
+			}
+			else if constexpr ( TOp == SetComparison::Superset )
+			{
+				return Other::All(
+					[]< typename T >() constexpr {
+						return Base::template Contains< std::remove_cvref_t< T > >;
+					}
+				);
+			}
+			else if constexpr ( TOp == SetComparison::Equal )
+			{
+				return CompareByImpl< SetComparison::Subset, Base, Other >() &&
+					   CompareByImpl< SetComparison::Superset, Base, Other >();
+			}
+			else
+			{
+				return false;
+			}
+		}
+
 		template < typename... Ts >
 		struct TypeListStorage
 		{
@@ -167,10 +209,16 @@ namespace sl {
 			static constexpr size_t Index = IndexFunction< 0, R, TupleType >();
 
 			template < size_t I >
-			using Type = typename std::tuple_element< I, TupleType >::type;
+			using TypeAt = typename std::tuple_element< I, TupleType >::type;
 
 			template < size_t I >
-			using Traits = TypeTraits< typename std::tuple_element< I, TupleType >::type >;
+			using TraitsAt = TypeTraits< typename std::tuple_element< I, TupleType >::type >;
+
+
+			template < SetComparison TOp, typename TOther >
+				requires IsTypeListV< TOther >
+			static constexpr bool CompareBy = CompareByImpl< TOp, TypeListStorage< Ts... >, TOther >();
+
 
 			template < typename Func >
 				requires( requires( Func&& func ) { { std::forward< Func >( func ).template operator()< Ts >() } -> std::same_as< void >; } && ... )

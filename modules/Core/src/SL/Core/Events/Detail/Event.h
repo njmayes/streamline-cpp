@@ -21,27 +21,6 @@ namespace sl {
 			std::convertible_to< R, bool >;
 
 
-		// Type List Subset Check
-
-		template < typename TSubset, typename TSuperset >
-		struct IsTypeListSubset : std::false_type
-		{};
-
-		template < typename TSubset, typename TSuperset >
-			requires IsTypeList< TSubset > && IsTypeList< TSuperset >
-		struct IsTypeListSubset< TSubset, TSuperset >
-			: std::bool_constant<
-				  TSubset::All(
-					  []< typename T >() constexpr {
-						  return TSuperset::template Contains< std::remove_cvref_t< T > >;
-					  }
-				  ) >
-		{};
-
-		template < typename TSubset, typename TSuperset >
-		inline constexpr bool IsTypeListSubsetV =
-			IsTypeListSubset< std::remove_cvref_t< TSubset >, std::remove_cvref_t< TSuperset > >::value;
-
 
 		// EventView Check
 
@@ -80,7 +59,7 @@ namespace sl {
 		template < typename Func >
 			requires( DispatchArguments< Func >::Size == 1 )
 		using DispatchEventType =
-			std::remove_cvref_t< typename DispatchArguments< Func >::template Type< 0 > >;
+			std::remove_cvref_t< typename DispatchArguments< Func >::template TypeAt< 0 > >;
 
 		template < typename Func >
 		using TypeListDispatchList = EventViewEventList< DispatchEventType< Func > >;
@@ -92,9 +71,9 @@ namespace sl {
 
 		template < typename Func, typename TEventList >
 		concept TypeListEventDispatchFunctor =
-			IsEventViewV< DispatchEventType< Func > > and				   // The argument must satisfy IsEventView
-			IsTypeList< TypeListDispatchList< Func > > and				   // The EventView must wrap a type list
-			IsTypeListSubsetV< TypeListDispatchList< Func >, TEventList >; // The wrapped type list must be a subset of the event list
+			IsEventViewV< DispatchEventType< Func > > and										   // The argument must satisfy IsEventView
+			IsTypeList< TypeListDispatchList< Func > > and										   // The EventView must wrap a type list
+			TEventList::template CompareBy< SetComparison::Subset, TypeListDispatchList< Func > >; // The wrapped type list must be a subset of the event list
 
 
 		template < typename TEventList, typename Func >
