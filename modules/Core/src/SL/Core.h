@@ -21,6 +21,7 @@
 #include "SL/Core/Threading/ThreadPool.h"
 
 #include "SL/Core/Types/Grid.h"
+#include "SL/Core/Types/Math.h"
 #include "SL/Core/Types/Enum.h"
 #include "SL/Core/Types/Option.h"
 #include "SL/Core/Types/Result.h"
