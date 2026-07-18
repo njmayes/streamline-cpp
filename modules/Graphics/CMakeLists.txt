@@ -7,7 +7,10 @@ cmake_minimum_required(VERSION 3.20)
 add_library(streamline-gfx)
 add_library(streamline::gfx ALIAS streamline-gfx)
 
-target_compile_features(streamline-gfx PUBLIC cxx_std_23)
+target_compile_features(streamline-gfx
+    PUBLIC
+        cxx_std_23
+)
 
 target_include_directories(streamline-gfx
     PUBLIC
@@ -20,11 +23,9 @@ file(GLOB_RECURSE STREAMLINE_GFX_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/*.cpp"
 )
 
-target_sources(streamline-gfx PRIVATE ${STREAMLINE_GFX_SOURCES})
-
-target_link_libraries(streamline-gfx
-    PUBLIC
-        streamline::core
+target_sources(streamline-gfx
+    PRIVATE
+        ${STREAMLINE_GFX_SOURCES}
 )
 
 target_compile_definitions(streamline-gfx
@@ -32,13 +33,20 @@ target_compile_definitions(streamline-gfx
         STREAMLINE_HAS_GFX=1
 )
 
+target_link_libraries(streamline-gfx
+    PUBLIC
+        streamline::core
+)
 
 # -------------------------------------------------------------
-# Third-party dependencies (graphics) via FetchContent
+# Third-party dependencies
 # -------------------------------------------------------------
 
 # -------------------------
 # stb
+#
+# stb does not provide a CMake target. Fetch the repository and
+# expose its headers through an interface target.
 # -------------------------
 
 FetchContent_Declare(
@@ -46,13 +54,20 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/nothings/stb.git
     GIT_TAG        master
 )
+
 FetchContent_MakeAvailable(stb)
 
 add_library(stb INTERFACE)
-target_include_directories(stb INTERFACE ${stb_SOURCE_DIR})
+
+target_include_directories(stb
+    INTERFACE
+        ${stb_SOURCE_DIR}
+)
 
 # -------------------------
 # GLFW
+#
+# GLFW provides the `glfw` target.
 # -------------------------
 
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
@@ -65,10 +80,14 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/glfw/glfw.git
     GIT_TAG        3.4
 )
+
 FetchContent_MakeAvailable(glfw)
 
 # -------------------------
-# glad (OpenGL loader)
+# GLAD
+#
+# GLAD provides `glad_add_library`, which creates the requested
+# OpenGL loader target.
 # -------------------------
 
 FetchContent_Declare(
@@ -77,12 +96,23 @@ FetchContent_Declare(
     GIT_TAG        v2.0.8
     SOURCE_SUBDIR  cmake
 )
+
 FetchContent_MakeAvailable(glad)
 
-glad_add_library(glad_gl_core_46 STATIC REPRODUCIBLE LOADER API gl:core=4.6)
+glad_add_library(
+    glad_gl_core_46
+    STATIC
+    REPRODUCIBLE
+    LOADER
+    API gl:core=4.6
+)
 
 # -------------------------
-# ImGui
+# Dear ImGui
+#
+# Dear ImGui does not provide a root CMake library target.
+# Compile the required core files and GLFW/OpenGL backend files
+# into a local target.
 # -------------------------
 
 FetchContent_Declare(
@@ -90,23 +120,28 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/ocornut/imgui.git
     GIT_TAG        v1.91.9b-docking
 )
+
 FetchContent_MakeAvailable(imgui)
 
-set(IMGUI_SOURCES
+add_library(imgui_glfw STATIC
     ${imgui_SOURCE_DIR}/imgui.cpp
     ${imgui_SOURCE_DIR}/imgui_draw.cpp
     ${imgui_SOURCE_DIR}/imgui_tables.cpp
     ${imgui_SOURCE_DIR}/imgui_widgets.cpp
+
     ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
     ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
 )
-
-add_library(imgui_glfw STATIC ${IMGUI_SOURCES})
 
 target_include_directories(imgui_glfw
     PUBLIC
         ${imgui_SOURCE_DIR}
         ${imgui_SOURCE_DIR}/backends
+)
+
+target_compile_definitions(imgui_glfw
+    PRIVATE
+        GLFW_INCLUDE_NONE
 )
 
 target_link_libraries(imgui_glfw
@@ -117,46 +152,50 @@ target_link_libraries(imgui_glfw
 
 # -------------------------
 # ImGuizmo
+#
+# ImGuizmo provides:
+#
+#   imguizmo
+#   imguizmo::imguizmo
+#
+# Its own target already exports the directory containing
+# ImGuizmo.h. It only needs the ImGui target attached so that
+# its source files can include imgui.h.
 # -------------------------
+
+set(IMGUIZMO_BUILD_EXAMPLE OFF CACHE BOOL "" FORCE)
 
 FetchContent_Declare(
     imguizmo
     GIT_REPOSITORY https://github.com/CedricGuillemet/ImGuizmo.git
     GIT_TAG        master
 )
+
 FetchContent_MakeAvailable(imguizmo)
 
-add_library(imguizmo STATIC
-    ${imguizmo_SOURCE_DIR}/ImGuizmo.cpp
-)
-
-target_include_directories(imguizmo
-    PUBLIC
-        ${imguizmo_SOURCE_DIR}
-)
 target_link_libraries(imguizmo
     PUBLIC
         imgui_glfw
 )
 
-# Attach gfx deps to streamline-gfx
+# -------------------------------------------------------------
+# Graphics dependencies
+# -------------------------------------------------------------
+
 target_link_libraries(streamline-gfx
     PUBLIC
         stb
         glfw
         glad_gl_core_46
         imgui_glfw
-        imguizmo
+        imguizmo::imguizmo
 )
 
 # -------------------------------------------------------------
-# Vulkan / OpenGL / OpenSSL / shaderc / SPIRV-Cross / system libs
+# Graphics APIs
 # -------------------------------------------------------------
 
-# Vulkan SDK (includes + libs)
 find_package(Vulkan REQUIRED)
-
-# OpenGL (instead of raw opengl32/GL)
 find_package(OpenGL REQUIRED)
 
 target_link_libraries(streamline-gfx
@@ -165,11 +204,16 @@ target_link_libraries(streamline-gfx
         OpenGL::GL
 )
 
-# shaderc / SPIRV-Cross:
+# -------------------------------------------------------------
+# shaderc / SPIRV-Cross
+# -------------------------------------------------------------
 
-if (MSVC)
-    if (NOT DEFINED ENV{VULKAN_SDK})
-        message(FATAL_ERROR "VULKAN_SDK environment variable is not set")
+if(MSVC)
+    if(NOT DEFINED ENV{VULKAN_SDK})
+        message(
+            FATAL_ERROR
+            "VULKAN_SDK environment variable is not set"
+        )
     endif()
 
     set(SHADERC_LIB_DIR "$ENV{VULKAN_SDK}/Lib")

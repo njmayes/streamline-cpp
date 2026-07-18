@@ -37,8 +37,11 @@ if(NOT CMAKE_CONFIGURATION_TYPES)
     endif()
 endif()
 
-if (MSVC)
-    add_compile_options(/Zc:preprocessor)
-endif()
 
 add_subdirectory(modules)
+
+
+target_compile_options(streamline-core
+    PUBLIC
+        $<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:MSVC>>:/Zc:preprocessor>
+)
