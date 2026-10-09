@@ -2,12 +2,10 @@
 
 #include "SL/Core/Common/Reflection.h"
 #include "SL/Core/Common/Macros.h"
+#include "SL/Core/Common/Std.h"
 
 #include "magic_enum/magic_enum.hpp"
 #include "magic_enum/magic_enum_format.hpp"
-
-#include <bit>
-#include <stdexcept>
 
 namespace sl::Enum {
 

@@ -39,6 +39,7 @@ endif()
 
 
 add_subdirectory(modules)
+add_subdirectory(test)
 
 
 target_compile_options(streamline-core

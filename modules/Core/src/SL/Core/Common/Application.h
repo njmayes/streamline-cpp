@@ -8,9 +8,6 @@
 #include "SL/Core/Logging/Logger.h"
 #include "SL/Core/Types/Timestep.h"
 
-#include <string>
-#include <mutex>
-
 namespace sl {
 
 	class Application;

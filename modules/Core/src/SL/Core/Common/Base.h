@@ -1,28 +1,12 @@
 #pragma once
 
+#include "Std.h"
 #include "Macros.h"
 #include "Platform.h"
 #include "Reflection.h"
 #include "Enum.h"
 #include "Environment.h"
 #include "Memory.h"
-
-#include <fstream>
-#include <filesystem>
-#include <format>
-#include <utility>
-#include <any>
-#include <mutex>
-#include <ranges>
-#include <vector>
-#include <queue>
-#include <set>
-#include <unordered_set>
-#include <map>
-#include <unordered_map>
-
-#include <cstddef>
-#include <cstring>
 
 namespace sl {
 
