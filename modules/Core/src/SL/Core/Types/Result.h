@@ -33,11 +33,18 @@ namespace sl {
 		using ErrorType = E;
 
 		template < typename... Args >
-		static constexpr bool IsNoExceptNew = std::is_nothrow_constructible_v< T, Args... >;
+		static constexpr bool IsValueNoExceptNew = std::is_nothrow_constructible_v< T, Args... >;
 
-		static constexpr bool IsNoExceptDefNew = std::is_nothrow_default_constructible_v< T >;
-		static constexpr bool IsNoExceptMove = std::is_nothrow_move_constructible_v< T > && std::is_nothrow_move_assignable_v< T >;
-		static constexpr bool IsNoExceptCopy = std::is_nothrow_copy_constructible_v< T > && std::is_nothrow_copy_assignable_v< T >;
+		static constexpr bool IsValueNoExceptDefNew = std::is_nothrow_default_constructible_v< T >;
+		static constexpr bool IsValueNoExceptMove = std::is_nothrow_move_constructible_v< T > && std::is_nothrow_move_assignable_v< T >;
+		static constexpr bool IsValueNoExceptCopy = std::is_nothrow_copy_constructible_v< T > && std::is_nothrow_copy_assignable_v< T >;
+
+		template < typename... Args >
+		static constexpr bool IsErrorNoExceptNew = std::is_nothrow_constructible_v< E, Args... >;
+
+		static constexpr bool IsErrorNoExceptDefNew = std::is_nothrow_default_constructible_v< E >;
+		static constexpr bool IsErrorNoExceptMove = std::is_nothrow_move_constructible_v< E > && std::is_nothrow_move_assignable_v< E >;
+		static constexpr bool IsErrorNoExceptCopy = std::is_nothrow_copy_constructible_v< E > && std::is_nothrow_copy_assignable_v< E >;
 
 		static constexpr bool IsErrorTypeSmartEnum = detail::IsSmartEnum< ErrorType >::value;
 
@@ -66,6 +73,11 @@ namespace sl {
 			: mValue( StorageType::template Make< Err >( error ) ), mResult( false )
 		{}
 
+		constexpr operator bool() const noexcept
+		{
+			return mResult;
+		}
+
 		constexpr bool IsOk() const noexcept
 		{
 			return mResult;
@@ -92,13 +104,13 @@ namespace sl {
 			return Expect( "emergency failure" );
 		}
 
-		constexpr T UnwrapOr( T&& defaultValue ) noexcept( IsNoExceptCopy && IsNoExceptMove )
+		constexpr T UnwrapOr( T&& defaultValue ) noexcept( IsValueNoExceptCopy && IsValueNoExceptMove )
 			requires( IsReference || std::copyable< T > )
 		{
 			return mResult ? MoveVal() : std::forward< T >( defaultValue );
 		}
 
-		constexpr T UnwrapOrDefault() noexcept( IsNoExceptDefNew && IsNoExceptCopy && IsNoExceptMove )
+		constexpr T UnwrapOrDefault() noexcept( IsValueNoExceptDefNew && IsValueNoExceptCopy && IsValueNoExceptMove )
 			requires( !IsReference && std::is_default_constructible_v< T > )
 		{
 			return UnwrapOr( T{} );
@@ -109,6 +121,19 @@ namespace sl {
 		constexpr T UnwrapOrElse( Func&& op )
 		{
 			return mResult ? MoveVal() : op();
+		}
+
+		constexpr E ExpectError( std::string_view msg )
+		{
+			if ( !mResult )
+				throw std::runtime_error( msg.data() );
+
+			return MoveError();
+		}
+
+		constexpr E Error()
+		{
+			return ExpectError( "emergency failure" );
 		}
 
 		//========================
@@ -124,7 +149,7 @@ namespace sl {
 			if ( mResult )
 				return Result< U, E >( std::invoke( std::forward< Func >( op ), MoveVal() ) );
 
-			return Result< U, E >( GetError() );
+			return Result< U, E >( GetErrorRef() );
 		}
 
 		template < typename Func >
@@ -136,7 +161,7 @@ namespace sl {
 			if ( mResult )
 				return Result< T, O >( MoveVal() );
 
-			return Result< T, O >( std::invoke( std::forward< Func >( op ), GetError() ) );
+			return Result< T, O >( std::invoke( std::forward< Func >( op ), GetErrorRef() ) );
 		}
 
 		template < typename Func, typename Default >
@@ -161,7 +186,7 @@ namespace sl {
 			if ( mResult )
 				return std::invoke( std::forward< Func >( op ), MoveVal() );
 
-			return std::invoke( std::forward< ErrFunc >( err_op ), GetError() );
+			return std::invoke( std::forward< ErrFunc >( err_op ), GetErrorRef() );
 		}
 
 		template < typename Func >
@@ -172,7 +197,7 @@ namespace sl {
 				return next( MoveVal() );
 
 			using Ret = std::invoke_result_t< Func, T >;
-			return Ret( GetError() );
+			return Ret( GetErrorRef() );
 		}
 
 		//========================
@@ -192,11 +217,11 @@ namespace sl {
 			{
 				if constexpr ( IsErrorTypeSmartEnum )
 				{
-					return GetError().Match( matcher );
+					return GetErrorRef().Match( matcher );
 				}
 				else
 				{
-					return matcher( detail::EnumTag< Err >{}, GetError() );
+					return matcher( detail::EnumTag< Err >{}, GetErrorRef() );
 				}
 			}
 		}
@@ -218,7 +243,7 @@ namespace sl {
 		}
 
 	protected:
-		constexpr T&& MoveVal() noexcept( IsNoExceptMove )
+		constexpr T&& MoveVal() noexcept( IsValueNoExceptMove )
 		{
 			if constexpr ( IsReference )
 				return GetValRef();
@@ -236,7 +261,20 @@ namespace sl {
 			return mValue.template GetValue< Ok >();
 		}
 
-		constexpr const E& GetError() const noexcept
+		constexpr E&& MoveError() noexcept( IsErrorNoExceptMove )
+		{
+			if constexpr ( IsReference )
+				return GetErrorRef();
+			else
+				return std::move( GetErrorRef() );
+		}
+
+		constexpr E& GetErrorRef() noexcept
+		{
+			return mValue.template GetValue< Err >();
+		}
+
+		constexpr const E& GetErrorRef() const noexcept
 		{
 			return mValue.template GetValue< Err >();
 		}

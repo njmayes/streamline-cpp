@@ -189,7 +189,7 @@ namespace sl {
 
 			auto dVal = f.UnwrapOrElse( []() { return 0; } );
 		}
-	}
+	} // namespace FunctionalTests
 
 	namespace ReflectionTests {
 
@@ -244,27 +244,63 @@ namespace sl {
 			obj3.x = 300;
 			std::println( "obj3 - {}\n", type.ToString( obj3 ) );
 		}
-	}
+	} // namespace ReflectionTests
 
-	namespace AsyncTests
-	{
-		inline int add(int a, int b)
+	namespace AsyncTests {
+		inline int add( int a, int b )
 		{
 			return a + b;
 		}
 
+		using IOResult = Result< int, std::exception_ptr >;
+
+		void SimulateAsyncIO( std::function< void( IOResult ) > complete )
+		{
+			std::thread( [ complete = std::move( complete ) ]() mutable {
+				std::this_thread::sleep_for( std::chrono::seconds( 2 ) );
+
+				complete( Ok< IOResult >( 42 ) );
+			} ).detach();
+		}
+
+		sl::Awaitable< int > TestAsyncIO()
+		{
+			log::Info( "Before IO: {}", std::this_thread::get_id() );
+
+			int result = co_await sl::AwaitIO< int >( SimulateAsyncIO );
+
+			log::Info( "After IO: {}", std::this_thread::get_id() );
+
+			co_return result;
+		}
+
+		sl::Awaitable< int > TestNestedAsync()
+		{
+			log::Info( "Parent: {}", std::this_thread::get_id() );
+
+			int result = co_await TestAsyncIO();
+
+			log::Info( "Parent resumed: {}", std::this_thread::get_id() );
+
+			co_return result * 2;
+		}
+
 		inline void Test()
 		{
-			ThreadPool test{};
+			ThreadPool pool{};
 
-			test.Dispatch( [] {} );
-			auto a = test.Submit( add, 1, 2 );
-			auto b = a.GetResult();
+			pool.Dispatch( [] {} );
+			auto a = pool.Submit( add, 1, 2 );
+			auto b = a.Get();
 
-			//auto c = test.Submit( add, -3, -4 )
+			auto result = pool.CoSubmit( TestNestedAsync );
+
+			log::Info( "Main: {}", std::this_thread::get_id() );
+			log::Info( "Result: {}", result.Get() );
+
+			// auto c = test.Submit( add, -3, -4 )
 			//			 .Then( std::identity{} );
-
 		}
-	}
+	} // namespace AsyncTests
 
-} // namespace sl::test
+} // namespace sl

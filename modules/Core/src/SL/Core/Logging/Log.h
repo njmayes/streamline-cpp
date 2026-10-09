@@ -14,6 +14,11 @@ namespace sl::log {
 		logger.SetLogLevel( level );
 	}
 
+	template < typename T, typename... Args >
+	void AddGlobalLogTarget( Args&&... args )
+	{
+		Logger::GetGlobalLogger().AddLogTarget< T >( std::forward< Args >( args )... );
+	}
 
 	/*
 	 *	Logging Functions
