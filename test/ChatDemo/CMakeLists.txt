@@ -36,3 +36,15 @@ target_link_libraries(streamline-chat-demo
         streamline::gfx
         streamline::net
 )
+
+# The 3D shader source files belong to streamline-gfx, not to this demo.
+add_custom_command(TARGET streamline-chat-demo POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:streamline-chat-demo>/resources/shaders"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_CURRENT_SOURCE_DIR}/resources/shaders"
+        "$<TARGET_FILE_DIR:streamline-chat-demo>/resources/shaders"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${STREAMLINE_GFX_3D_SHADER_DIR}"
+        "$<TARGET_FILE_DIR:streamline-chat-demo>/resources/shaders"
+    VERBATIM
+)

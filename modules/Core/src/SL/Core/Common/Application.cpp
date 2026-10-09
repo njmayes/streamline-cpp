@@ -24,10 +24,12 @@ namespace sl {
 			layer.Reset();
 		}
 
-		mEventRuntime.reset();
-
+		// Shut graphics and other systems down before the event runtime releases
+		// the window and its OpenGL context.
 		for ( const auto& shutdownTask : mAppSystems | std::views::reverse )
 			shutdownTask();
+
+		mEventRuntime.reset();
 
 		sInstance = nullptr;
 	}

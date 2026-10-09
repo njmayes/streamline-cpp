@@ -49,6 +49,6 @@ namespace sl {
 
 		std::unordered_map< GLenum, std::string > mOpenGLSourceCode;
 
-		mutable std::unordered_map< std::string_view, int > mUniformLocCache;
+		mutable std::unordered_map< std::string, int > mUniformLocCache;
 	};
 } // namespace sl

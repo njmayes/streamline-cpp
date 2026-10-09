@@ -3,6 +3,7 @@
 #include <glad/gl.h>
 
 #include "Renderer2D.h"
+#include "Renderer3D.h"
 
 #include "SL/Core/Logging/Log.h"
 
@@ -60,12 +61,14 @@ namespace sl {
 
 	void Renderer::Shutdown()
 	{
+		Renderer3D::Shutdown();
 		Renderer2D::Shutdown();
 	}
 
 	void Renderer::SetViewport( uint32_t w, uint32_t h )
 	{
 		glViewport( 0, 0, w, h );
+		Renderer3D::Resize( w, h );
 	}
 
 	void Renderer::SetClearColor( const Vec4f& colour )

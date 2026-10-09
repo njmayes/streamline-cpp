@@ -17,13 +17,16 @@ option(STREAMLINE_BUILD_NET "Build streamline-net (networking backends)" ON)
 option(STREAMLINE_BUILD_GFX "Build streamline-gfx (graphics/windowing backends)" ON)
 
 # Build the TestApp executable (testing and code examples)
-option(STREAMLINE_BUILD_TEST_APP "Build Streamline test app example" ON)
+option(STREAMLINE_BUILD_SANDBOX "Build Streamline test app example" ON)
 
 # Build the ChatDemo executable (full app demo)
 option(STREAMLINE_BUILD_CHAT_DEMO "Build Streamline chat room demo" ON)
 
 # Build the benchmarking executable (testing)
 option(STREAMLINE_BUILD_BENCHMARK "Build Streamline benchmarking app" ON)
+
+# Build the 3D demo executable (testing)
+option(STREAMLINE_BUILD_3D_DEMO "Build the graphics 3D smoke demo" ON)
 
 if(NOT CMAKE_CONFIGURATION_TYPES)
     set(default_build_type "Debug")

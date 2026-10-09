@@ -119,8 +119,9 @@ namespace sl {
 	}
 
 	Shader::Shader( std::string_view name, std::string_view vertex_src, std::string_view fragment_src )
-		: mName( name )
+		: mFilepath( name ), mName( name )
 	{
+		Utils::CreateCacheDirectoryIfNeeded();
 		std::unordered_map< GLenum, std::string > sources;
 		sources[ GL_VERTEX_SHADER ] = vertex_src;
 		sources[ GL_FRAGMENT_SHADER ] = fragment_src;
@@ -161,7 +162,6 @@ namespace sl {
 
 	void Shader::CompileOrGetVulkanBinaries( const std::unordered_map< GLenum, std::string >& shader_sources )
 	{
-		GLuint program = glCreateProgram();
 		shaderc::Compiler compiler;
 		shaderc::CompileOptions options;
 		options.SetTargetEnvironment( shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_2 );
@@ -176,7 +176,7 @@ namespace sl {
 		for ( auto&& [ stage, source ] : shader_sources )
 		{
 			std::filesystem::path shader_filepath = mFilepath;
-			std::filesystem::path cached_path = cache_directory / ( shader_filepath.filename().string() + Utils::GLShaderStageCachedVulkanFileExtension( stage ) );
+			std::filesystem::path cached_path = cache_directory / ( shader_filepath.filename().string() + "." + std::to_string( std::hash< std::string >{}( source ) ) + Utils::GLShaderStageCachedVulkanFileExtension( stage ) );
 
 			std::ifstream in( cached_path, std::ios::in | std::ios::binary );
 			if ( in.is_open() )
@@ -191,7 +191,13 @@ namespace sl {
 			}
 			else
 			{
-				shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv( source, Utils::GLShaderStageToShaderC( stage ), mFilepath.c_str(), options );
+				shaderc::SpvCompilationResult module =
+					compiler.CompileGlslToSpv(
+						source,
+						Utils::GLShaderStageToShaderC( stage ),
+						mFilepath.c_str(),
+						options
+					);
 				if ( module.GetCompilationStatus() != shaderc_compilation_status_success )
 				{
 					log::Error( module.GetErrorMessage() );
@@ -233,7 +239,8 @@ namespace sl {
 		for ( auto&& [ stage, spirv ] : mVulkanSPIRV )
 		{
 			std::filesystem::path shader_filepath = mFilepath;
-			std::filesystem::path cached_path = cache_directory / ( shader_filepath.filename().string() + Utils::GLShaderStageCachedOpenGLFileExtension( stage ) );
+			const std::string binary( reinterpret_cast< const char* >( spirv.data() ), spirv.size() * sizeof( uint32_t ) );
+			std::filesystem::path cached_path = cache_directory / ( shader_filepath.filename().string() + "." + std::to_string( std::hash< std::string >{}( binary ) ) + Utils::GLShaderStageCachedOpenGLFileExtension( stage ) );
 
 			std::ifstream in( cached_path, std::ios::in | std::ios::binary );
 			if ( in.is_open() )
@@ -252,7 +259,14 @@ namespace sl {
 				mOpenGLSourceCode[ stage ] = glsl_compiler.compile();
 				auto& source = mOpenGLSourceCode[ stage ];
 
-				shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv( source, Utils::GLShaderStageToShaderC( stage ), mFilepath.c_str() );
+				shaderc::SpvCompilationResult module =
+					compiler.CompileGlslToSpv(
+						source,
+						Utils::GLShaderStageToShaderC( stage ),
+						mFilepath.c_str(),
+						options
+					);
+
 				if ( module.GetCompilationStatus() != shaderc_compilation_status_success )
 				{
 					log::Error( module.GetErrorMessage() );
@@ -401,18 +415,12 @@ namespace sl {
 
 	GLint Shader::GetUniformLocation( std::string_view name ) const
 	{
-		if ( not mUniformLocCache.contains( name ) )
-			return mUniformLocCache[ name ];
+		const std::string key( name );
+		if ( const auto it = mUniformLocCache.find( key ); it != mUniformLocCache.end() )
+			return it->second;
 
-		GLint location = glGetUniformLocation( mRendererID, name.data() );
-		if ( location == -1 )
-		{
-			// Don't store in cache if unable to find uniform.
-			log::Warn( "Could not get uniform `{0}` from shader to add to cache!", name );
-			return location;
-		}
-
-		mUniformLocCache[ name ] = location;
+		const GLint location = glGetUniformLocation( mRendererID, key.c_str() );
+		mUniformLocCache.emplace( key, location );
 		return location;
 	}
 } // namespace sl

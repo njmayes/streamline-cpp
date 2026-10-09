@@ -31,6 +31,7 @@ target_sources(streamline-gfx
 target_compile_definitions(streamline-gfx
     PUBLIC
         STREAMLINE_HAS_GFX=1
+        GLM_ENABLE_EXPERIMENTAL
 )
 
 target_link_libraries(streamline-gfx
@@ -238,3 +239,12 @@ else()
             spirv-cross-glsl
     )
 endif()
+# The renderer's three GLSL stages are runtime assets. Keep the library's
+# canonical copies here and let applications deploy them alongside their assets.
+set(STREAMLINE_GFX_3D_SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/resources/shaders" CACHE INTERNAL "Streamline 3D shader asset directory")
+
+# During development the source shader path is a fallback; deployed applications
+# should provide their own assets using Renderer3DSettings::shaderDirectory.
+target_compile_definitions(streamline-gfx PRIVATE
+    STREAMLINE_GFX_DEFAULT_SHADER_DIR="${CMAKE_CURRENT_SOURCE_DIR}/resources/shaders"
+)

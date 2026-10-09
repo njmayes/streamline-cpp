@@ -115,6 +115,10 @@ namespace sl {
 		{
 			return mData.data();
 		}
+		const Type* Data() const
+		{
+			return mData.data();
+		}
 
 		auto begin()
 		{
