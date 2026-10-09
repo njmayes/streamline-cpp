@@ -146,87 +146,6 @@ namespace sl::bench {
 		{
 		};
 
-		class FilterToVectorPopulateTarget final : public BenchmarkLogTargetBase
-		{
-		private:
-			void PopulateBuffer( std::span< MessageEntry > data ) override
-			{
-				auto filtered_data =
-					ToVector< MessageEntry >(
-						data | std::views::filter(
-								   [ this ]( auto const& entry ) {
-									   return ShouldWriteMessage( entry );
-								   }
-							   )
-					);
-
-				mToWrite = 0;
-
-				for ( auto const& entry : filtered_data )
-				{
-					PopulateBufferSingleEntry( entry );
-					PopulateBufferNewLine();
-				}
-			}
-		};
-
-		class FilterToPointerVectorPopulateTarget final : public BenchmarkLogTargetBase
-		{
-		private:
-			void PopulateBuffer( std::span< MessageEntry > data ) override
-			{
-				std::vector< MessageEntry const* > filtered_data;
-				filtered_data.reserve( data.size() );
-
-				for ( auto const& entry : data )
-				{
-					if ( ShouldWriteMessage( entry ) )
-						filtered_data.emplace_back( &entry );
-				}
-
-				mToWrite = 0;
-
-				for ( auto const* entry : filtered_data )
-				{
-					PopulateBufferSingleEntry( *entry );
-					PopulateBufferNewLine();
-				}
-			}
-		};
-
-		class TwoPassCountThenWritePopulateTarget final : public BenchmarkLogTargetBase
-		{
-		private:
-			void PopulateBuffer( std::span< MessageEntry > data ) override
-			{
-				mToWrite = 0;
-
-				std::size_t required_bytes = 0;
-				for ( auto const& entry : data )
-				{
-					if ( ShouldWriteMessage( entry ) )
-						required_bytes += entry.length + GetNewLineBytes();
-				}
-
-				if ( required_bytes > mBuffer.size() )
-				{
-					auto new_size = mBuffer.size();
-					while ( new_size < required_bytes )
-						new_size *= 2;
-					mBuffer.resize( new_size );
-				}
-
-				for ( auto const& entry : data )
-				{
-					if ( ShouldWriteMessage( entry ) )
-					{
-						PopulateBufferSingleEntry( entry );
-						PopulateBufferNewLine();
-					}
-				}
-			}
-		};
-
 		class NullLogTarget final : public ILogTarget
 		{
 		public:
@@ -428,7 +347,7 @@ namespace sl::bench {
 			Logger raw_logger{ Logger::MessageSizeLimit, message_count + 16 };
 			raw_logger.SetLogLevel( LogLevel::Info );
 			auto logger = raw_logger.GetBenchmarkLogger();
-			AddNullTargets( logger, target_count, LogLevel::Info );;
+			AddNullTargets( logger, target_count, LogLevel::Info );
 
 			std::vector< std::string_view > payload_views;
 			payload_views.reserve( payloads.views.size() );
@@ -534,9 +453,6 @@ namespace sl::bench {
 			LogBenchmarkRegistrar()
 			{
 				RegisterPopulateBenchmarks< CurrentPopulateTarget >( "Log/LogTarget/PopulateBuffer/CurrentProduction" );
-				RegisterPopulateBenchmarks< FilterToVectorPopulateTarget >( "Log/LogTarget/PopulateBuffer/FilterToVector" );
-				RegisterPopulateBenchmarks< FilterToPointerVectorPopulateTarget >( "Log/LogTarget/PopulateBuffer/FilterToPointerVector" );
-				RegisterPopulateBenchmarks< TwoPassCountThenWritePopulateTarget >( "Log/LogTarget/PopulateBuffer/TwoPassCountThenWrite" );
 
 				benchmark::RegisterBenchmark( "Log/LogMemoryArena/RequestBuffer", &BM_LogMemoryArena_RequestBuffer )
 					->Args( { 64, 64 } )
@@ -584,7 +500,9 @@ namespace sl::bench {
 			}
 		};
 
+#if BENCHMARK_LOGS
 		[[maybe_unused]] static LogBenchmarkRegistrar sRegistrar{};
+#endif
 
 	} // namespace
 

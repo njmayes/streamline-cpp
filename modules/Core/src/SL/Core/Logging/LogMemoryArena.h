@@ -8,6 +8,8 @@ namespace sl {
 	{
 	public:
 		LogMemoryArena( std::size_t size );
+		LogMemoryArena( LogMemoryArena&& ) = default;
+		LogMemoryArena& operator=( LogMemoryArena&& ) = default;
 
 		std::optional< MessageBuffer > RequestBuffer( std::size_t size );
 		void ReleaseBuffers();

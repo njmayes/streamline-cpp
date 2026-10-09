@@ -26,7 +26,6 @@ namespace sl {
 	void LogMemoryArena::ReleaseBuffers()
 	{
 		SL_PROFILE_FUNCTION();
-
 		mUsed = 0;
 	}
 } // namespace sl

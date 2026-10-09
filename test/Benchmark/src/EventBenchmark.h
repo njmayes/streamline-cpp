@@ -664,6 +664,8 @@ namespace sl::bench {
 #undef DEFINE_ST_BENCHMARK
 #undef DEFINE_MT_BENCHMARK
 
+#if BENCHMARK_EVENTS
 	[[maybe_unused]] static EventBenchmarkRegistrar sRegistrar{};
+#endif
 
 } // namespace sl::bench

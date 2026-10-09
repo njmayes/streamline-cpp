@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "Logger.h"
@@ -8,64 +9,137 @@ namespace sl {
 	{
 		Logger& logger;
 
-		BenchmarkLogger( Logger& logger )
+		explicit BenchmarkLogger( Logger& logger )
 			: logger{ logger }
 		{
-			{
-				std::unique_lock< std::mutex > lock( logger.mQueueMutex );
-				logger.mTerminate = true;
-			}
-
-			logger.mCV.notify_all();
-
-			if ( logger.mWorker.joinable() )
-				logger.mWorker.join();
-
-			logger.mTerminate = false;
-
-			// Keep destructor logic safe.
-			logger.mWorker = std::thread( [] {} );
+			BenchmarkStopWorker();
 		}
 
 		void BenchmarkFlush()
 		{
-			logger.Flush();
+			SL_ASSERT( not logger.mWorker.joinable(), "Stop the logger worker before benchmarking" );
+
+			// Flush pending buffers in FIFO order.
+			while ( true )
+			{
+				std::optional< std::size_t > index;
+
+				{
+					std::scoped_lock lock( logger.mQueueMutex );
+
+					if ( logger.mPendingBuffers.Empty() )
+						break;
+
+					index = logger.mPendingBuffers.Pop();
+				}
+
+				auto& storage = logger.GetStorage( *index );
+
+				logger.Flush( storage );
+				storage.Reset();
+
+				{
+					std::scoped_lock lock( logger.mQueueMutex );
+
+					logger.mStats.Flush( logger.mLastFlush );
+					logger.mFreeBuffers.Push( *index );
+				}
+			}
+
+			// Flush the currently active buffer, if any.
+			{
+				std::scoped_lock lock( logger.mQueueMutex );
+
+				logger.ActivateFreeStorage();
+			}
+
+			Logger::MessageStorage* storage{};
+
+			{
+				std::scoped_lock lock( logger.mQueueMutex );
+
+				if ( logger.mActiveBuffer.has_value() )
+				{
+					auto& active = logger.GetActiveStorage();
+
+					if ( not active.queue.empty() )
+						storage = &active;
+				}
+			}
+
+			if ( storage )
+			{
+				logger.Flush( *storage );
+				storage->Reset();
+
+				std::scoped_lock lock( logger.mQueueMutex );
+				logger.mStats.Flush( logger.mLastFlush );
+			}
 		}
 
 		void BenchmarkStopWorker()
 		{
 			{
-				std::unique_lock< std::mutex > lock( logger.mQueueMutex );
+				std::scoped_lock lock( logger.mQueueMutex );
 				logger.mTerminate = true;
 			}
 
-			logger.mCV.notify_all();
+			logger.mWorkerCV.notify_all();
+			logger.mProducerCV.notify_all();
 
 			if ( logger.mWorker.joinable() )
 				logger.mWorker.join();
 
-			logger.mTerminate = false;
-
-			// Keep destructor logic safe.
-			logger.mWorker = std::thread( [] {} );
+			// Keep mTerminate true so normal logging cannot
+			// submit messages without a running worker.
 		}
 
 		void BenchmarkResetState()
 		{
-			logger.mMessageQueue.clear();
-			logger.mArena.ReleaseBuffers();
-			logger.mStats.messages_since_last_flush = 0;
-			logger.mStats.large_message_count = 0;
+			SL_ASSERT( not logger.mWorker.joinable(), "Stop the logger worker before resetting" );
+
+			std::scoped_lock lock( logger.mQueueMutex );
+
+			for ( auto& storage : logger.mMessageStorage )
+				storage->Reset();
+
+			while ( not logger.mPendingBuffers.Empty() )
+				logger.mPendingBuffers.Pop();
+
+			while ( not logger.mFreeBuffers.Empty() )
+				logger.mFreeBuffers.Pop();
+
+			logger.mActiveBuffer.reset();
+
+			for ( std::size_t i = 0; i < logger.mMessageStorage.size(); ++i )
+				logger.mFreeBuffers.Push( i );
+
+			logger.ActivateFreeStorage();
+
+			logger.mStats.Reset();
+			logger.mLastFlush = Clock::now();
 		}
 
 		auto& BenchmarkQueue()
 		{
-			return logger.mMessageQueue;
+			SL_ASSERT( not logger.mWorker.joinable(), "Stop the logger worker before accessing the queue" );
+
+			std::scoped_lock lock( logger.mQueueMutex );
+
+			logger.ActivateFreeStorage();
+
+			return logger.GetActiveStorage().queue;
 		}
 
 		auto& BenchmarkArena()
 		{
-			return logger.mArena;
+			SL_ASSERT( not logger.mWorker.joinable(), "Stop the logger worker before accessing the arena" );
+
+			std::scoped_lock lock( logger.mQueueMutex );
+
+			logger.ActivateFreeStorage();
+
+			return logger.GetActiveStorage().arena;
 		}
 
 		auto& BenchmarkTargets()
@@ -75,7 +149,7 @@ namespace sl {
 
 		std::size_t MessageSizeLimit() const
 		{
-			return logger.mMessageSizeLimit;
+			return logger.mBufferSizeLimit - 1;
 		}
 	};
 } // namespace sl

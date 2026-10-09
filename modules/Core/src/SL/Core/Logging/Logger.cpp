@@ -1,3 +1,4 @@
+
 #include "Logger.h"
 
 #include "BenchmarkLogger.h"
@@ -17,7 +18,6 @@ namespace {
 	}
 } // namespace
 
-
 namespace sl {
 
 	Logger& Logger::GetGlobalLogger()
@@ -32,195 +32,363 @@ namespace sl {
 		return sLogger;
 	}
 
-	Logger::Logger( std::size_t message_size_limit, std::size_t max_messages_before_flush )
-		: mMinLogLevel( LogLevel::Debug )
-		, mTerminate( false )
-		, mLastFlush{ Clock::now() }
-		, mMessageSizeLimit( message_size_limit )
+	Logger::Logger(
+		std::size_t buffer_size_limit,
+		std::size_t max_messages_before_flush,
+		std::size_t buffer_count
+	)
+		: mBufferSizeLimit( buffer_size_limit )
 		, mMaxMessagesBeforeFlush( max_messages_before_flush )
-		, mArena( message_size_limit * max_messages_before_flush )
+		, mFreeBuffers( buffer_count )
+		, mPendingBuffers( buffer_count )
 	{
+		if ( buffer_count < 2 )
+			throw std::invalid_argument( "Logger requires at least two buffers" );
+
+		if ( buffer_size_limit < 2 or max_messages_before_flush == 0 )
+			throw std::invalid_argument( "Invalid logger buffer configuration" );
+
+		if ( buffer_count > std::numeric_limits< std::size_t >::max() / buffer_size_limit )
+			throw std::length_error( "Logger buffer configuration overflow" );
+
+		mMessageStorage.reserve( buffer_count );
+
+		for ( std::size_t i = 0; i < buffer_count; ++i )
+		{
+			mMessageStorage.emplace_back(
+				std::make_unique< MessageStorage >(
+					buffer_size_limit,
+					max_messages_before_flush
+				)
+			);
+
+			mFreeBuffers.Push( i );
+		}
+
+		ActivateFreeStorage();
+
 		mWorker = std::thread( &Logger::ProcessQueue, this );
-		mMessageBuffer.reserve( mMessageSizeLimit * mMaxMessagesBeforeFlush );
 	}
 
 	Logger::~Logger()
 	{
 		{
-			std::unique_lock< std::mutex > lock( mQueueMutex );
+			std::scoped_lock lock( mQueueMutex );
 			mTerminate = true;
 		}
-		mCV.notify_all();
-		mWorker.join();
+
+		mWorkerCV.notify_all();
+		mProducerCV.notify_all();
+
+		if ( mWorker.joinable() )
+			mWorker.join();
 	}
 
 	void Logger::SetLogLevel( LogLevel level )
 	{
-		mMinLogLevel = level;
+		mMinLogLevel.store( level, std::memory_order_relaxed );
 	}
 
 	void Logger::Log( LogLevel level, std::string_view message )
 	{
 		SL_PROFILE_FUNCTION();
 
-		if ( std::to_underlying( level ) < std::to_underlying( mMinLogLevel ) )
+		if ( std::to_underlying( level ) <
+			 std::to_underlying( mMinLogLevel.load( std::memory_order_relaxed ) ) )
 			return;
 
-		std::optional< MessageBuffer > buffer = mArena.RequestBuffer( mMessageSizeLimit );
-		if ( not buffer.has_value() )
-		{
-			{
-				SL_PROFILE_SCOPE( "Logging - Notify" );
-
-				mCV.notify_one();
-			}
-			{
-				SL_PROFILE_SCOPE( "Logging - Wait" );
-
-				std::unique_lock< std::mutex > lock( mQueueMutex );
-				mCV.wait( lock, [ this ] { return mMessageQueue.size() < mMaxMessagesBeforeFlush; } );
-			}
-
-			{
-				SL_PROFILE_SCOPE( "Logging - Get Buffer Retry" );
-
-				buffer = mArena.RequestBuffer( mMessageSizeLimit );
-				SL_ASSERT( buffer.has_value(), "Still could not create message buffer despite flush" );
-			}
-		}
-
 		auto level_string = Enum::ToString( level );
+		auto& timestamp = GetCurrentTimestamp();
 
-		UpdateCurrentTimestamp();
-
-		std::size_t formatted_size{};
-		{
-			SL_PROFILE_SCOPE( "Logging - Format message" );
-
-			auto format_result = std::format_to_n( buffer->begin(), mMessageSizeLimit, "[{}] {}: {}", level_string, mTimestampCache.format_string.data(), message.data() );
-			formatted_size = std::min( static_cast< std::size_t >( format_result.size ), mMessageSizeLimit );
-		}
-
-		if ( formatted_size == mMessageSizeLimit )
-			mStats.large_message_count++;
+		bool notify_worker = false;
 
 		{
-			SL_PROFILE_SCOPE( "Logging - Lock queue and push" );
+			std::unique_lock lock( mQueueMutex );
 
-			std::lock_guard< std::mutex > lock( mQueueMutex );
-			mMessageQueue.emplace_back( *buffer, formatted_size, level );
+			{
+				SL_PROFILE_SCOPE( "Logging - Wait for storage" );
+
+				mProducerCV.wait( lock, [ this ] {
+					return mTerminate or mActiveBuffer.has_value() or not mFreeBuffers.Empty();
+				} );
+			}
+
+			if ( mTerminate )
+				return;
+
+			// Another producer might have filled the previous active
+			// buffer. Claim a free one if required.
+			ActivateFreeStorage();
+
+			auto& storage = GetActiveStorage();
+
+			auto buffer = storage.arena.RequestBuffer( mBufferSizeLimit );
+
+			if ( not buffer.has_value() )
+				throw std::runtime_error( "Logger arena exhausted unexpectedly" );
+
+			std::size_t formatted_size{};
+
+			{
+				SL_PROFILE_SCOPE( "Logging - Format message" );
+
+				auto result = std::format_to_n(
+					buffer->begin(),
+					mBufferSizeLimit - 1,
+					"[{}] {}: {}",
+					level_string,
+					timestamp.data(),
+					message
+				);
+
+				formatted_size = std::min(
+					static_cast< std::size_t >( result.size ),
+					mBufferSizeLimit - 1
+				);
+
+				*( buffer->begin() + formatted_size ) = '\0';
+			}
+
+			{
+				SL_PROFILE_SCOPE( "Logging - Push message" );
+
+				storage.queue.emplace_back(
+					*buffer,
+					formatted_size + 1,
+					level
+				);
+			}
+
+			mStats.AddMessage( formatted_size, mBufferSizeLimit - 1 );
+
+			// Immediately rotate to the next free buffer when full.
+			// This does not wait for the worker to finish flushing.
+			if ( storage.queue.size() >= mMaxMessagesBeforeFlush )
+			{
+				QueueActiveStorage();
+				ActivateFreeStorage();
+
+				notify_worker = true;
+			}
 		}
 
-		mStats.messages_since_last_flush++;
+		if ( notify_worker )
+		{
+			mWorkerCV.notify_one();
 
-		mCV.notify_one();
+			// Other producers may be waiting for an active buffer.
+			mProducerCV.notify_all();
+		}
 	}
 
 	void Logger::ProcessQueue()
 	{
+		SL_PROFILE_FUNCTION();
+
 		while ( true )
 		{
+			std::optional< std::size_t > flush_index;
+			bool notify_producers = false;
+
 			{
-				std::unique_lock< std::mutex > lock( mQueueMutex );
-				mCV.wait_until( lock, mLastFlush + MaxTimeBetweenFlush, [ this ] {
-					return mMessageQueue.size() >= mMaxMessagesBeforeFlush or mTerminate;
-				} );
+				std::unique_lock lock( mQueueMutex );
 
-				Flush();
+				{
+					SL_PROFILE_SCOPE( "Logging - Wait for flush" );
+
+					mWorkerCV.wait_until(
+						lock,
+						mLastFlush + MaxTimeBetweenFlush,
+						[ this ] {
+							return mTerminate or not mPendingBuffers.Empty();
+						}
+					);
+				}
+
+				// On shutdown, enqueue the remaining partial active
+				// buffer after all previously completed buffers.
+				if ( mTerminate )
+				{
+					if ( mActiveBuffer.has_value() )
+						QueueActiveStorage();
+				}
+				else if ( mPendingBuffers.Empty() )
+				{
+					// Reached the time-based flush deadline.
+					// A partially filled active buffer must also
+					// be submitted for flushing.
+					if ( mActiveBuffer.has_value() )
+					{
+						auto& active = GetActiveStorage();
+
+						if ( not active.queue.empty() )
+						{
+							QueueActiveStorage();
+							ActivateFreeStorage();
+
+							notify_producers = true;
+						}
+					}
+				}
+
+				if ( mPendingBuffers.Empty() )
+				{
+					if ( mTerminate )
+						break;
+
+					// Avoid repeatedly waiting on an expired deadline
+					// while no messages are available.
+					mLastFlush = Clock::now();
+					continue;
+				}
+
+				flush_index = mPendingBuffers.Pop();
+
+				// If producers have no active buffer but a free one
+				// exists, activate it before releasing the mutex.
+				if ( not mTerminate and not mActiveBuffer.has_value() )
+				{
+					ActivateFreeStorage();
+					notify_producers = true;
+				}
 			}
-			mCV.notify_one();
 
-			if ( mTerminate and mMessageQueue.empty() )
-				break;
+			if ( notify_producers )
+				mProducerCV.notify_all();
+
+			auto& storage = GetStorage( *flush_index );
+
+			// Flush outside the queue mutex.
+			// No producer can access this storage while it is owned
+			// by the worker.
+			try
+			{
+				Flush( storage );
+			}
+			catch ( std::exception const& exception )
+			{
+				std::fprintf(
+					stderr,
+					"Logger target flush failed: %s\n",
+					exception.what()
+				);
+			}
+			catch ( ... )
+			{
+				std::fputs(
+					"Logger target flush failed with an unknown exception\n",
+					stderr
+				);
+			}
+
+			// The worker exclusively owns this storage until it
+			// returns the index to the free pool.
+			storage.Reset();
+
+			{
+				std::scoped_lock lock( mQueueMutex );
+
+				mStats.Flush( mLastFlush );
+
+				mFreeBuffers.Push( *flush_index );
+
+				if ( not mTerminate )
+					ActivateFreeStorage();
+			}
+
+			mProducerCV.notify_all();
 		}
 	}
 
-	void sl::Logger::Flush()
+	void Logger::Flush( MessageStorage& storage )
 	{
 		SL_PROFILE_FUNCTION();
 
 		{
-			SL_PROFILE_SCOPE( "Pre-write" );
+			SL_PROFILE_SCOPE( "Logging - Write targets" );
+
+			std::scoped_lock lock( mTargetsMutex );
 
 			for ( auto const& target : mLogTargets )
 			{
 				target->PreFlush();
-			}
-		}
-
-		{
-			SL_PROFILE_SCOPE( "Writing" );
-
-			for ( auto const& target : mLogTargets )
-			{
-				target->WriteTarget( mMessageQueue );
+				target->WriteTarget( storage.queue );
 				target->Flush();
 			}
 		}
-
-		{
-			SL_PROFILE_SCOPE( "Cleanup" );
-
-			{
-				SL_PROFILE_SCOPE( "Cleanup - Release buffer" );
-				mArena.ReleaseBuffers();
-			}
-			{
-				SL_PROFILE_SCOPE( "Cleanup - Clear queue" );
-				mMessageQueue.clear();
-			}
-		}
-
-		{
-			SL_PROFILE_SCOPE( "Stats" );
-
-			mStats.total_flushes++;
-			mStats.large_message_count = 0;
-			mStats.messages_since_last_flush = 0;
-
-			auto flush_time = Clock::now();
-			mStats.time_since_last_flush = flush_time - mLastFlush;
-			mLastFlush = flush_time;
-		}
 	}
 
-	void Logger::UpdateCurrentTimestamp()
+	Logger::MessageStorage& Logger::GetStorage( std::size_t index )
+	{
+		return *mMessageStorage[ index ];
+	}
+
+	Logger::MessageStorage& Logger::GetActiveStorage()
+	{
+		SL_ASSERT( mActiveBuffer.has_value(), "No active logger buffer" );
+		return GetStorage( *mActiveBuffer );
+	}
+
+	void Logger::ActivateFreeStorage()
+	{
+		// Must be called while holding mQueueMutex, or during
+		// construction before the worker starts.
+		if ( mActiveBuffer.has_value() or mFreeBuffers.Empty() )
+			return;
+
+		mActiveBuffer = mFreeBuffers.Pop();
+
+		SL_ASSERT(
+			GetActiveStorage().queue.empty(),
+			"Activated logger buffer is not empty"
+		);
+	}
+
+	void Logger::QueueActiveStorage()
+	{
+		// Caller must hold mQueueMutex.
+		if ( not mActiveBuffer.has_value() )
+			return;
+
+		auto const index = *mActiveBuffer;
+
+		if ( not GetStorage( index ).queue.empty() )
+		{
+			mPendingBuffers.Push( index );
+		}
+		else
+		{
+			mFreeBuffers.Push( index );
+		}
+
+		mActiveBuffer.reset();
+	}
+
+	Logger::TemporaryBuffer& Logger::GetCurrentTimestamp()
 	{
 		SL_PROFILE_FUNCTION();
 
-		std::chrono::system_clock::time_point now;
-		{
-			SL_PROFILE_SCOPE( "Update timestamp - Get time" );
-			now = std::chrono::system_clock::now();
-		}
+		thread_local TimestampCache tsCache;
 
-		{
-			SL_PROFILE_SCOPE( "Update timestamp - Check if time is same" );
-			if ( std::chrono::floor< std::chrono::seconds >( now ) == std::chrono::floor< std::chrono::seconds >( mTimestampCache.timestamp ) )
-				return;
-		}
+		auto now = std::chrono::system_clock::now();
 
-		std::time_t now_c{};
-		{
-			SL_PROFILE_SCOPE( "Update timestamp - To time_t" );
-			now_c = std::chrono::system_clock::to_time_t( now );
-		}
+		if ( std::chrono::floor< std::chrono::seconds >( now ) ==
+			 std::chrono::floor< std::chrono::seconds >( tsCache.timestamp ) )
+			return tsCache.format_string;
 
-		std::tm time{};
-		{
-			SL_PROFILE_SCOPE( "Update timestamp - Get local time" );
-			time = GetLocalTime( &now_c );
-		}
+		auto now_c = std::chrono::system_clock::to_time_t( now );
+		auto time = GetLocalTime( &now_c );
 
-		{
-			SL_PROFILE_SCOPE( "Update timestamp - update saved timestamp" );
-			mTimestampCache.timestamp = now;
-		}
+		std::strftime(
+			tsCache.format_string.data(),
+			tsCache.format_string.size(),
+			"%F %T",
+			&time
+		);
 
-		{
-			SL_PROFILE_SCOPE( "Update timestamp - Format time" );
-			std::strftime( mTimestampCache.format_string.data(), mTimestampCache.format_string.size(), "%F %T", &time );
-		}
+		tsCache.timestamp = now;
+
+		return tsCache.format_string;
 	}
 
 	BenchmarkLogger Logger::GetBenchmarkLogger()

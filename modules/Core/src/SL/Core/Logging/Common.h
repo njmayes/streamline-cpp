@@ -24,4 +24,8 @@ namespace sl {
 		std::size_t length;
 		LogLevel level;
 	};
+
+	using Clock = std::chrono::steady_clock;
+	using Duration = std::chrono::duration< float, std::micro >;
+	using TimePoint = std::chrono::time_point< Clock, Duration >;
 } // namespace sl
